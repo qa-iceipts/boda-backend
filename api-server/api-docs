@@ -1,0 +1,6 @@
+All Users Types - {
+    Integer Value Refers to type column Value in DB
+    1 = ADMIN
+    2 = DRIVER
+    3 = CUSTOMER
+}
