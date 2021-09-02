@@ -66,7 +66,7 @@ router.get('/', function (req, res) {
  *         - 3
  */
 
-router.post('/addUser', (req, res, next) => {
+router.post('/addUser',authMiddleware,validate(superSchema.addUserSchema), (req, res, next) => {
 
     console.log("Add User Route Called")
 
