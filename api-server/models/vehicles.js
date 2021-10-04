@@ -15,10 +15,17 @@ module.exports = (sequelize, DataTypes) => {
   };
   vehicles.init({
     name: DataTypes.STRING,
-    type: DataTypes.INTEGER,
+    type: {
+      type: DataTypes.INTEGER,
+      unique: true
+    },
     rate: DataTypes.FLOAT,
+    min_rate : DataTypes.FLOAT,
+    max_rate : DataTypes.FLOAT,
+    persons : DataTypes.INTEGER,
     currency: DataTypes.STRING,
-    service_type: DataTypes.STRING
+    service_type: DataTypes.STRING,
+    
   }, {
     sequelize,
     modelName: 'vehicles',

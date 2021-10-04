@@ -13,7 +13,14 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       // User.belongsTo(models.roles); 
-      User.belongsTo(models.roles, {foreignKey: 'type', targetKey: 'type'}); // Adds fk_role to User
+      User.belongsTo(models.roles, {foreignKey: 'roleType', targetKey: 'type'}); // Adds fk_role to User
+      User.hasMany(models.user_subscriptions);
+      // User.hasMany(models.rides);
+       User.hasMany(models.rides,{foreignKey: 'customer_id',as: 'customer'});
+       User.hasMany(models.rides,{foreignKey: 'driver_id',as: 'driver'});
+      // User.hasMany(models.rides, {foreignKey: 'driver_id'});
+      User.hasMany(models.fcm_keys);
+      User.hasMany(models.user_vehicles)
     }
   };
   User.init({
@@ -25,7 +32,6 @@ module.exports = (sequelize, DataTypes) => {
     },
     
     name: DataTypes.STRING,
-    type: DataTypes.INTEGER,
     phone: {
       type: DataTypes.STRING,
       unique: true
@@ -33,6 +39,9 @@ module.exports = (sequelize, DataTypes) => {
     email: {
       type:DataTypes.STRING,
       unique: true
+    },
+    password : {
+      type:DataTypes.STRING,
     },
     address: DataTypes.STRING,
     country: DataTypes.STRING,
@@ -42,7 +51,8 @@ module.exports = (sequelize, DataTypes) => {
     profile_image: DataTypes.STRING,
     about_me: DataTypes.STRING,
     license: DataTypes.STRING,
-    payment_mode: DataTypes.INTEGER
+    payment_mode: DataTypes.INTEGER,
+    ratings : DataTypes.FLOAT
   }, {
     sequelize,
     modelName: 'User',

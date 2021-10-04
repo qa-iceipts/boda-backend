@@ -8,10 +8,12 @@
 
 // var async = require('async');
 // var http = require("http");
-const logger = require('../utils/Logger');
+const logger = require('../utils/logger');
 const usersDao = require('../daos/users-dao');
 const db = require('../models')
+const { Op } = require("sequelize");
 const util = require('../utils/commonUtils')
+const bcrypt = require('bcrypt');
 var responseConstant = require("../constants/responseConstants");
 const jwt = require('jsonwebtoken');
 const {
@@ -21,12 +23,12 @@ const {
     verifyRefreshToken,
     returnRefreshTimestamp,
     inValidateAllUser,
-    verifyRefreshTokenWithdb
+    verifyRefreshTokenWithdb,
+    returnTokens
 } = require('../utils/verifytoken')
 /**
  * export module
  */
-
 
 module.exports = {
 
@@ -34,7 +36,7 @@ module.exports = {
         return new Promise(function (resolve, reject) {
             console.log("Insert Obj in addUser Service ::", req.body)
             usersDao.addUser(req).then(function (result) {
-                logger.debug('success ', result);
+                ;
                 if (result) {
                     let req = {
                         body: {
@@ -59,61 +61,132 @@ module.exports = {
         });
 
     },
-    login: function (req) {
+    updateUser: function (req) {
+        return new Promise(function (resolve, reject) {
+            console.log("Insert Obj in updateUser Service ::", req.body)
+            usersDao.updateUser(req).then(function (result) {
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                logger.error('error in updateUser', err);
+                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+            });
+        }, function (err) {
+            logger.error('error in add user promise', err);
+            return reject(err);
+        });
+
+    },
+
+    getUser: function (req) {
+        return new Promise(function (resolve, reject) {
+            console.log("Insert Obj in getUser Service ::", req.body)
+            usersDao.getUser(req).then(function (result) {
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                logger.error('error in getUser', err);
+                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+            });
+        }, function (err) {
+            logger.error('error in add getUser promise', err);
+            return reject(err);
+        });
+
+    },
+
+    getUserById: function (id) {
+        return new Promise(function (resolve, reject) {
+            console.log("Insert Obj in getUserById Service ::")
+            usersDao.getUserById(id).then(function (result) {
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                logger.error('error in getUserById', err);
+                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+            });
+        }, function (err) {
+            logger.error('error in getUserById promise', err);
+            return reject(err);
+        });
+
+    },
+
+    getAllUsers: function (req, res) {
+        return new Promise(function (resolve, reject) {
+            usersDao.getAllUsers(req).then(function (result) {
+                // logger.debug('success ', result);
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                logger.error('error in getAllUsers service', err);
+                return reject(err);
+            });
+        }, function (err) {
+            logger.error('error in getAllUsers promise', err);
+            return reject(err);
+        });
+    },
+
+    login: function (req, role) {
         return new Promise(function (resolve, reject) {
             let reqObj = req.body
             console.log(reqObj)
+            let whereObj
             // login code start
-            db.User.findOne({
-                where: {
+            if (role == 'admin') {
+                whereObj = {
+                    [Op.or]: [
+                        { phone: reqObj.username },
+                        { email: reqObj.username }
+                    ]
+                }
+            } else {
+                whereObj = {
                     phone: reqObj.phone
                 }
-            }).then(user => {
+            }
+            db.User.findOne({
+                where: whereObj,
+                include: {
+                    model: db.roles,
+                    attributes: ['roleName'],
+                    required: true
+                }
+            }).then((user) => {
 
                 if (!user) {
                     return reject(util.responseUtil(null, null, responseConstant.USER_NOT_FOUND));
 
                 } else {
-
-                    let accessToken, refreshToken
-                    signAccessToken(user.dataValues).then(function (result) {
-                        accessToken = result
-                        console.log(accessToken)
-                        loginRefreshToken(user.dataValues).then(function (result1) {
-                            refreshToken = result1
-                            console.log("refreshToken::", refreshToken)
-
-                            returnRefreshTimestamp(refreshToken).then(function (exp) {
-                                if (exp) {
-                                    let tokenObj = {
-                                        userId: user.dataValues.id,
-                                        refresh_token: refreshToken,
-                                        timestamp: exp,
-                                        is_used: '0'
-                                    }
-
-                                    db.tokens.create(tokenObj).then(() => {
-                                        return resolve({
-                                            tokens: {
-                                                accesstoken: accessToken,
-                                                refreshtoken: refreshToken
-                                            },
-                                            user: user.dataValues
-                                        });
-
-                                    }).catch(err => {
-                                        console.log(err)
-                                    });
-
+                    // console.log(user.dataValues)
+                    if (role == 'admin') {
+                        if (user.dataValues.roleType == 1) {
+                            bcrypt.compare(req.body.password, user.dataValues.password, function (err, result) {
+                                // console.log(result)
+                                if (err) {
+                                    return reject(err);
                                 }
+                                if (!result) {
+                                    return reject(util.responseUtil(null, null, responseConstant.INVALIDE_CREDENTIAL));
+                                } else {
+                                    returnTokens(user).then(function (result) {
+                                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+                                    }).catch(function (err) {
+                                        logger.error('error in returnTokens service', err);
+                                        return reject(err);
+                                    });
+                                }
+                            });
+                        } else {
+                            return reject(util.responseUtil("User role is not admin", null, responseConstant.UNAUTHORIZE));
+                        }
 
-
-                            }).catch(err => {
-                                console.log(err)
-                            })
-
+                    } else {
+                        returnTokens(user).then(function (result) {
+                            return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+                        }).catch(function (err) {
+                            logger.error('error in returnTokens service', err);
+                            return reject(err);
                         });
-                    });
+                    }
+
                 }
 
             }).catch(err => {
@@ -282,15 +355,36 @@ module.exports = {
 
     },
 
-    logout : function (req) {
+    logout: function (req) {
         return new Promise(function (resolve, reject) {
             let reqObj = req.body
-            console.log("reqObj in Logout Service :: ",reqObj)
+            console.log("reqObj in Logout Service :: ", reqObj)
             let refresh_token = reqObj.refreshToken
-            inValidateOneUser(refresh_token).then(res=>{
+            inValidateOneUser(refresh_token).then(res => {
                 console.log("logged out")
                 return resolve(util.responseUtil(null, "Successfully Logged Out", responseConstant.SUCCESS));
-            }).catch(err=>{
+            }).catch(err => {
+                console.log(err);
+                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+            })
+        }, function (err) {
+            logger.error('error in login user promise', err);
+            return reject(err);
+        });
+
+    },
+    getDriverMetrics : function (driverIds) {
+        return new Promise(function (resolve, reject) {
+            console.log("getDriverMetrics Service :: ")
+            db.User.findAll({
+                where: {
+                    id : driverIds,
+                    roleType : 2
+                }
+            }).then(result=>{
+                // console.log(result)
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(err => {
                 console.log(err);
                 return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
             })

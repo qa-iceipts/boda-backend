@@ -26,7 +26,8 @@ const sequelize = new Sequelize(config.database, config.username, config.passwor
     idle: 10000
   },
   dialectOptions: config.dialectOptions,
-  logging: console.log 
+  logging: console.log ,
+  // timezone: "+05:30"
 });
 
 

@@ -12,10 +12,7 @@ module.exports = {
       name: {
         type: Sequelize.STRING
       },
-      password :{
-        type:Sequelize.STRING
-      },
-      type: {
+      roleType: {
         type: Sequelize.INTEGER
       },
       phone: {
@@ -52,9 +49,6 @@ module.exports = {
       },
       payment_mode: {
         type: Sequelize.INTEGER
-      },
-      otp:{
-        type: Sequelize.STRING
       },
       createdAt: {
         allowNull: false,
