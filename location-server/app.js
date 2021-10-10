@@ -55,7 +55,7 @@ dbhelper().then(() => {
 	const db = require('./models/index')
 	
     const routes = require('./routes/routes.js')
-	app.use('/', routes)
+	app.use('/location', routes)
 
 	// sync the db
 	db.sequelize.sync({

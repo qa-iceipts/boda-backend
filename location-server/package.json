@@ -4,7 +4,8 @@
   "description": "location server nearby users for app",
   "main": "app",
   "scripts": {
-    "test": "test app"
+    "test": "test app",
+    "start" :"node app"
   },
   "keywords": [
     "location-server",

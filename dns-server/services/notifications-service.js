@@ -42,7 +42,7 @@ module.exports = {
                 //       link: 'www.amazon.in'
                 //     }
                 //   },
-                data: { score: '850', time: '2:45' },
+                data: notificationObj,
                 tokens: registrationTokens,
             };
 

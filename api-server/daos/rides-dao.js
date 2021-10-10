@@ -12,7 +12,7 @@
 
 const logger = require('../utils/logger');
 const {
-    rides
+    rides,User ,user_vehicles
 } = require('../models');
 const { getPagination, getPagingData } = require('../utils/pagination')
 const {
@@ -39,6 +39,67 @@ module.exports = {
         }, function (err) {
             console.log(err)
             logger.error('error in addRide promise', err);
+            return reject(err);
+        });
+    },
+    updateRide: function (reqObj) {
+        return new Promise(function (resolve, reject) {
+
+            console.log("updateRide dao called");
+
+            rides.update(reqObj,{
+                where : {
+                    id : reqObj.id
+                }
+            }).then((result) => {
+                return resolve(result);
+            }).catch(err => {
+                console.log(err)
+                return reject(err);
+            })
+
+            console.log("updateRide dao returned");
+
+        }, function (err) {
+            console.log(err)
+            logger.error('error in updateRide promise', err);
+            return reject(err);
+        });
+    },
+    getRide: function (rideId) {
+        return new Promise(function (resolve, reject) {
+
+            console.log("getRide dao called");
+
+            rides.findOne({
+                where : {
+                    id : rideId
+                },
+                include: [
+                    {
+                        model: User,
+                        as: 'driver',
+                        required: true,
+                        attributes : ["id","name","phone","email","profile_image"]
+                    },
+                    {
+                        model: user_vehicles,
+                        required: true
+                    },
+
+                ]
+            }).then((result) => {
+                return resolve(result);
+            }).catch(err => {
+                console.log(err)
+                return reject(err);
+            })
+
+            console.log("getRide dao returned");
+
+        }, function (err) {
+            console.log(err)
+            logger.error('error in getRide promise', err);
             return reject(err);
         });
     },

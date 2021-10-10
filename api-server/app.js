@@ -40,7 +40,7 @@ const options = {
 	apis: ["./Routes/*.js"],
 };
 const specs = swaggerJsDoc(options);
-app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs))
+app.use("/api/api-docs", swaggerUI.serve, swaggerUI.setup(specs))
 
 // SWAGGER END
 
@@ -71,10 +71,6 @@ app.use(express.urlencoded({
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// simple route
-// app.get("/", (req, res) => {
-// 	res.json({ message: "Welcome to boda-api application." });
-// });
 
 
 // set port, listen for requests
@@ -96,7 +92,7 @@ dbhelper().then(() => {
 
 	const db = require('./models/index')
 	const routes = require('./routes/routes.js')
-	app.use('/', routes)
+	app.use('/api', routes)
 
 	// sync the db
 	db.sequelize.sync({

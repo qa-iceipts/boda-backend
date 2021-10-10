@@ -16,12 +16,21 @@ module.exports = (sequelize, DataTypes) => {
   dns_connections.init({
     rideId: {
       type : DataTypes.STRING,
-      unique : true
+      // unique : true
     },
     socketId:  {
       type : DataTypes.STRING,
       unique : true
+    },
+     userId :{
+      type : DataTypes.STRING,
+      unique : true
+    },
+    user_type :{
+      type : DataTypes.INTEGER,
+      unique : false
     }
+    
   }, {
     sequelize,
     modelName: 'dns_connections',

@@ -17,13 +17,21 @@ module.exports = (sequelize, DataTypes) => {
   fcm_keys.init({
     fcm_key: {
       type :DataTypes.STRING,
-      unique : true
+
     },
     device_type : DataTypes.STRING,
-    device_id : DataTypes.STRING,
+    device_id : {
+      type :DataTypes.STRING,
+    },
   }, {
     sequelize,
     modelName: 'fcm_keys',
+    indexes: [
+      {
+          unique: true,
+          fields: ['UserId', 'device_id', 'fcm_key']
+      }
+  ]
   });
   return fcm_keys;
 };

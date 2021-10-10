@@ -354,5 +354,30 @@ module.exports = {
         });
     },
 
+    getAllUsersByIds : function (Ids) {
+        return new Promise(function (resolve, reject) {
+            console.log("getAllUsersByIds Dao Called ::")
+            db.User.findAll({
+                where: { id: Ids },
+                attributes: {exclude: ['password']},
+                
+              }).then(function (result) {
+                //   console.log(result[0].dataValues)
+                if(result.length > 0){
+                    return resolve(result);
+                }else{
+                    return reject("No users found")
+                }
+            }).catch(function (err) {
+                console.log(err)
+                logger.error('error in getAllUsersByIds', err);
+                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
+            });
+        }, function (err) {
+            console.log(err)
+            logger.error('error in add getAllUsersByIds promise', err);
+            return reject(err);
+        });
+}
 
 }

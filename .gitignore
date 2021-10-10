@@ -49,4 +49,5 @@ Thumbs.db
 *.wmv
 
 .env
-firebase_config.js
+client.js
+client2.js

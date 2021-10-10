@@ -6,7 +6,7 @@ const express = require("express");
 const app = express();
 
 const server = require('http').createServer(app);
-const io = require('socket.io')(server,{
+const io = require('socket.io')(server,{path: '/dns/socket.io'},{
     cors:{ origin: "*"}
 });
 
@@ -53,7 +53,7 @@ dbhelper().then(() => {
 
    	const routes = require('./routes/routes.js')
 	
-    app.use('/', routes)
+    app.use('/dns', routes)
 
 	// sync the db
 	db.sequelize.sync({

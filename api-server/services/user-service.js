@@ -124,6 +124,20 @@ module.exports = {
         });
     },
 
+    getAllUsersByIds : function (req, res) {
+        return new Promise(function (resolve, reject) {
+            usersDao.getAllUsersByIds(req.body.Ids).then(function (result) {
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                logger.error('error in getAllUsersByIds service', err);
+                return reject(err);
+            });
+        }, function (err) {
+            logger.error('error in getAllUsersByIds promise', err);
+            return reject(err);
+        });
+    },
+
     login: function (req, role) {
         return new Promise(function (resolve, reject) {
             let reqObj = req.body
@@ -380,7 +394,8 @@ module.exports = {
                 where: {
                     id : driverIds,
                     roleType : 2
-                }
+                },
+                attributes: {exclude: ['password']},
             }).then(result=>{
                 // console.log(result)
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));

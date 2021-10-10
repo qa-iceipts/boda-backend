@@ -34,6 +34,43 @@ module.exports = {
             return reject(err);
         });
 
-    }
+    },
+
+    updateRide : function (req) {
+        return new Promise(function (resolve, reject) {
+            console.log("updateRide Service Called ::")
+            let reqObj = req.body
+            console.log("reqObj::",reqObj)
+            ridesDao.updateRide(reqObj).then(function (result) {
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                console.log(err)
+                logger.error('error in updateRide', err);
+                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
+            });
+        }, function (err) {
+            console.log(err)
+            logger.error('error in add updateRide promise', err);
+            return reject(err);
+        });
+
+    },
+    getRide : function (rideId) {
+        return new Promise(function (resolve, reject) {
+            console.log("getRide Service Called ::" ,rideId)
+            ridesDao.getRide(rideId).then(function (result) {
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                console.log(err)
+                logger.error('error in getRide', err);
+                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
+            });
+        }, function (err) {
+            console.log(err)
+            logger.error('error in add getRide promise', err);
+            return reject(err);
+        });
+
+    },
 
 }

@@ -192,6 +192,24 @@ router.get('/getAllUsers/:userType', verifyAccessToken, (req, res) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
+router.post('/getAllUsersByIds/', (req, res) => {
+    console.log("getAllUsersByIds Route Called")
+
+        userService.getAllUsersByIds(req).then((result) => {
+            res.status(HttpStatus.StatusCodes.OK).send(result);
+        }, (err) => {
+            if (err.status === 1003) {
+                res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
+            } else {
+                res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+            }
+        });
+
+}, (err) => {
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
 router.put('/updateUser', verifyAccessToken, (req, res) => {
 
     console.log("Add User Route Called")

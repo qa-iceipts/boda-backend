@@ -23,13 +23,25 @@ module.exports = {
         return new Promise(function (resolve, reject) {
             console.log("addFcmKey Service Called ::")
             let reqObj = req.body
-            console.log("reqObj::",reqObj)
+            console.log("reqObj::", reqObj)
             fcm_keys.findOrCreate({
-                where: { fcm_key: reqObj.fcm_key },
-                defaults: reqObj
-              }).then(function ([result,created]) {
+                where: { device_id: reqObj.device_id , UserId : reqObj.UserId},
+                defaults: reqObj,
+                raw: true
+            }).then(function ([result, created]) {
                 console.log(created)
-                return resolve(util.responseUtil(null, null, responseConstant.SUCCESS));
+                if (created) {
+                    return resolve(util.responseUtil(null, null, responseConstant.SUCCESS));
+                } else {
+                    fcm_keys.update(reqObj, { where: { id: result.id } }).then((result) => {
+                        return resolve(util.responseUtil(null, null, responseConstant.SUCCESS));
+                    }).catch(function (err) {
+                        console.log(err)
+                        logger.error('error in addFcmKey', err);
+                        return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
+                    });
+                }
+
             }).catch(function (err) {
                 console.log(err)
                 logger.error('error in addFcmKey', err);
@@ -42,18 +54,23 @@ module.exports = {
         });
 
     },
-    getTokensByIds : function (Ids) {
+    getTokensByIds: function (Ids) {
         return new Promise(function (resolve, reject) {
             console.log("getTokensByIds Service Called ::")
             fcm_keys.findAll({
                 where: { UserId: Ids },
-                attributes : ['fcm_key']
-              }).then(function (result) {
-                  let fcmtokens = []
+                attributes: ['fcm_key'],
+            }).then(function (result) {
+                if (result.length > 0) {
+                    let fcmtokens = []
                     result.forEach(element => {
                         fcmtokens.push(element.dataValues.fcm_key)
                     });
-                return resolve(util.responseUtil(null, fcmtokens, responseConstant.SUCCESS));
+                    return resolve(util.responseUtil(null, fcmtokens, responseConstant.SUCCESS));
+                } else {
+                    return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
+                }
+
             }).catch(function (err) {
                 console.log(err)
                 logger.error('error in getTokensByIds', err);
