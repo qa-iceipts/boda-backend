@@ -49,7 +49,7 @@ exports = module.exports = function (io) {
                socket.emit('nearbyDriversList', { result: result });
 
                socket.on('getOffers', function (data) {
-                  // console.log("getAvailableRides called", data);
+                  console.log("getOffers called", data);
                   fetchDrivers(data).then(([result, driverIds]) => {
                      //  console.log(driverIds)
                      getTokensByIds(driverIds).then((fcmtokens) => {

@@ -100,7 +100,7 @@ module.exports = {
 
     getNearbyDrivers: function (reqObj) {
         return new Promise(function (resolve, reject) {
-            axios.post(process.env,LOCATION_SERVER+'/getNearbyDrivers', {
+            axios.post(process.env.LOCATION_SERVER+'/getNearbyDrivers', {
                 "user_id": reqObj.user_id,
                 "lat": reqObj.pick_lat,
                 "long": reqObj.pick_long,
@@ -214,7 +214,7 @@ module.exports = {
                 }
             }).then(result => {
                 // console.log(result)
-                if (result) {
+                if (result.length>0) {
                     let driverIds = []
                     result.forEach(element => {
                         driverIds.push(element.dataValues.driverId)
