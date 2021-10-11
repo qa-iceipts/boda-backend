@@ -9,7 +9,7 @@ const { getPickupRequests ,quotePrice} = require('../services/pickup-service')
 const { getChats} = require('../services/chats')
 // simple route
 router.get("/", (req, res) => {
-    res.status(200).send({ message: "Welcome to webscoket server." });
+    res.sendFile(path.join(__dirname, '../public/index.html'))
 });
 router.get('/health' ,(req,res,next)=>{
 	res.sendFile(path.join(__dirname, '../public/health.html'))

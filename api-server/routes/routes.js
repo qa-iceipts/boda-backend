@@ -10,6 +10,10 @@ var adminRouter = require('./admin');
 var ridesRouter = require('./rides');
 var fcm_keysRouter = require('./fcm_keys');
 
+
+router.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'))
+});
 router.use('/users', usersRouter)
 router.use('/user_vehicles', UserVehiclesRouter)
 router.use('/vehicles', vehiclesRouter)
@@ -23,8 +27,5 @@ router.use('/fcm', fcm_keysRouter)
 router.get('/health' ,(req,res,next)=>{
 	res.sendFile(path.join(__dirname, '../public/health.html'))
 })
-
-//ERROR HANDLING FOR ALL UNDEFINED API ENDPOINTS
-
 
 module.exports = router;

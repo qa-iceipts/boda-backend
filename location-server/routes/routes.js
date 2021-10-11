@@ -10,7 +10,7 @@ const userLocationService = require("../services/user_location-service")
 
 // simple route
 router.get("/", (req, res) => {
-    res.status(200).send({ message: "Welcome to location server." });
+    res.sendFile(path.join(__dirname, '../public/index.html'))
 });
 router.get('/health' ,(req,res,next)=>{
 	res.sendFile(path.join(__dirname, '../public/health.html'))
