@@ -7,7 +7,8 @@ module.exports = {
         return new Promise((resolve,reject)=>{
             mysql.createConnection({
                 user     : config.username,
-                password : config.password
+                password : config.password,
+                host: config.host,
             }).then((connection) => {
                 connection.query(`CREATE DATABASE IF NOT EXISTS ${config.database};`).then(() => {
                     resolve("done")

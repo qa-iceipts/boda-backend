@@ -25,12 +25,6 @@ router.get('/health' ,(req,res,next)=>{
 })
 
 //ERROR HANDLING FOR ALL UNDEFINED API ENDPOINTS
-router.use("*", (req, res, next) => {
-	const error = {
-		status: 404,
-		message: "API ENDPOINT NOT FOUND ON SERVER",
-	};
-	res.status(404).send(error);
-});
+
 
 module.exports = router;

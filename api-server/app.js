@@ -94,6 +94,13 @@ dbhelper().then(() => {
 	const routes = require('./routes/routes.js')
 	app.use('/api', routes)
 
+	app.use("*", (req, res, next) => {
+		const error = {
+			status: 404,
+			message: "API ENDPOINT NOT FOUND ON SERVER",
+		};
+		res.status(404).send(error);
+	});
 	// sync the db
 	db.sequelize.sync({
 		force: false
