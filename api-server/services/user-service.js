@@ -44,7 +44,7 @@ module.exports = {
                         }
                     }
                     module.exports.login(req).then(loginres => {
-                        return resolve(util.responseUtil(null, loginres, responseConstant.SUCCESS));
+                        return resolve(loginres);
                     }).catch(err => {
                         logger.error('error in signup login funct Call', err);
                         return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));

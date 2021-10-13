@@ -43,7 +43,7 @@ exports = module.exports = function (io) {
             }
          );
          socket.on('getAvailableRides', function (data) {
-            // console.log("getAvailableRides called",data);
+            console.log("getAvailableRides called",data);
             socket.emit('getAvailableRidesCallback', { data: "dataReceived" });
             getNearbyDrivers(data).then((result) => {
                socket.emit('nearbyDriversList', { result: result });
