@@ -124,6 +124,7 @@ exports = module.exports = function (io) {
             rideId: data.rideid,
             user_type : socket.userObj.user_type
          }
+         console.log("insertObj::",insertObj)
          // if(socket.userObj.user_type == 2 ){
          //    // he his Driver
          //    customer_id: data.to
@@ -133,6 +134,11 @@ exports = module.exports = function (io) {
             console.log("socket.userObj ::", socket.userObj)
             getTokensByIds(data.to).then((fcmtokens) => {
                console.log(fcmtokens.data)
+               io.to(data.to).emit("privateMsg", {
+                  content: data.content,
+                  name: data.name,
+                  from: socket.id,
+               });
                if(fcmtokens.data && fcmtokens.data.length >0){
                 
                let notificationObj = {
@@ -141,11 +147,7 @@ exports = module.exports = function (io) {
                }
                sendNotifications(fcmtokens.data, notificationObj).then((result) => {
                   // 
-                  io.to(data.to).emit("privateMsg", {
-                     content: data.content,
-                     name: data.name,
-                     from: socket.id,
-                  });
+                
                }).catch(err => {
                   console.log(err)
                   socket.emit('error', { data: "error"});

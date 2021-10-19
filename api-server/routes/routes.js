@@ -9,11 +9,13 @@ var subscriptionsRouter = require('./subscriptions');
 var adminRouter = require('./admin');
 var ridesRouter = require('./rides');
 var fcm_keysRouter = require('./fcm_keys');
+var awsS3Router = require('./awsS3');
 
 
 router.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'))
 });
+
 router.use('/users', usersRouter)
 router.use('/user_vehicles', UserVehiclesRouter)
 router.use('/vehicles', vehiclesRouter)
@@ -22,7 +24,7 @@ router.use('/mpesa', mpesaRouter)
 router.use('/admin', adminRouter)
 router.use('/rides', ridesRouter)
 router.use('/fcm', fcm_keysRouter)
-
+router.use('/aws', awsS3Router)
 
 router.get('/health' ,(req,res,next)=>{
 	res.sendFile(path.join(__dirname, '../public/health.html'))

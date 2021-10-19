@@ -1,7 +1,7 @@
 "use strict";
 /**
  *  This module is used to define Data access operations for UserVehicles 
- *  @module Vehicles-dao
+ *  @module Rides-dao
  *  @author Deepesh Kushwaha
  *  @version 1.0.0
  */
@@ -100,6 +100,33 @@ module.exports = {
         }, function (err) {
             console.log(err)
             logger.error('error in getRide promise', err);
+            return reject(err);
+        });
+    },
+    
+    getRidesByUserId: function (userid) {
+        return new Promise(function (resolve, reject) {
+
+            console.log("getRidesByUserId dao called");
+
+            rides.findAll({
+                where : {
+                    customer_id : userid,
+                    is_booked : 1
+                },
+                raw:true
+            }).then((result) => {
+                return resolve(result);
+            }).catch(err => {
+                console.log(err)
+                return reject(err);
+            })
+
+            console.log("getRidesByUserId dao returned");
+
+        }, function (err) {
+            console.log(err)
+            logger.error('error in getRidesByUserId promise', err);
             return reject(err);
         });
     },

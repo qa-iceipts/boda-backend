@@ -76,5 +76,26 @@ router.get('/:rideId', verifyAccessToken , (req, res, next) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
+router.get('/', verifyAccessToken , (req, res, next) => {
+
+    console.log("rides all / get Route Called",req.payload.id)
+    ridesService.getRidesByUserId(req.payload.id).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1130) {
+            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
+        }
+        else {
+            console.log(err)
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
+
+}, (err) => {
+    console.log(err)
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
 
 module.exports = router;

@@ -1,12 +1,5 @@
 'use strict';
 /**
- *  This module is used to define constants
- *  @module constants
- *  @author Shubham.Gorde
- *  @version 1.0.0
- */
-
-/**
  *  import project modules
  */
 var constants = {};

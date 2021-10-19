@@ -20,7 +20,7 @@ router.post('/', verifyAccessToken, authorize([ROLE.ADMIN, ROLE.DRIVER , ROLE.CU
         if (err.status = 1114) {
             res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err);
         } else {
-            logger, error(err)
+            logger.error(err)
             res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
         }
     });

@@ -1,11 +1,5 @@
 
 'use strict';
-/**
- *  This module is use to define error messages
- *  @module message
- *  @author Shubham.Gorde
- *  @version 1.0.0
- */
 
 /**
  * import project modules

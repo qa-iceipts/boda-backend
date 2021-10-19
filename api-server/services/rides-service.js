@@ -73,4 +73,22 @@ module.exports = {
 
     },
 
+    getRidesByUserId : function (userid) {
+        return new Promise(function (resolve, reject) {
+            console.log("getRidesByUserId Service Called ::" ,userid)
+            ridesDao.getRidesByUserId(userid).then(function (result) {
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                console.log(err)
+                logger.error('error in getRidesByUserId', err);
+                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
+            });
+        }, function (err) {
+            console.log(err)
+            logger.error('error in add getRidesByUserId promise', err);
+            return reject(err);
+        });
+
+    },
+
 }
