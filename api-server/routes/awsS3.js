@@ -39,7 +39,7 @@ router.post('/uploadProfile', verifyAccessToken,authorize([ROLE.ADMIN, ROLE.DRIV
             // your error handling goes here
 
         }else{
-            // console.log(req)
+            console.log("req.file :: ",req.file)
             req.body.profile_image = 'https://d3aqd0lttt7b0w.cloudfront.net/' + req.file.key
 
             updateUser(req).then(function (result) {
@@ -49,7 +49,7 @@ router.post('/uploadProfile', verifyAccessToken,authorize([ROLE.ADMIN, ROLE.DRIV
                 })
             }).catch(function (err) {
                 logger.error('error in updateUser', err);
-                return reject(err);
+                res.send(err);
             });   
         }
     });

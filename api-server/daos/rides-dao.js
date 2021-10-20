@@ -114,7 +114,15 @@ module.exports = {
                     customer_id : userid,
                     is_booked : 1
                 },
-                raw:true
+                include: [
+                    {
+                        model: User,
+                        as: 'driver',
+                        required: false,
+                        attributes : ["id","name","phone","email","profile_image"]
+                    },
+                ],
+               // raw:true
             }).then((result) => {
                 return resolve(result);
             }).catch(err => {
