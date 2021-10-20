@@ -10,7 +10,7 @@ var options = {
     json: true,
     maxsize: 5242880, // 5MB
     maxFiles: 5,
-    colorize: false,
+    colorize: true,
   },
   console: {
     level: 'debug',
@@ -20,7 +20,7 @@ var options = {
   },
 };
 
-// instantiate a new Winston Logger with the settings defined above
+// instantiate a new Winston logger with the settings defined above
 var logger = new winston.createLogger ({
   transports: [
     new winston.transports.File(options.file),

@@ -3,9 +3,12 @@ const router = express.Router();
 const logger = require('../utils/logger')
 const HttpStatus = require('http-status-codes');
 const userService = require('../services/user-service');
-const {validate,superSchema}  = require('../utils/validator')
+const { validate, superSchema } = require('../utils/validator')
 const { authMiddleware } = require("../utils/firebase/firebase_middleware");
-const {verifyAccessToken, verifyDriver} = require("../utils/verifytoken")
+const {
+    verifyAccessToken,
+    verifyUser
+} = require("../utils/verifytoken")
 
 router.get('/', function (req, res) {
     console.log("/user request called");
@@ -66,7 +69,7 @@ router.get('/', function (req, res) {
  *         - 3
  */
 
-router.post('/addUser',authMiddleware,validate(superSchema.addUserSchema), (req, res, next) => {
+router.post('/addUser', authMiddleware, validate(superSchema.addUserSchema), (req, res, next) => {
 
     console.log("Add User Route Called")
 
@@ -85,7 +88,149 @@ router.post('/addUser',authMiddleware,validate(superSchema.addUserSchema), (req,
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/logout',validate(superSchema.logoutSchema), (req, res, next) => {
+router.post('/devaddUser', validate(superSchema.addUserSchema), (req, res, next) => {
+
+    console.log("Add User Route Called")
+
+    userService.addUser(req).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1003) {
+            res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
+        } else {
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
+
+}, (err) => {
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+router.post('/devlogin', validate(superSchema.loginSchema), (req, res, next) => {
+
+    console.log("login Route Called")
+
+    userService.login(req).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1102) {
+            res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
+        }
+        else if (err.status === 1130) {
+            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
+        }
+        else {
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
+
+}, (err) => {
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+router.get('/getUser', verifyAccessToken, (req, res) => {
+
+    console.log("Add User Route Called")
+
+    userService.getUser(req).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1003) {
+            res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
+        } else {
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
+
+}, (err) => {
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+router.get('/getUser/:id', verifyAccessToken, (req, res) => {
+
+    console.log("getUserById Route Called")
+
+    userService.getUserById(req.params.id).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1003) {
+            res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
+        } else {
+            console.log(err)
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
+
+}, (err) => {
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+router.get('/getAllUsers/:userType', verifyAccessToken, (req, res) => {
+    console.log("Add User Route Called")
+    
+    verifyUser(req, 'admin').then(() => {
+        userService.getAllUsers(req).then((result) => {
+            res.status(HttpStatus.StatusCodes.OK).send(result);
+        }, (err) => {
+            if (err.status === 1003) {
+                res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
+            } else {
+                res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+            }
+        });
+
+    }).catch(err => {
+        res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
+    })
+
+}, (err) => {
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+router.post('/getAllUsersByIds/', (req, res) => {
+    console.log("getAllUsersByIds Route Called")
+
+        userService.getAllUsersByIds(req).then((result) => {
+            res.status(HttpStatus.StatusCodes.OK).send(result);
+        }, (err) => {
+            if (err.status === 1003) {
+                res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
+            } else {
+                res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+            }
+        });
+
+}, (err) => {
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+router.put('/updateUser', verifyAccessToken, (req, res) => {
+
+    console.log("Add User Route Called")
+
+    userService.updateUser(req).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1003) {
+            res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
+        } else {
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
+
+}, (err) => {
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+
+router.post('/logout', validate(superSchema.logoutSchema), (req, res, next) => {
 
     console.log("Logout User Route Called")
 
@@ -105,7 +250,7 @@ router.post('/logout',validate(superSchema.logoutSchema), (req, res, next) => {
 });
 
 
-router.post('/login' ,validate(superSchema.loginSchema), (req, res, next) => {
+router.post('/login', authMiddleware, validate(superSchema.loginSchema), (req, res, next) => {
 
     console.log("login Route Called")
 
@@ -114,18 +259,21 @@ router.post('/login' ,validate(superSchema.loginSchema), (req, res, next) => {
     }, (err) => {
         if (err.status === 1102) {
             res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
-        } else {
+        }
+        else if (err.status === 1130) {
+            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
+        }
+        else {
             res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
         }
     });
-    
+
 }, (err) => {
     logger.error("router error", err);
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-
-router.post('/verifyjwttoken',(req, res, next) => {
+router.post('/verifyjwttoken', (req, res, next) => {
 
     console.log("verifyjwttoken Route Called")
 
@@ -138,22 +286,22 @@ router.post('/verifyjwttoken',(req, res, next) => {
             res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
         }
     });
-    
+
 }, (err) => {
     logger.error("router error", err);
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/refreshToken',userService.refreshToken);
+router.post('/refreshToken', userService.refreshToken);
 
-router.post('/checkUserExists',(req, res, next) => {
+router.post('/checkUserExists', (req, res, next) => {
 
     console.log("checkUserExists Route Called")
 
     userService.checkUserExists(req).then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(result);
     }, (err) => {
-         if (err.status === 1130) {
+        if (err.status === 1130) {
             res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
         }
         else if (err.status === 1102) {
@@ -162,20 +310,40 @@ router.post('/checkUserExists',(req, res, next) => {
             res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
         }
     });
-    
+
 }, (err) => {
     logger.error("router error", err);
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/verifyUser',verifyAccessToken,(req, res) => {
-    verifyDriver(req).then((result)=>{
+router.post('/verifyUser', verifyAccessToken, (req, res) => {
+    verifyDriver(req).then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(req.payload);
-    }).catch(err=>{
-        logger.error("err::",err)
+    }).catch(err => {
+        logger.error("err::", err)
         res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
     })
+
+}, (err) => {
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+router.post('/getDriverMetrics', (req, res) => {
     
+    console.log("getDriverMetrics Called")
+
+    userService.getDriverMetrics(req.body.driverIds).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1130) {
+            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
+        }
+        else if (err.status === 1102) {
+            res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
+        } else {
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
 }, (err) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });

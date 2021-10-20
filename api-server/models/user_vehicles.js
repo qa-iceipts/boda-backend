@@ -11,15 +11,17 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      user_vehicles.belongsTo(models.vehicles); 
+      // user_vehicles.belongsTo(models.vehicles); 
       user_vehicles.belongsTo(models.User); 
+      user_vehicles.belongsTo(models.vehicles, {foreignKey: 'vehicleType', targetKey: 'type'});
     }
   };
   user_vehicles.init({
     details: DataTypes.STRING,
     registration: DataTypes.STRING,
     images: DataTypes.STRING,
-    is_insured: DataTypes.BOOLEAN
+    is_insured: DataTypes.BOOLEAN,
+    color : DataTypes.STRING
   }, {
     sequelize,
     modelName: 'user_vehicles',

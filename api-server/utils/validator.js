@@ -21,8 +21,9 @@ var superSchema = {
             min: 10,
             empty: false
         },
-        roleId: {
+        roleType: {
             type: "enum",
+            optional: false,
             values: [2, 3]
         }
 
@@ -41,6 +42,20 @@ var superSchema = {
         refreshToken:{
             type: "string",
             optional: false,
+            empty: false
+        }
+    },
+    adminloginSchema:{
+        username: {
+            type: "string",
+            optional: false,
+            max: "100",
+            empty: false
+        },
+        password: {
+            type: "string",
+            optional: false,
+            max: "500",
             empty: false
         }
     }

@@ -6,7 +6,7 @@
  *  @version 1.0.0
  */
 
-const logger = require('../utils/Logger');
+const logger = require('../utils/logger');
 const users_vehiclesDao = require('../daos/user_vehicles-dao');
 const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
@@ -34,6 +34,38 @@ module.exports = {
             return reject(err);
         });
 
-    }
+    },
+
+    getUserVehicles: function (UserId) {
+        return new Promise(function (resolve, reject) {
+
+            users_vehiclesDao.getUserVehicles(UserId).then(function (result) {
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                logger.error('error in getUserVehicles', err);
+                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
+            });
+        }, function (err) {
+            logger.error('error in add getUserVehicles promise', err);
+            return reject(err);
+        });
+
+    },
+
+    updateUserVehicles: function (req) {
+        return new Promise(function (resolve, reject) {
+
+            users_vehiclesDao.updateUserVehicles(req).then(function (result) {
+                return resolve(util.responseUtil(null, null, responseConstant.SUCCESS));
+            }).catch(function (err) {
+                logger.error('error in updateUserVehicles', err);
+                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
+            });
+        }, function (err) {
+            logger.error('error in add updateUserVehicles promise', err);
+            return reject(err);
+        });
+
+    },
 
 }

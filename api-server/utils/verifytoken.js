@@ -6,25 +6,24 @@
  *  @version 1.0.0
  */
 
-const logger = require('../utils/Logger');
+const logger = require('../utils/logger');
 const db = require('../models')
-var http = require("http");
-var responseConstant = require("../constants/responseConstants");
 const JWT = require('jsonwebtoken');
+const {getUser} = require('../daos/users-dao')
 /**
  * export module
  */
 module.exports = {
 
     signAccessToken: (user) => {
-        console.log("users ::", user)
+        // console.log("users ::", user)
         let id = user.id
         let phone = user.phone
         let email = user.email
-        let role = user.roleId
+        let roleType = user.roleType
         return new Promise((resolve, reject) => {
             const payload = {
-                role,
+                roleType,
                 id,
                 phone,
                 email
@@ -47,14 +46,14 @@ module.exports = {
     },
 
     loginRefreshToken: (user) => {
-        console.log("users ::", user)
+        // console.log("users ::", user)
         let id = user.id
         let phone = user.phone
         let email = user.email
-        let role = user.roleId
+        let roleType = user.roleType
         return new Promise((resolve, reject) => {
             const payload = {
-                role,
+                roleType,
                 id,
                 phone,
                 email
@@ -84,13 +83,13 @@ module.exports = {
                 let id = payload.id
                 let phone = payload.phone
                 let email = payload.email
-                let roleId = payload.role
+                let roleType = payload.roleType
                 let user = {
                     name,
                     id,
                     phone,
                     email,
-                    roleId
+                    roleType
                 }
                 resolve(user)
             })
@@ -165,6 +164,51 @@ module.exports = {
         })
     },
 
+    returnTokens: (user) => {
+        return new Promise((resolve, reject) => {
+            let accessToken, refreshToken
+            module.exports.signAccessToken(user.dataValues).then(function (result) {
+                accessToken = result
+                console.log("accessToken::",accessToken)
+                module.exports.loginRefreshToken(user.dataValues).then(function (result1) {
+                    refreshToken = result1
+                    console.log("refreshToken::", refreshToken)
+
+                    module.exports.returnRefreshTimestamp(refreshToken).then(function (exp) {
+                        if (exp) {
+                            let tokenObj = {
+                                userId: user.dataValues.id,
+                                refresh_token: refreshToken,
+                                timestamp: exp,
+                                is_used: '0'
+                            }
+                            delete user.dataValues.password
+                            db.tokens.create(tokenObj).then(() => {
+                                return resolve({
+                                    tokens: {
+                                        accesstoken: accessToken,
+                                        refreshtoken: refreshToken
+                                    },
+                                    user: user.dataValues
+                                });
+
+                            }).catch(err => {
+                                console.log(err)
+                            });
+
+                        }
+
+
+                    }).catch(err => {
+                        console.log(err)
+                        return reject(err)
+                    })
+
+                });
+            });
+        })
+    },
+
     verifyAccessToken: (req, res, next) => {
         console.log("in verify token ")
         const authHeader = req.headers['authorization']
@@ -200,42 +244,44 @@ module.exports = {
     // rolename = ANY(driv)
     verifyUser: (req,roleName) => {
         return new Promise((resolve, reject) => {
-
             // console.log("in verifyDriver payload ::", req.payload)
             let userId = req.payload.id
-
             db.User.findOne({
                 where: {
                     id: userId
+                },
+                include: {
+                    model: db.roles,
+                    attributes:['roleName'],
+                    required: true
                 }
             }).then((user) => {
                 if (user) {
-                    // console.log("user::",user.dataValues)
-                    // Driver User
-                    if(roleName.toLowerCase() == 'admin'){
-                        if (user.dataValues.roleId == '1') {
-                            return resolve("User role is Admin")
-                        } else {
-                            return reject("Admin Role Required")
-                        }
+                        
+                    if(roleName){
+                         //  console.log("verifyUser Values::",user.dataValues)
+                    let DBroleName = user.dataValues.role.dataValues.roleName
+                    if(!DBroleName){
+                        return reject("Valid roleType Required")
                     }
-                    else if(roleName.toLowerCase() == 'driver'){
-                        if (user.dataValues.roleId == '2') {
-                            return resolve("User role is Driver")
-                        } else {
-                            return reject("Driver Role Required")
-                        }
-                    }
-                    else if(roleName.toLowerCase() == 'customer'){
-                        if (user.dataValues.roleId == '3') {
-                            return resolve("User role is customer")
-                        } else {
-                            return reject("Driver Role Required")
-                        }
-                    }else{
-                        return reject("Valid Role Required")
-                    }
+                    console.log("USER ROLE VALIDATION::",roleName.toLowerCase()  +" == " + DBroleName.toLowerCase())
                     
+                    // Driver User
+                    if(roleName.toLowerCase() == DBroleName.toLowerCase()){
+        
+                            return resolve("User roleType is " + DBroleName)
+                        
+                    }else {
+                        return reject( {
+                            status:401,
+                            error:" Unauthorized ! "+ roleName +" Account Required"
+                        })
+                    }
+                    }
+                    else{
+                        return resolve(user.dataValues)
+                    }
+                   
 
                 } else {
                     return reject("User Not found")
@@ -247,6 +293,40 @@ module.exports = {
 
 
         });
+    },
+
+
+    // new authorize user
+    authorize: (roles = [])=> {
+            return (req,res,next)=>{
+                if (typeof roles === 'string') {
+                    roles = [roles];
+                }
+                getUser(req).then((user) => {
+                    if (user) {
+                        if(roles){
+                        let DBroleName = user.role.dataValues.roleName
+                        console.log("DBroleName :: ",DBroleName)
+                        if (roles.length && !roles.includes(DBroleName.toLowerCase())) {
+                            // user's role is not authorized
+                            return res.status(401).json({ message: 'Unauthorized Role' });
+                        }
+                        next()
+                        }
+                        else{
+                            next()
+                            // return resolve(user.dataValues)
+                        }
+                    } else {
+                        return res.status(401).json({ message: 'User Not Found' });
+                    }
+                }).catch(err => {
+                    logger.error("error in authorize:: ", err)
+                    return res.status(401).json({ err:err});
+                });
+            }
+        
+
     }
 
 
