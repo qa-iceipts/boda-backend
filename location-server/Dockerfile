@@ -1,0 +1,11 @@
+FROM node:14
+
+WORKDIR /location-server
+
+COPY . .
+
+RUN npm install
+
+EXPOSE 8080
+
+CMD [ "npm", "start", "app.js" ]
