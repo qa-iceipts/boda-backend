@@ -227,6 +227,35 @@ module.exports = {
         });
     },
 
+    getUserImageById: function (id) {
+        return new Promise(function (resolve, reject) {
+            logger.debug("getUserImageById dao called");
+            db.User.findOne({
+                where: {
+                    id: id
+                },
+                attributes: ["profile_image"],
+                raw : true
+            }).then(function (result) {
+                // console.log("res::", result)
+                if (result) {
+                    return resolve(result.profile_image);
+                } else {
+                    return reject("User Not Found");
+                }
+
+            }).catch(function (err) {
+                logger.error('error in getUserImageById user', err);
+                return reject(err);
+            });
+            logger.debug("getUserImageById user dao returned");
+
+        }, function (err) {
+            logger.error('error in getUserImageById user promise', err);
+            return reject(err);
+        });
+    },
+
     getUserById: function (id) {
         return new Promise(function (resolve, reject) {
             logger.debug("getUser dao called");

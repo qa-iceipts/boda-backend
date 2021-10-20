@@ -7,65 +7,71 @@
  */
 
 const logger = require('../utils/logger');
-// const {
-//     fcm_keys
-// } = require('../models');
 const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
+const { updateUser,getUserImageById } = require('../daos/users-dao');
+const multer = require('multer')
+const { uploadFile, getFileStream,deleteFile } = require("../utils/aws-S3")
 
-// image 
-// const upload = multer({ dest: 'uploads/' })
+// upload single profile function
+const uploadProfile = uploadFile.single('profile');
 
-const { uploadFile, getFileStream } = require("../utils/aws-S3")
 /**
  * export module
  */
 
 module.exports = {
 
-    uploadProfile: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("uploadProfile Service Called ::")
-            let reqObj = req.body
-            console.log("reqObj::", reqObj)
+    uploadProfile : function(req,res,next){
+        return new Promise(function (resolve,reject){
+            uploadProfile(req, res, function (err) {
+                if (req.file_error) {
+                    console.log(req.file_error)
+                    return reject(util.responseUtil(req.file_error, null, responseConstant.UNPROCESSABLE_ENTITY));
+                }
+                else if (err) {
+                    console.log(err)
+                    return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+                    // your error handling goes here
+                } else if (req.file.key) {
 
-            uploadFile('profile/', req.file).then((result) => {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(err => {
-                console.log(err)
-                logger.error('error in uploadProfile', err);
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            })
+                    console.log("req.file.key :: ", req.file.key)
+
+                    // update user database with new profile image
+                    req.body.profile_image = process.env.AWS_Cloudfront + req.file.key
+                    getUserImageById(req.payload.id).then(profile_image=>{
+                       
+                        const profile_image_key = (profile_image.split(process.env.AWS_Cloudfront))[1];
+                        console.log(profile_image_key)
+
+                        // delete the OLD image from S3
+                        deleteFile(profile_image_key)
+
+                        updateUser(req).then(function (result) {
+                            console.log(req.file)
+                            return resolve(util.responseUtil(null, {file: req.body.profile_image}, responseConstant.SUCCESS));
+                        }).catch(function (err) {
+                            console.log(err)
+                            logger.error('error in updateUser', err);
+                            return reject(util.responseUtil(err,null, responseConstant.RUN_TIME_ERROR));
+                        });
+
+                    }).catch(function (err) {
+                        console.log(err)
+                        logger.error('error in getUserImageById aws service', err);
+                        return reject(util.responseUtil(err,null, responseConstant.RUN_TIME_ERROR));
+                    });
+                }
+                else {
+                    console.log(err)
+                    return reject(util.responseUtil("key error while uploading",null, responseConstant.RUN_TIME_ERROR));
+                }
+            });
         }, function (err) {
             console.log(err)
-            logger.error('error in add uploadProfile promise', err);
+            logger.error('error in uploadProfile promise', err);
             return reject(err);
         });
-
-    },
-
-    sss: function () {
-
-        multer({
-            storage: multerS3({
-                s3: s3,
-                acl: 'public-read',
-                bucket: 'xxxxxxxx',
-                metadata: (req, file, callBack) => {
-                    callBack(null, { fieldName: file.fieldname })
-                },
-                key: (req, file, callBack) => {
-                    var fullPath = 'products/' + file.originalname;//If you want to save into a folder concat de name of the folder to the path
-                    callBack(null, fullPath)
-                }
-            }),
-            limits: { fileSize: 2000000 }, // In bytes: 2000000 bytes = 2 MB
-            fileFilter: function (req, file, cb) {
-                checkFileType(file, cb);
-            }
-        }).array('photos', 10);
-
-    },
-    
+    }
 
 }
