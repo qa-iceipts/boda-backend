@@ -40,13 +40,15 @@ module.exports = {
                     // update user database with new profile image
                     req.body.profile_image = process.env.AWS_Cloudfront + req.file.key
                     getUserImageById(req.payload.id).then(profile_image=>{
+                       if(profile_image){
+
                        
                         const profile_image_key = (profile_image.split(process.env.AWS_Cloudfront))[1];
                         console.log(profile_image_key)
 
                         // delete the OLD image from S3
                         deleteFile(profile_image_key)
-
+                    }
                         updateUser(req).then(function (result) {
                             console.log(req.file)
                             return resolve(util.responseUtil(null, {file: req.body.profile_image}, responseConstant.SUCCESS));
