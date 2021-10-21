@@ -71,26 +71,30 @@ module.exports = {
                     let notificationObj1 = {
                         title: "Ride Booked By Customer",
                         body: "Customer is waiting at pickup location"
-
                     }
+                    let notificationObj1DATA = {data :JSON.stringify({
+                        rideId : req.body.id,
+                        state : req.state
+                    })}
                     let notificationObj2 = {
                         title: "Ride Booking Successfull",
                         body: "Driver is arriving soon at pickup location"
 
                     }
-
+                
+                    
                     if (fcmtokens.data.length > 0) {
 
 
 
-                        sendNotifications([fcmtokens.data[0]], notificationObj1).then((result) => {
+                        sendNotifications([fcmtokens.data[0]], notificationObj1,notificationObj1DATA).then((result) => {
 
                             console.log("Notifications sent")
 
                             if (fcmtokens.data[1]) {
 
 
-                                sendNotifications([fcmtokens.data[1]], notificationObj2).then((result) => {
+                                sendNotifications([fcmtokens.data[1]], notificationObj2,notificationObj1DATA).then((result) => {
 
                                     console.log("Notifications sent")
 
