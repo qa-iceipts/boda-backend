@@ -5,6 +5,19 @@ const express = require("express");
 const app = express();
 const expressValidator = require('express-validator');
 
+var cron = require('node-cron');
+
+const {DestroyCronJob} = require("./utils/verifytoken")
+
+cron.schedule('0 8 * * 1', () => {
+	// Runs 8 AM on every Monday
+ 	console.log('running a task every monday 8 AM');
+	 DestroyCronJob().then(result=>{
+		console.log("result CRON JOB ::",result)
+	}).catch(err=>{
+		console.log(err)
+	})
+});
 
 // path 
 const path = require('path');

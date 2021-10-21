@@ -54,6 +54,31 @@ router.post('/update', verifyAccessToken , (req, res, next) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
+
+router.post('/bookRide', verifyAccessToken , (req, res, next) => {
+
+    console.log("/bookRide post Route Called")
+    ridesService.bookRide(req).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1130) {
+            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
+        }
+        else {
+            console.log(err)
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
+
+}, (err) => {
+    console.log(err)
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+
+
+
 router.get('/:rideId', verifyAccessToken , (req, res, next) => {
 
     console.log("rides / get Route Called")

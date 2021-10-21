@@ -327,7 +327,36 @@ module.exports = {
             }
         
 
-    }
+    },
+
+    DestroyCronJob: function (req) {
+        return new Promise(function (resolve, reject) {
+            console.log("DestroyCronJob Service Called ::")
+ 
+            db.tokens.destroy({
+                where: {
+                    // timestamp < unix_timestamp
+                    timestamp : db.Sequelize.where(db.Sequelize.col("timestamp"),"<",db.Sequelize.fn("UNIX_TIMESTAMP"))
+                    // timestamp: Sequelize.where(Sequelize.fn("UPPER", Sequelize.col("columnWithFunction")), "=", "SOME UPPER CASE VALUE")
+                }
+
+            }).then(function (created) {
+                return resolve(created)
+            }).catch(function (err) {
+                console.log(err)
+                logger.error('error in DestroyCronJob', err);
+                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
+            });
+        }, function (err) {
+            console.log(err)
+            logger.error('error in add DestroyCronJob promise', err);
+            return reject(err);
+        });
+
+    },
+
+    
+   
 
 
 }

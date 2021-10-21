@@ -24,6 +24,7 @@ module.exports = (sequelize, DataTypes) => {
     drop_lat: DataTypes.STRING,
     drop_long: DataTypes.STRING,
     range : DataTypes.FLOAT,
+    quoteOption : DataTypes.ENUM('FIXED', 'NEGOTIABLE')
   }, {
     sequelize,
     modelName: 'rides',

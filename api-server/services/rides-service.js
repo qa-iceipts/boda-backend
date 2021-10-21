@@ -10,6 +10,8 @@ const logger = require('../utils/logger');
 const ridesDao = require('../daos/rides-dao');
 const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
+const { getTokensByIds } = require("../services/fcm-service")
+const { sendNotifications } = require('../services/notifications-service')
 /**
  * export module
  */
@@ -20,7 +22,7 @@ module.exports = {
         return new Promise(function (resolve, reject) {
             console.log("addRide Service Called ::")
             let reqObj = req.body
-            console.log("reqObj::",reqObj)
+            console.log("reqObj::", reqObj)
             ridesDao.addRide(reqObj).then(function (result) {
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
             }).catch(function (err) {
@@ -36,11 +38,11 @@ module.exports = {
 
     },
 
-    updateRide : function (req) {
+    updateRide: function (req) {
         return new Promise(function (resolve, reject) {
             console.log("updateRide Service Called ::")
             let reqObj = req.body
-            console.log("reqObj::",reqObj)
+            console.log("reqObj::", reqObj)
             ridesDao.updateRide(reqObj).then(function (result) {
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
             }).catch(function (err) {
@@ -55,9 +57,82 @@ module.exports = {
         });
 
     },
-    getRide : function (rideId) {
+    bookRide: function (req) {
         return new Promise(function (resolve, reject) {
-            console.log("getRide Service Called ::" ,rideId)
+            console.log("bookRide Service Called ::")
+            let reqObj = req.body
+            console.log("reqObj::", reqObj)
+            ridesDao.updateRide(reqObj).then(function (result) {
+                let IDS = [req.body.driver_id, req.body.customer_id]
+
+                getTokensByIds(IDS).then(fcmtokens => {
+
+                    console.log(fcmtokens.data)
+                    let notificationObj1 = {
+                        title: "Ride Booked By Customer",
+                        body: "Customer is waiting at pickup location"
+
+                    }
+                    let notificationObj2 = {
+                        title: "Ride Booking Successfull",
+                        body: "Driver is arriving soon at pickup location"
+
+                    }
+
+                    if (fcmtokens.data.length > 0) {
+
+
+
+                        sendNotifications([fcmtokens.data[0]], notificationObj1).then((result) => {
+
+                            console.log("Notifications sent")
+
+                            if (fcmtokens.data[1]) {
+
+
+                                sendNotifications([fcmtokens.data[1]], notificationObj2).then((result) => {
+
+                                    console.log("Notifications sent")
+
+                                }).catch(err => {
+                                    console.log(err)
+                                    return reject(err)
+                                });
+
+                            }
+
+                        }).catch(err => {
+                            console.log(err)
+                            return reject(err)
+                        });
+                    }
+
+                    return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+
+
+                }).catch(err => {
+
+                    console.log(err)
+                    return reject(err)
+
+
+                })
+
+            }).catch(function (err) {
+                console.log(err)
+                logger.error('error in bookRide', err);
+                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+            });
+        }, function (err) {
+            console.log(err)
+            logger.error('error in add bookRide promise', err);
+            return reject(err);
+        });
+
+    },
+    getRide: function (rideId) {
+        return new Promise(function (resolve, reject) {
+            console.log("getRide Service Called ::", rideId)
             ridesDao.getRide(rideId).then(function (result) {
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
             }).catch(function (err) {
@@ -73,9 +148,9 @@ module.exports = {
 
     },
 
-    getRidesByUserId : function (userid) {
+    getRidesByUserId: function (userid) {
         return new Promise(function (resolve, reject) {
-            console.log("getRidesByUserId Service Called ::" ,userid)
+            console.log("getRidesByUserId Service Called ::", userid)
             ridesDao.getRidesByUserId(userid).then(function (result) {
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
             }).catch(function (err) {

@@ -27,6 +27,13 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: false,
       type : DataTypes.BOOLEAN
     },
+    // is_cancelled: {
+    //   defaultValue: false,
+    //   type : DataTypes.BOOLEAN
+    // },
+    state: {
+      type : DataTypes.ENUM('FIND', 'NEGOTIATE' , 'BOOKED' , 'CANCELLED')
+    },
     amount_estimated: DataTypes.FLOAT,
     amount_actual: DataTypes.FLOAT,
     distance: DataTypes.FLOAT,

@@ -105,12 +105,12 @@ const clearBucket = (bucket) => {
 
 // code for testing aws
 
-setTimeout(() => {
-    //  clearBucket('staging-bodadrop-common')
-    listObjectsInBucket('staging-bodadrop-common')
-    //  getFileStream("profile/2021-10-20T17:50:59.823Z2a1d10bb-03a8-42c5-a012-b09dc110aece-12329.jpg")
-    // deleteFile("profile/2021-10-20T17:33:26.071Zd713d9b9-dbcc-4be3-91cd-32feb001bd85-12329.jpg")
-}, 2000);
+// setTimeout(() => {
+//     //  clearBucket('staging-bodadrop-common')
+//     listObjectsInBucket('staging-bodadrop-common')
+//     //  getFileStream("profile/2021-10-20T17:50:59.823Z2a1d10bb-03a8-42c5-a012-b09dc110aece-12329.jpg")
+//     // deleteFile("profile/2021-10-20T17:33:26.071Zd713d9b9-dbcc-4be3-91cd-32feb001bd85-12329.jpg")
+// }, 2000);
 
 
 // whole new idea code with multer S3
