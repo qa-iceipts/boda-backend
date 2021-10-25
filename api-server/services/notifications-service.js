@@ -21,7 +21,7 @@ module.exports = {
                 },
                 android: {
                     notification: {
-                        clickAction: 'pickupRequests_intent'
+                        clickAction: 'rideclick'
                     }
                 },
                 data: notificationObj1DATA?notificationObj1DATA:"",

@@ -13,7 +13,7 @@ router.post('/', verifyAccessToken , (req, res, next) => {
 
     console.log("ratings/ post Route Called")
 
-    ratingsService.addRating(req).then((result) => {
+    ratingsService.addRatings(req).then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(result);
     }, (err) => {
         if (err.status === 1130) {

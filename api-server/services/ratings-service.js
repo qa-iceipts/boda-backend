@@ -8,7 +8,7 @@
  */
 
 const logger = require('../utils/logger');
-const ridesDao = require('../daos/rides-dao');
+const ratingssDao = require('../daos/ratings-dao');
 const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
 /**
@@ -22,7 +22,7 @@ module.exports = {
             console.log("addRatings Service Called ::")
             let reqObj = req.body
             console.log("reqObj::",reqObj)
-            ratingssDao.addRatings(reqObj).then(function (result) {
+            ratingssDao.addRating(reqObj).then(function (result) {
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
             }).catch(function (err) {
                 console.log(err)

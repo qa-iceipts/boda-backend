@@ -59,74 +59,69 @@ module.exports = {
     },
     bookRide: function (req) {
         return new Promise(function (resolve, reject) {
+
             console.log("bookRide Service Called ::")
             let reqObj = req.body
             console.log("reqObj::", reqObj)
-            ridesDao.updateRide(reqObj).then(function (result) {
-                let IDS = [req.body.driver_id, req.body.customer_id]
 
-                getTokensByIds(IDS).then(fcmtokens => {
+            getTokensByIds(req.body.driver_id).then(driver_fcmtokens => {
+                getTokensByIds(req.body.customer_id).then(customer_fcmtokens => {
 
-                    console.log(fcmtokens.data)
-                    let notificationObj1 = {
-                        title: "Ride Booked By Customer",
-                        body: "Customer is waiting at pickup location"
-                    }
-                    let notificationObj1DATA = {data :JSON.stringify({
-                        rideId : req.body.id,
-                        state : req.state
-                    })}
-                    let notificationObj2 = {
-                        title: "Ride Booking Successfull",
-                        body: "Driver is arriving soon at pickup location"
+                    console.log("driver_fcmtokens.data:: ", driver_fcmtokens.data)
+                    console.log("customer_fcmtokens.data:: ", customer_fcmtokens.data)
 
-                    }
-                
-                    
-                    if (fcmtokens.data.length > 0) {
+                    if (driver_fcmtokens.data.length > 0 && customer_fcmtokens.data.length > 0) {
 
+                        let driverNotificationObj = {
+                            title: "Ride Booked By Customer",
+                            body: "Customer is waiting at pickup location"
+                        }
+                        let driverNotificationObjDATA = {
+                            data: JSON.stringify({
+                                rideId: req.body.id,
+                                state: req.state
+                            })
+                        }
+                        let customerNotificationObj = {
+                            title: "Ride Booking Successfull",
+                            body: "Driver is arriving soon at pickup location"
+                        }
 
-
-                        sendNotifications([fcmtokens.data[0]], notificationObj1,notificationObj1DATA).then((result) => {
-
+                        sendNotifications(driver_fcmtokens.data, driverNotificationObj, driverNotificationObjDATA).then((result) => {
                             console.log("Notifications sent")
-
-                            if (fcmtokens.data[1]) {
-
-
-                                sendNotifications([fcmtokens.data[1]], notificationObj2,notificationObj1DATA).then((result) => {
-
+                            if (customer_fcmtokens.data) {
+                                sendNotifications(customer_fcmtokens.data, customerNotificationObj, driverNotificationObjDATA).then((result) => {
                                     console.log("Notifications sent")
+
+                                    ridesDao.updateRide(reqObj).then(function (result) {
+                                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+                                    }).catch(function (err) {
+                                        console.log(err)
+                                        logger.error('error in bookRide', err);
+                                        return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+                                    });
+
 
                                 }).catch(err => {
                                     console.log(err)
                                     return reject(err)
                                 });
-
                             }
-
                         }).catch(err => {
                             console.log(err)
                             return reject(err)
                         });
+                    } else {
+                        return reject("notifications tokens not found for users")
                     }
-
-                    return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-
-
                 }).catch(err => {
-
                     console.log(err)
                     return reject(err)
-
-
                 })
-
-            }).catch(function (err) {
+            }).catch(err => {
                 console.log(err)
-                logger.error('error in bookRide', err);
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            });
+                return reject(err)
+            })
         }, function (err) {
             console.log(err)
             logger.error('error in add bookRide promise', err);
@@ -169,5 +164,78 @@ module.exports = {
         });
 
     },
+
+    cancelRide: function (req) {
+        return new Promise(function (resolve, reject) {
+
+            console.log("cancelRide Service Called ::")
+            let reqObj = req.body
+            console.log("reqObj::", reqObj)
+
+            getTokensByIds(req.body.driver_id).then(driver_fcmtokens => {
+                getTokensByIds(req.body.customer_id).then(customer_fcmtokens => {
+
+                    console.log("driver_fcmtokens.data:: ", driver_fcmtokens.data)
+                    console.log("customer_fcmtokens.data:: ", customer_fcmtokens.data)
+
+                    if (driver_fcmtokens.data.length > 0 && customer_fcmtokens.data.length > 0) {
+
+                        let driverNotificationObj = {
+                            title: "Ride is Cancelled",
+                            body: "Customer cancelled the ride"
+                        }
+                        let driverNotificationObjDATA = {
+                            data: JSON.stringify({
+                                rideId: req.body.id,
+                                state: req.state
+                            })
+                        }
+                        let customerNotificationObj = {
+                            title: "Ride is Cancelled",
+                            body: "Customer cancelled the ride"
+                        }
+
+                        sendNotifications(driver_fcmtokens.data, driverNotificationObj, driverNotificationObjDATA).then((result) => {
+                            console.log("Notifications sent")
+                            if (customer_fcmtokens.data) {
+                                sendNotifications(customer_fcmtokens.data, customerNotificationObj, driverNotificationObjDATA).then((result) => {
+                                    console.log("Notifications sent")
+
+                                    ridesDao.updateRide(reqObj).then(function (result) {
+                                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+                                    }).catch(function (err) {
+                                        console.log(err)
+                                        logger.error('error in bookRide', err);
+                                        return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+                                    });
+                                    
+                                }).catch(err => {
+                                    console.log(err)
+                                    return reject(err)
+                                });
+                            }
+                        }).catch(err => {
+                            console.log(err)
+                            return reject(err)
+                        });
+                    } else {
+                        return reject("notifications tokens not found for users")
+                    }
+                }).catch(err => {
+                    console.log(err)
+                    return reject(err)
+                })
+            }).catch(err => {
+                console.log(err)
+                return reject(err)
+            })
+        }, function (err) {
+            console.log(err)
+            logger.error('error in add bookRide promise', err);
+            return reject(err);
+        });
+
+    },
+
 
 }

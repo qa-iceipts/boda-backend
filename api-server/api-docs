@@ -1,7 +1,7 @@
 rm -rf boda-drop-api/
 
 git clone git@bitbucket.org:bodadrop/boda-drop-api.git
-
+https://d3aqd0lttt7b0w.cloudfront.net/profile/2021-10-21T10:35:50.413Zb30bc85c-b06c-4888-b485-d560d41752b0-patrick-fore-850jTF12RSQ-unsplash%20(1).jpg
 All Users Types - {
     Integer Value Refers to type column Value in DB
     1 = ADMIN

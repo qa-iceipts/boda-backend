@@ -9,6 +9,7 @@ var subscriptionsRouter = require('./subscriptions');
 var adminRouter = require('./admin');
 var ridesRouter = require('./rides');
 var fcm_keysRouter = require('./fcm_keys');
+var ratingsRouter = require('./ratings');
 var awsS3Router = require('./awsS3');
 
 
@@ -25,6 +26,7 @@ router.use('/admin', adminRouter)
 router.use('/rides', ridesRouter)
 router.use('/fcm', fcm_keysRouter)
 router.use('/aws', awsS3Router)
+router.use('/ratings', ratingsRouter)
 
 router.get('/health' ,(req,res,next)=>{
 	res.sendFile(path.join(__dirname, '../public/health.html'))

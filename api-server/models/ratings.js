@@ -19,7 +19,9 @@ module.exports = (sequelize, DataTypes) => {
   ratings.init({
     vehicle_rating: DataTypes.FLOAT,
     driver_rating: DataTypes.FLOAT,
-    feedback: DataTypes.STRING
+    feedback_type : DataTypes.STRING,
+    feedback: DataTypes.STRING,
+    
   }, {
     sequelize,
     modelName: 'ratings',

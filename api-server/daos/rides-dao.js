@@ -9,10 +9,10 @@
 /**
  *  import project modules
  */
-
+var moment = require('moment');
 const logger = require('../utils/logger');
 const {
-    rides,User ,user_vehicles
+    rides, User, user_vehicles, sequelize
 } = require('../models');
 const { getPagination, getPagingData } = require('../utils/pagination')
 const {
@@ -47,9 +47,9 @@ module.exports = {
 
             console.log("updateRide dao called");
 
-            rides.update(reqObj,{
-                where : {
-                    id : reqObj.id
+            rides.update(reqObj, {
+                where: {
+                    id: reqObj.id
                 }
             }).then((result) => {
                 return resolve(result);
@@ -72,15 +72,21 @@ module.exports = {
             console.log("getRide dao called");
 
             rides.findOne({
-                where : {
-                    id : rideId
+                where: {
+                    id: rideId
                 },
                 include: [
                     {
                         model: User,
                         as: 'driver',
                         required: true,
-                        attributes : ["id","name","phone","email","profile_image"]
+                        attributes: ["id", "name", "phone", "email", "profile_image"]
+                    },
+                    {
+                        model: User,
+                        as: 'customer',
+                        required: false,
+                        attributes: ["id", "name", "phone", "email", "profile_image"]
                     },
                     {
                         model: user_vehicles,
@@ -89,7 +95,13 @@ module.exports = {
 
                 ]
             }).then((result) => {
-                return resolve(result);
+                // console.log(result)
+                if (result) {
+                    return resolve(result);
+                } else {
+                    return reject("Not Found")
+                }
+
             }).catch(err => {
                 console.log(err)
                 return reject(err);
@@ -103,26 +115,26 @@ module.exports = {
             return reject(err);
         });
     },
-    
+
     getRidesByUserId: function (userid) {
         return new Promise(function (resolve, reject) {
 
             console.log("getRidesByUserId dao called");
 
             rides.findAll({
-                where : {
-                    customer_id : userid,
-                    is_booked : 1
+                where: {
+                    customer_id: userid,
+                    is_booked: 1
                 },
                 include: [
                     {
                         model: User,
                         as: 'driver',
                         required: false,
-                        attributes : ["id","name","phone","email","profile_image"]
+                        attributes: ["id", "name", "phone", "email", "profile_image"]
                     },
                 ],
-               // raw:true
+                // raw:true
             }).then((result) => {
                 return resolve(result);
             }).catch(err => {
@@ -138,4 +150,48 @@ module.exports = {
             return reject(err);
         });
     },
+
+    getLastWeekReport: function () {
+        return new Promise(function (resolve, reject) {
+
+            // query to find last week data
+            rides.findAll(
+                {
+                    where: {
+                        createdAt: {
+                            [Op.gte]: moment().subtract(7, 'days').toDate(),
+                            [Op.lt]: moment()
+                        }
+                    },
+                    attributes: [
+                        [sequelize.fn("COUNT", sequelize.col('id')), "Count"],
+                        [sequelize.fn('DAYNAME', sequelize.col('createdAt')), 'Date']
+                    ],
+                    group: [sequelize.fn('DATE', sequelize.col('rides.createdAt'))],
+                    raw: true
+                }
+            ).then((result) => {
+                console.log(result)
+                return resolve(result);
+            }).catch(err => {
+                console.log(err)
+                return reject(err);
+            })
+
+        }, function (err) {
+            console.log(err)
+            logger.error('error in getLastWeekReport promise', err);
+            return reject(err);
+        })
+    }
+
+
+
+
 }
+
+// setTimeout(() => {
+
+//     module.exports.getLastWeekReport()
+
+// }, 2000);

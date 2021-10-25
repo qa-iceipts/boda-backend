@@ -48,7 +48,7 @@ module.exports = {
 
                         // delete the OLD image from S3
                         deleteFile(profile_image_key)
-                    }
+                        }
                         updateUser(req).then(function (result) {
                             console.log(req.file)
                             return resolve(util.responseUtil(null, {file: req.body.profile_image}, responseConstant.SUCCESS));
