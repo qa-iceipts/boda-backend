@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
     //   type : DataTypes.BOOLEAN
     // },
     state: {
-      type : DataTypes.ENUM('FIND', 'NEGOTIATE' , 'BOOKED' , 'CANCELLED')
+      type : DataTypes.ENUM('FINDING', 'NEGOTIATING' , 'BOOKED' ,'STARTED', 'CANCELLED','COMPLETED')
     },
     amount_estimated: DataTypes.FLOAT,
     amount_actual: DataTypes.FLOAT,

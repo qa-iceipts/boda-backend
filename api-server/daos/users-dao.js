@@ -282,15 +282,16 @@ module.exports = {
                         as: 'driver',
                         attributes :[],
                         where : {
-                            is_booked:1 
+                            state : ['COMPLETED']
+                            // is_booked:1 
                         },
                         required: false
                     },
 
                 ]
             }).then(function (result) {
-                // console.log("res::", result)
-                if (result) {
+                //  console.log("res::", result.dataValues)
+                if (result.dataValues.id) {
                     return resolve(result.dataValues);
                 } else {
                     return reject("User Not Found");

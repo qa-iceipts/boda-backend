@@ -2,14 +2,14 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger')
 const HttpStatus = require('http-status-codes');
-const subscriptionsService = require('../services/subscriptions-service');
+const adminService = require('../services/admin-service');
 const {login} = require('../services/user-service');
 const {validate,superSchema}  = require('../utils/validator')
 const bcrypt = require('bcrypt');
-
+const ROLE = require('../utils/roles')
 const {
     verifyAccessToken,
-    verifyUser
+    authorize
 } = require("../utils/verifytoken")
 
 const {
@@ -69,6 +69,27 @@ router.post('/login',validate(superSchema.adminloginSchema), (req,res)=>{
         res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
     })
 }, (err) => {
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+router.get('/dashboard', verifyAccessToken ,  authorize([ROLE.ADMIN]),(req, res, next) => {
+
+    console.log("adminDashboard / get Route Called",req.payload.id)
+    adminService.adminDashboard().then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1130) {
+            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
+        }
+        else {
+            console.log(err)
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
+
+}, (err) => {
+    console.log(err)
+    logger.error("router error", err);
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 

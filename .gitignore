@@ -47,7 +47,7 @@ Thumbs.db
 *.flv
 *.mov
 *.wmv
-
+.vscode
 .env*
 client.js
 client2.js

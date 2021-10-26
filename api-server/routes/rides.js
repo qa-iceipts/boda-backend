@@ -10,6 +10,7 @@ const {
 } = require("../utils/verifytoken")
 
 
+
 router.post('/', verifyAccessToken , (req, res, next) => {
 
     console.log("rides/ post Route Called")
@@ -76,11 +77,31 @@ router.post('/bookRide', verifyAccessToken , (req, res, next) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
+router.post('/cancelRide', verifyAccessToken , (req, res, next) => {
 
-router.post('/bookRide', verifyAccessToken , (req, res, next) => {
+    console.log("/cancelRide post Route Called")
+    ridesService.cancelRide(req).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1130) {
+            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
+        }
+        else {
+            console.log(err)
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
 
-    console.log("/bookRide post Route Called")
-    ridesService.bookRide(req).then((result) => {
+}, (err) => {
+    console.log(err)
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
+
+router.post('/startRide', verifyAccessToken , (req, res, next) => {
+
+    console.log("/startRide post Route Called")
+    ridesService.startRide(req).then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(result);
     }, (err) => {
         if (err.status === 1130) {
@@ -100,6 +121,26 @@ router.post('/bookRide', verifyAccessToken , (req, res, next) => {
 
 
 
+router.post('/endRide', verifyAccessToken , (req, res, next) => {
+
+    console.log("/endRide post Route Called")
+    ridesService.endRide(req).then((result) => {
+        res.status(HttpStatus.StatusCodes.OK).send(result);
+    }, (err) => {
+        if (err.status === 1130) {
+            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
+        }
+        else {
+            console.log(err)
+            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+    });
+
+}, (err) => {
+    console.log(err)
+    logger.error("router error", err);
+    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+});
 
 router.get('/:rideId', verifyAccessToken , (req, res, next) => {
 
@@ -143,6 +184,9 @@ router.get('/', verifyAccessToken , (req, res, next) => {
     logger.error("router error", err);
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
+
+
+
 
 
 module.exports = router;

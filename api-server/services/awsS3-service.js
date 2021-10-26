@@ -25,6 +25,7 @@ module.exports = {
     uploadProfile : function(req,res,next){
         return new Promise(function (resolve,reject){
             uploadProfile(req, res, function (err) {
+                console.log(req.file)
                 if (req.file_error) {
                     console.log(req.file_error)
                     return reject(util.responseUtil(req.file_error, null, responseConstant.UNPROCESSABLE_ENTITY));
@@ -40,14 +41,17 @@ module.exports = {
                     // update user database with new profile image
                     req.body.profile_image = process.env.AWS_Cloudfront + req.file.key
                     getUserImageById(req.payload.id).then(profile_image=>{
+                        console.log("profile_image",profile_image)
                        if(profile_image){
 
-                       
                         const profile_image_key = (profile_image.split(process.env.AWS_Cloudfront))[1];
                         console.log(profile_image_key)
 
-                        // delete the OLD image from S3
-                        deleteFile(profile_image_key)
+                        if(profile_image_key){
+                            // delete the OLD image from S3
+                            deleteFile(profile_image_key)
+                        }
+                        
                         }
                         updateUser(req).then(function (result) {
                             console.log(req.file)

@@ -14,12 +14,14 @@ const logger = require('../utils/logger');
 const {
     user_subscriptions,subscriptions, sequelize
 } = require('../models');
+const {Op} = require('sequelize')
+
 /**
  * export module
  */
 module.exports = {
 
-    getSubscriptionReport: function (req) {
+    getSubscriptionReport: function () {
         return new Promise(function (resolve, reject) {
             console.log("getSubscriptionReport dao called");
 
@@ -29,13 +31,41 @@ module.exports = {
                     [sequelize.fn("COUNT", sequelize.col("user_subscriptions.id")), "Count"],
                     // [sequelize.literal('"subscriptions"."name"'), 'subscriptions']
                 ] 
-                    
                 },
                 include: [{
                     model: subscriptions, attributes: ["name"],
                     required: true
                 }],
                 group: ['type']
+          }).then(result=>{
+            return resolve(result)
+          }).catch(err=>{
+              return reject(err)
+          })
+
+            console.log("getSubscriptionReport dao returned");
+
+        }, function (err) {
+            logger.error('error in getSubscriptionReport promise', err);
+            return reject(err);
+        });
+    },
+
+    getTotalSubscribers : function () {
+        return new Promise(function (resolve, reject) {
+            console.log("getTotalSubscribers dao called");
+
+            user_subscriptions.count({
+                    where: {
+                        start: {
+                            [Op.lte]: new Date(),
+                        },
+                        end: {
+                            [Op.gte]: new Date()
+                        },
+                        is_active: true
+                    },
+
           }).then(result=>{
             return resolve(result)
           }).catch(err=>{
@@ -75,3 +105,4 @@ module.exports = {
 
     
 }
+

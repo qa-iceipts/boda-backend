@@ -128,6 +128,7 @@ const storage = multer.diskStorage({
 
 // file types check
 const fileFilter = (req, file, cb) => {
+    console.log("filefilter",file)
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/jpg') {
         cb(null, true)
     } else {
@@ -145,6 +146,7 @@ const multerS3Config = multerS3({
         cb(null, { fieldName: file.fieldname });
     },
     key: function (req, file, cb) {
+        console.log("filedetails",file)
         cb(null, req.subdir + new Date().toISOString() + uuidv4() + '-' + file.originalname)
     },
     contentDisposition: 'inline',
