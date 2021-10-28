@@ -11,7 +11,7 @@ const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
 const { getDayWiseReport ,getWeekWiseReport,getMonthWiseReport ,getTodaysBooking} = require('../daos/rides-dao');
 const {getCurrentMonthRevenue} = require("../daos/transactions-dao")
-const {getTotalSubscribers} = require("../daos/user_subscriptions-dao")
+const {getTotalSubscribers, getSubscriptionReport} = require("../daos/user_subscriptions-dao")
 /**
  * export module
  */
@@ -30,6 +30,7 @@ module.exports = {
                     getTodaysBooking().catch(error => { return error; }), //3
                     getTotalSubscribers().catch(error => { return error; }), //4
                     getCurrentMonthRevenue().catch(error => { return error; }),//5
+                    getSubscriptionReport().catch(error => { return error; }),//6
                 ]
 
             ).then(values => {
@@ -37,14 +38,15 @@ module.exports = {
                 //  console.log(values[1]);
                 //  console.log(values[2]);
                 let result = {
-                    totalSubscribers: values[3],
-                    currentMonthRevenue: values[4],
-                    todaysBooking: values[5],
+                    totalSubscribers: values[4],
+                    currentMonthRevenue: values[5],
+                    todaysBooking: values[3],
                     rides: {
                         daywise: values[0],
                         weekwise: values[1],
                         monthwise: values[2]
-                    }
+                    },
+                    subscriptionData : values[6]
 
                 }
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));

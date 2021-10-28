@@ -12,8 +12,6 @@
 
 const logger = require('../utils/logger');
 const {user_vehicles} = require('../models');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
 /**
  * export module
  */

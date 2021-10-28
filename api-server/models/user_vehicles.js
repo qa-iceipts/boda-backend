@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       // user_vehicles.belongsTo(models.vehicles); 
       user_vehicles.belongsTo(models.User); 
       user_vehicles.belongsTo(models.vehicles, {foreignKey: 'vehicleType', targetKey: 'type'});
+      user_vehicles.hasMany(models.user_vehicles_images)
     }
   };
   user_vehicles.init({

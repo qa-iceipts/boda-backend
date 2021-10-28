@@ -25,8 +25,9 @@ module.exports = {
         return new Promise(function (resolve, reject) {
             console.log("getCurrentMonthRevenue dao called");
 
-            transactions.count({
-                // attributes : [[sequelize.fn('COUNT', 'id'), 'todaysBookings']],
+            transactions.findAll({
+                
+                attributes : [[sequelize.fn('SUM', sequelize.col('transactions.amount')), 'revenue']],
                 where: {
                     status: true,
                     andOp:sequelize.where(sequelize.fn('MONTH', sequelize.col('createdAt')), moment().format("MM")),
@@ -35,7 +36,7 @@ module.exports = {
                  raw: true
             }).then((result) => {
                 console.log(result)
-                return resolve(result);
+                return resolve(result[0].revenue);
             }).catch(err => {
                 console.log(err)
                 return reject(err);

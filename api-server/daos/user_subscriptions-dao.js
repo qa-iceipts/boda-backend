@@ -25,23 +25,32 @@ module.exports = {
         return new Promise(function (resolve, reject) {
             console.log("getSubscriptionReport dao called");
 
-            user_subscriptions.findAll({
-                attributes: { 
-                    include: [
-                    [sequelize.fn("COUNT", sequelize.col("user_subscriptions.id")), "Count"],
-                    // [sequelize.literal('"subscriptions"."name"'), 'subscriptions']
-                ] 
-                },
-                include: [{
-                    model: subscriptions, attributes: ["name"],
-                    required: true
-                }],
-                group: ['type']
-          }).then(result=>{
-            return resolve(result)
-          }).catch(err=>{
-              return reject(err)
-          })
+            let query = "SELECT s.name,count(us.id) as totalSub FROM boda_db.subscriptions s left join boda_db.user_subscriptions us ON us.subscriptionType = s.type AND us.start<= now() AND us.end>= now() AND us.is_active = true group by s.name"
+            sequelize.query(query,{ type: sequelize.QueryTypes.SELECT })
+            .then((result) => {
+                //  console.log(result)
+                return resolve(result);
+            }).catch(err => {
+                console.log(err)
+                return reject(err);
+            })
+        //     user_subscriptions.findAll({
+        //         attributes: { 
+        //             include: [
+        //             [sequelize.fn("COUNT", sequelize.col("user_subscriptions.id")), "Count"],
+        //             // [sequelize.literal('"subscriptions"."name"'), 'subscriptions']
+        //         ] 
+        //         },
+        //         include: [{
+        //             model: subscriptions, attributes: ["name"],
+        //             required: true
+        //         }],
+        //         group: ['type']
+        //   }).then(result=>{
+        //     return resolve(result)
+        //   }).catch(err=>{
+        //       return reject(err)
+        //   })
 
             console.log("getSubscriptionReport dao returned");
 
@@ -105,4 +114,5 @@ module.exports = {
 
     
 }
+
 

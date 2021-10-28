@@ -54,12 +54,25 @@ exports = module.exports = function (io) {
                      //  console.log(driverIds)
                      getTokensByIds(driverIds).then((fcmtokens) => {
                         console.log(fcmtokens.data)
-                        let notificationObj = {
-                           title: "New Ride Request",
-                           body: "Quote your prices now for customers"
+                     
+                        const message = {
+               
+                           notification: {
+                              title: "New Ride Request",
+                              body: "Quote your prices now for customers"
+   
+                           },
+                           android: {
+                               notification: {
+                                 clickAction: 'pickupRequests_intent'
+                               }
+                             },
+                   
+                           data: notificationObj,
+                           tokens: fcmtokens.data,
+                       };
 
-                        }
-                        sendNotifications(fcmtokens.data, notificationObj).then((result) => {
+                        sendNotifications(message).then((result) => {
 
                            console.log("Notifications sent")
                            function emitData() {
@@ -92,7 +105,7 @@ exports = module.exports = function (io) {
                })
             }).catch(err => {
                console.log(err)
-               socket.emit('error', { data: "error", err: err });
+               socket.emit('noDriversFound', { data: "no Nearby Drivers Found"});
             })
 
          })
@@ -138,14 +151,31 @@ exports = module.exports = function (io) {
                   content: data.content,
                   name: data.name,
                   from: socket.id,
+                  sender : socket.userObj.userId,
+                  rideId : data.rideid
+
                });
                if(fcmtokens.data && fcmtokens.data.length >0){
-                
-               let notificationObj = {
-                  title : "New Message",
-                  body : data.content
-               }
-               sendNotifications(fcmtokens.data, notificationObj).then((result) => {
+           
+               const message = {
+               
+                  notification: {
+                     title : "New Message",
+                     body : data.content
+                  },
+                  android: {
+                      notification: {
+                        clickAction: 'pickupRequests_intent'
+                      }
+                    },
+          
+                  data: {
+                     sender : socket.userObj.userId,
+                     rideId : data.rideid
+                  },
+                  tokens: fcmtokens.data,
+              };
+               sendNotifications(message).then((result) => {
                   // 
                 
                }).catch(err => {
@@ -169,16 +199,6 @@ exports = module.exports = function (io) {
 
       });
 
-      // socket.on('msg', function (userId,data) {
-      //    getSocketId(userId).then((result) => {
-      //       console.log('getSocketId', result);
-      //       socket.to(result.socketId,data)
-      //    }
-      //    ).catch(err => {
-      //       console.log(err)
-      //       socket.emit('error', { data: "error", err: err });
-      //    })
 
-      // });
    });
 }

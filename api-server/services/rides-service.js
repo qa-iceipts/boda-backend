@@ -218,7 +218,7 @@ module.exports = {
                             },
                             android: {
                                 notification: {
-                                    clickAction: 'rideclick'
+                                    clickAction: 'startRide'
                                 }
                             },
                             data: notificationdata ? notificationdata : "",
@@ -232,7 +232,7 @@ module.exports = {
                             },
                             android: {
                                 notification: {
-                                    clickAction: 'rideclick'
+                                    clickAction: 'startRide'
                                 }
                             },
                             data: notificationdata ? notificationdata : "",
@@ -315,7 +315,7 @@ module.exports = {
                             },
                             android: {
                                 notification: {
-                                    clickAction: 'rideclick'
+                                    clickAction: 'endRide'
                                 }
                             },
                             data: notificationdata ? notificationdata : "",
@@ -329,7 +329,7 @@ module.exports = {
                             },
                             android: {
                                 notification: {
-                                    clickAction: 'rideclick'
+                                    clickAction: 'endRide'
                                 }
                             },
                             data: notificationdata ? notificationdata : "",
@@ -410,7 +410,7 @@ module.exports = {
                             },
                             android: {
                                 notification: {
-                                    clickAction: 'rideclick'
+                                    clickAction: 'cancelRide'
                                 }
                             },
                             data: notificationdata ? notificationdata : "",
@@ -423,7 +423,7 @@ module.exports = {
                             },
                             android: {
                                 notification: {
-                                    clickAction: 'rideclick'
+                                    clickAction: 'cancelRide'
                                 }
                             },
                             data: notificationdata ? notificationdata : "",
