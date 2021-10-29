@@ -4,9 +4,11 @@ const logger = require('../utils/logger')
 const HttpStatus = require('http-status-codes');
 const userVehiclesService = require('../services/user_vehicles-service');
 const validate = require('../utils/validator')
+const ROLE = require("../utils/roles")
 const {
     verifyAccessToken,
-    verifyUser
+    verifyUser,
+    authorize
 } = require("../utils/verifytoken")
 
 
@@ -16,9 +18,7 @@ const {
 // });
 
 
-router.post('/addVehicle', verifyAccessToken, (req, res) => {
-    verifyUser(req, "driver").then(() => {
-
+router.post('/addVehicle', verifyAccessToken,authorize([ROLE.DRIVER]), (req, res) => {
         userVehiclesService.addUserVehicles(req).then((result) => {
             res.send(result);
         }, (err) => {
@@ -31,20 +31,11 @@ router.post('/addVehicle', verifyAccessToken, (req, res) => {
                 res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
             }
         });
-
-
-    }).catch(err => {
-        res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
-    })
-
 }, (err) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.get('/', verifyAccessToken, (req, res) => {
-
-    verifyUser(req, "driver").then(() => {
-
+router.get('/',verifyAccessToken,authorize([ROLE.DRIVER]),  (req, res) => {
         userVehiclesService.getUserVehicles(req.payload.id).then((result) => {
             res.send(result);
         }, (err) => {
@@ -54,18 +45,11 @@ router.get('/', verifyAccessToken, (req, res) => {
                 res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
             }
         });
-
-
-    }).catch(err => {
-        res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
-    })
-
 }, (err) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/update', verifyAccessToken, (req, res) => {
-    verifyUser(req, "driver").then(() => {
+router.post('/update',verifyAccessToken,authorize([ROLE.DRIVER]),  (req, res) => {
         userVehiclesService.updateUserVehicles(req).then((result) => {
             res.send(result);
         }, (err) => {
@@ -75,9 +59,6 @@ router.post('/update', verifyAccessToken, (req, res) => {
                 res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
             }
         });
-    }).catch(err => {
-        res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
-    })
 }, (err) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });

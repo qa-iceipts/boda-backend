@@ -11,7 +11,7 @@
  */
 
 const logger = require('../utils/logger');
-const {user_vehicles} = require('../models');
+const {user_vehicles,vehicles} = require('../models');
 /**
  * export module
  */
@@ -19,7 +19,7 @@ module.exports = {
     addUserVehicles: function (req) {
         return new Promise(function (resolve, reject) {
             let reqObj = req.body
-            logger.debug("addUserVehicles dao called");
+            console.log("addUserVehicles dao called");
             user_vehicles.findOne({where: {UserId : reqObj.UserId}}).then((result)=>{
                 if(result){
                     // console.log(result)
@@ -37,7 +37,7 @@ module.exports = {
                 }
                 })
            
-            logger.debug("add addUserVehicles dao returned");
+            console.log("add addUserVehicles dao returned");
 
         }, function (err) {
             logger.error('error in addUserVehicles promise', err);
@@ -48,14 +48,14 @@ module.exports = {
     updateUserVehicles: function (req) {
         return new Promise(function (resolve, reject) {
             let reqObj = req.body
-            logger.debug("updateUserVehicles dao called");
+            console.log("updateUserVehicles dao called");
             user_vehicles.update(reqObj,{where: {UserId : req.payload.id}}).then((result)=>{
                         return resolve(result);
                 }).catch(err=>{
                     return reject(err)
                 })
            
-            logger.debug("updateUserVehicles dao returned");
+            console.log("updateUserVehicles dao returned");
 
         }, function (err) {
             logger.error('error in updateUserVehicles promise', err);
@@ -65,8 +65,16 @@ module.exports = {
 
     getUserVehicles: function (UserId) {
         return new Promise(function (resolve, reject) {
-            logger.debug("getUserVehicles dao called");
-            user_vehicles.findOne({where: {UserId : UserId}}).then((result)=>{
+            console.log("getUserVehicles dao called");
+            user_vehicles.findOne({
+                where: {
+                    UserId : UserId
+                },
+                include : {
+                    model : vehicles,
+                    required : true
+                }
+            }).then((result)=>{
                         if(result){
                             return resolve(result);
                         }else{
@@ -76,7 +84,36 @@ module.exports = {
                     return reject(err)
                 })
            
-            logger.debug("getUserVehicles dao returned");
+            console.log("getUserVehicles dao returned");
+
+        }, function (err) {
+            logger.error('error in getUserVehicles promise', err);
+            return reject(err);
+        });
+    },
+
+    getVehicleById : function (vehicleId) {
+        return new Promise(function (resolve, reject) {
+            console.log("getVehicleById dao called");
+            user_vehicles.findOne({
+                where: {
+                    id : vehicleId
+                },
+                include : {
+                    model : vehicles,
+                    required : true
+                }
+            }).then((result)=>{
+                        if(result){
+                            return resolve(result);
+                        }else{
+                            return reject("No vehicles found !!")
+                        }
+                }).catch(err=>{
+                    return reject(err)
+                })
+           
+            console.log("getUserVehicles dao returned");
 
         }, function (err) {
             logger.error('error in getUserVehicles promise', err);

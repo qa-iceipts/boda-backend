@@ -35,7 +35,7 @@ module.exports = {
         });
     },
 
-    getUserVehiclesImageById: function (userVehicleId) {
+    getAllUserVehiclesImageById: function (userVehicleId) {
         return new Promise(function (resolve, reject) {
             console.log("getUserVehiclesImage dao called");
             user_vehicles_images.findAndCountAll({
@@ -67,10 +67,8 @@ module.exports = {
                 if (count < uploadLimit) {
                     return resolve(count)
                 } else {
-                    let err = {
-                        message: "Sorry ! Maximum 6 images are allowed"
-                    }
-                    return reject(err)
+                
+                    return reject("Sorry ! Maximum 6 images are allowed")
                 }
             })
             console.log("add getUserVehiclesImage dao returned");
@@ -80,5 +78,5 @@ module.exports = {
             return reject(err);
         });
     },
-
+    
 }

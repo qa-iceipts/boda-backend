@@ -11,7 +11,10 @@ const io = require('socket.io')(server,{
     cors:{ origin: "*"}
 });
 
+
+
 require('./utils/socketio')(io)
+require('./services/pickup-service').setIO(io)
 
 // path 
 const path = require('path');

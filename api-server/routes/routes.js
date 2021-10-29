@@ -11,7 +11,7 @@ var ridesRouter = require('./rides');
 var fcm_keysRouter = require('./fcm_keys');
 var ratingsRouter = require('./ratings');
 var awsS3Router = require('./awsS3');
-
+var UserVehiclesImagesRouter = require('./user_vehicle_images');
 
 router.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'))
@@ -19,6 +19,7 @@ router.get("/", (req, res) => {
 
 router.use('/users', usersRouter)
 router.use('/user_vehicles', UserVehiclesRouter)
+router.use('/user_vehicles_images', UserVehiclesImagesRouter)
 router.use('/vehicles', vehiclesRouter)
 router.use('/subscriptions', subscriptionsRouter)
 router.use('/mpesa', mpesaRouter)

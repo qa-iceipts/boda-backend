@@ -55,7 +55,7 @@ exports = module.exports = function (io) {
                      getTokensByIds(driverIds).then((fcmtokens) => {
                         console.log(fcmtokens.data)
                      
-                        const message = {
+                        let message = {
                
                            notification: {
                               title: "New Ride Request",
@@ -67,11 +67,15 @@ exports = module.exports = function (io) {
                                  clickAction: 'pickupRequests_intent'
                                }
                              },
-                   
-                           data: notificationObj,
+                             
+                           // data: {
+                           //    title: "New Ride Request",
+                           //    body: "Quote your prices now for customers"
+   
+                           // },
                            tokens: fcmtokens.data,
                        };
-
+                   
                         sendNotifications(message).then((result) => {
 
                            console.log("Notifications sent")
@@ -82,7 +86,8 @@ exports = module.exports = function (io) {
                                  socket.emit('driverResponse', { data: result });
                               }).catch(err => {
                                  console.log(err)
-                                 socket.emit('error', { data: "error", err: err });
+                                 // socket.emit('error', { data: "error", err: err });
+                                 socket.emit('noDriversFound', { data: "no Nearby Drivers Found"});
                               })
 
                            }
@@ -146,18 +151,17 @@ exports = module.exports = function (io) {
          addChat(insertObj).then(() => {
             console.log("socket.userObj ::", socket.userObj)
             getTokensByIds(data.to).then((fcmtokens) => {
-               console.log(fcmtokens.data)
+               console.log("fcm tokens",fcmtokens.data)
                io.to(data.to).emit("privateMsg", {
                   content: data.content,
                   name: data.name,
                   from: socket.id,
                   sender : socket.userObj.userId,
                   rideId : data.rideid
-
                });
                if(fcmtokens.data && fcmtokens.data.length >0){
            
-               const message = {
+               let message = {
                
                   notification: {
                      title : "New Message",
@@ -165,16 +169,20 @@ exports = module.exports = function (io) {
                   },
                   android: {
                       notification: {
-                        clickAction: 'pickupRequests_intent'
+                        clickAction: 'chat_notification'
                       }
                     },
-          
-                  data: {
+                   data :  { data: JSON.stringify({
                      sender : socket.userObj.userId,
                      rideId : data.rideid
-                  },
+                  }) },
+                  // data: {
+                  //    sender : socket.userObj.userId,
+                  //    rideId : data.rideid
+                  // },
                   tokens: fcmtokens.data,
               };
+              console.log("chat msg notification",message)
                sendNotifications(message).then((result) => {
                   // 
                 

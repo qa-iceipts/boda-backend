@@ -12,7 +12,7 @@ var responseConstant = require("../constants/responseConstants");
 const { updateUser, getUserImageById } = require('../daos/users-dao');
 const { addUserVehiclesImage, checkUploadLimit } = require('../daos/user_vehicles_images-dao');
 const { uploadFile, getFileStream, deleteFile } = require("../utils/aws-S3")
-
+const {getVehicleById} = require('../daos/user_vehicles-dao')
 // upload single profile function
 const uploadProfile = uploadFile.single('profile');
 const upload = uploadFile.single('file');
@@ -86,49 +86,54 @@ module.exports = {
     uploadVehicleImage: function (req, res, next) {
         return new Promise(function (resolve, reject) {
             let userVehicleId = req.params.userVehicleId
+            
+            getVehicleById(userVehicleId).then(function () {
+                checkUploadLimit(userVehicleId).then(function (count) {
 
-            checkUploadLimit(userVehicleId).then(function (count) {
-
-                uploadVehicleImage(req, res, function (err) {
-                    console.log(req.file)
-                    if (req.file_error) {
-                        console.log(req.file_error)
-                        return reject(util.responseUtil(req.file_error, null, responseConstant.UNPROCESSABLE_ENTITY));
-                    }
-                    else if (err) {
-                        console.log(err)
-                        return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                        // your error handling goes here
-                    } else if (req.file.key) {
-
-                        console.log("req.file.key :: ", req.file.key)
-
-                        // update user database with new profile image
-                        req.body = {
-                            image: process.env.AWS_Cloudfront + req.file.key,
-                            userVehicleId: userVehicleId
+                    uploadVehicleImage(req, res, function (err) {
+                        console.log(req.file)
+                        if (req.file_error) {
+                            console.log(req.file_error)
+                            return reject(util.responseUtil(req.file_error, null, responseConstant.UNPROCESSABLE_ENTITY));
                         }
-                        addUserVehiclesImage(req).then(function (result) {
-                            console.log(req.file)
-                            return resolve(util.responseUtil(null, { file: req.body.image }, responseConstant.SUCCESS));
-                        }).catch(function (err) {
+                        else if (err) {
                             console.log(err)
-                            logger.error('error in addUserVehiclesImage', err);
                             return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                        });
-
-
-                    }
-                    else {
-                        console.log(err)
-                        return reject(util.responseUtil("key error while uploading", null, responseConstant.RUN_TIME_ERROR));
-                    }
+                            // your error handling goes here
+                        } else if (req.file.key) {
+    
+                            console.log("req.file.key :: ", req.file.key)
+    
+                            // update user database with new profile image
+                            req.body = {
+                                image: process.env.AWS_Cloudfront + req.file.key,
+                                userVehicleId: userVehicleId
+                            }
+                            addUserVehiclesImage(req).then(function (result) {
+                                console.log(req.file)
+                                return resolve(util.responseUtil(null, { file: req.body.image }, responseConstant.SUCCESS));
+                            }).catch(function (err) {
+                                console.log(err)
+                                logger.error('error in addUserVehiclesImage', err);
+                                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+                            });
+    
+    
+                        }
+                        else {
+                            console.log(err)
+                            return reject(util.responseUtil("key error while uploading", null, responseConstant.RUN_TIME_ERROR));
+                        }
+                    });
+                }).catch(function (err) {
+                    // console.log(err)
+                    return reject(util.responseUtil(err, null, responseConstant.DUPLICATION_ERROR));
                 });
             }).catch(function (err) {
                 console.log(err)
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+                return reject(util.responseUtil("Vehicle Not found first add vehicle", null, responseConstant.RECORD_NOT_FOUND));
             });
-
+           
         }, function (err) {
             console.log(err)
             logger.error('error in uploadProfile promise', err);

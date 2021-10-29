@@ -240,11 +240,11 @@ module.exports = {
                 return resolve(result.data)
             }).catch(err => {
                 if(err.isAxiosError == true){
-                    console.log(err.response.data)
-                    return resolve(err.response.data)
+                    console.log(err)
+                    return reject(err.response)
                 }else{
                     console.log(err)
-                return resolve(err)
+                    return reject(err)
                 }
                 
             })

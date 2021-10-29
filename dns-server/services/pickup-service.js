@@ -9,134 +9,129 @@ const {
     rides
 } = require('../models');
 const { Op } = require("sequelize")
+var io 
 module.exports = {
-    getPickupRequests : function (reqObj){
-        return new Promise(function (resolve,reject){
+    setIO : function (io){
+        io = io
+    },
+
+    getPickupRequests: function (reqObj) {
+        return new Promise(function (resolve, reject) {
             rides.findAll({
-                where : {
-                    status : 0,
-                    price : 0,
-                    driverId : reqObj.driverId
+                where: {
+                    status: 0,
+                    price: 0,
+                    driverId: reqObj.driverId
+                },
+                raw: true
+            }).then(result => {
+                if (result.length > 0) {
+
+                    let origins = reqObj.lat + ',' + reqObj.long
+                    let destinations = ''
+                    let customerIds = []
+                    result.forEach((element, index) => {
+                        customerIds.push(element.customerId)
+                        destinations += element.pick_lat + ',' + element.pick_long
+                        if (index != result.length - 1) {
+                            destinations += '|'
+                        }
+                    });
+                    console.log("cust_ids::", customerIds)
+                    console.log("destinations:: ", destinations, "=>origins :: ", origins)
+
+                    // ETA GET
+                    axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
+                        params: {
+                            destinations: destinations,
+                            origins: origins,
+                            key: process.env.MAPS_API_KEY
+                        }
+                    }).then(etaResult => {
+
+                        if (etaResult.data) {
+                            console.log(etaResult.data)
+
+                            etaResult.data.rows.forEach((element, index) => {
+                                console.log(element)
+                                result[index].distance = element.elements[0].distance.text
+                                result[index].duration = element.elements[0].duration.text
+                                result[index].origin_address = etaResult.data.origin_addresses
+                               
+                            });
+
+                            console.log(result)
+
+                            axios.post(process.env.API_SERVER + `/users/getAllUsersByIds`, {
+                                "Ids": customerIds
+                            }).then(customerData => {
+                                if (customerData.data && customerData.data.data) {
+                                    console.log(customerData.data.data)
+                                    let merged = []
+                                    for (let i = 0; i < customerData.data.data.length; i++) {
+                                        merged.push({
+                                            profile_image :customerData.data.data[i].profile_image,
+                                            ...(result.find((itmInner) => itmInner.customerId === customerData.data.data[i].id)),
+                                        }
+                                        );
+                                    }
+                                    return resolve(util.responseUtil(null, merged, responseConstant.SUCCESS));
+                                    // return resolve(merged)
+
+                                } else {
+                                    return reject("users not found !!")
+                                }
+
+                            }).catch(err => {
+                                console.log(err)
+                                return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
+                            })
+                           
+
+                        }
+                    }).catch(err => {
+                        console.log(err)
+                        return reject(util.responseUtil(null, null, responseConstant.RUN_TIME_ERROR));
+                    })
+
+
+
+                }else{
+                    return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
                 }
-            }).then(result=>{
 
                 // if (result.length > 0) {
-                //     let destinations = result[0].pick_lat + ',' + result[0].pick_long
-                //     let customerIds = []
-                //     result.forEach(element => {
-                //         customerIds.push(element.customerId)
-                //     });
-                //     console.log(driverIds)
-
-                //     axios.post(process.env.API_SERVER+`/users/getAllUsersByIds`, {
-                //         "Ids": driverIds
-                //     }).then(driversData => {
-
-                //         axios.post(process.env.LOCATION_SERVER+`/getLocationByIds`, {
-                //             "Ids": [reqObj.driverId]
-                //         }).then(driversLocationData => {
-                //             // console.log(driversLocationData.data)
-                //             let origins = ''
-                //             driversLocationData.data.forEach((element, index) => {
-                //                 origins += element.lat + ',' + element.long
-                //                 if (index != driversLocationData.data.length - 1) {
-                //                     origins += '|'
-                //                 }
-                //             });
-                //             console.log("destinations:: ", destinations, "origins :: ", origins)
-
-                //             // ETA GET
-                //             axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
-                //                 params: {
-                //                     destinations: destinations,
-                //                     origins: origins,
-                //                     key: process.env.MAPS_API_KEY
-                //                 }
-                //             }).then(function (etaResult) {
-                //                 if (etaResult.data)
-                //                     // console.log(etaResult.data.rows[0])
-
-                //                     etaResult.data.rows.forEach((element, index) => {
-                //                         console.log(element)
-                //                         driversLocationData.data[index].distance = element.elements[0].distance.text
-                //                         driversLocationData.data[index].duration = element.elements[0].duration.text
-                //                     });
-                //                 //console.log(driversLocationData.data)
-
-                //                 let merged = [];
-
-                //                 for (let i = 0; i < driversData.data.data.length; i++) {
-                //                     merged.push({
-                //                         ...driversData.data.data[i],
-                //                         ...(result.find((itmInner) => itmInner.driverId === driversData.data.data[i].id)),
-                //                         ...(driversLocationData.data.find((itmInner) => itmInner.user_id === driversData.data.data[i].id))
-                //                     }
-                //                     );
-                //                 }
-                //                 console.log(merged)
-                //                 return resolve(merged)
-
-                //             })
-                //                 .catch(function (error) {
-                //                     console.log(error);
-                //                     return reject(error);
-                //                 })
-                //             // 
-                //         }).catch(err => {
-                //             if (err.isAxiosError == true) {
-                //                 console.log(err.response.data)
-                //                 // return resolve(err.response.data)
-                //             } else {
-                //                 console.log(err)
-                //                 // return resolve(err)
-                //             }
-                //         })
-                //         // return resolve(result.data)
-                //     }).catch(err => {
-                //         if (err.isAxiosError == true) {
-                //             console.log(err.response.data)
-                //             return resolve(err.response.data)
-                //         } else {
-                //             console.log(err)
-                //             return resolve(err)
-                //         }
-
-                //     })
-                //     // console.log("getResponse ::",result)  
-
-                // } else {
-                //     return reject("No Drivers reached")
-                // }
-
-
-                
-                // if(result.length>0){
                 //     return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                // }else{
+                // } else {
                 //     return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
                 // }
-            }).catch(err=>{
+            }).catch(err => {
                 console.log(err)
                 return reject(err)
             })
         });
     },
 
-    quotePrice : function (reqObj){
-        return new Promise(function (resolve,reject){
-            rides.update({price:reqObj.price,status : 1},{
-                where : {
-                    id :reqObj.id,
-                    driverId : reqObj.driverId,
-                    rideId :reqObj.rideId,
+    quotePrice: function (reqObj) {
+        return new Promise(function (resolve, reject) {
+
+            io.to(reqObj.id).emit("privateMsg", {
+                data : "hyy price is 100 rs"
+             });
+
+            rides.update({ price: reqObj.price, status: 1 }, {
+                where: {
+                    id: reqObj.id,
+                    driverId: reqObj.driverId,
+                    rideId: reqObj.rideId,
                 }
-            }).then(result=>{
-                if(result.length>0){
+            }).then(result => {
+                if (result.length > 0) {
                     return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                }else{
+                } else {
                     return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
                 }
-            }).catch(err=>{
+            }).catch(err => {
                 console.log(err)
                 return reject(err)
             })

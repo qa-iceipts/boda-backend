@@ -308,9 +308,7 @@ module.exports = {
             return reject(err);
         });
     },
-
-
-
+    
     getAllUsers: function (req) {
         return new Promise(function (resolve, reject) {
             console.log("getAllUsers dao called");
