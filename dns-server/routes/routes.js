@@ -72,9 +72,10 @@ router.post("/getPickupRequests", (req, res) => {
 router.post("/quotePrice", (req, res) => {
     console.log("quotePrice called")
 
-    quotePrice(req.body).then((result) => {
+    quotePrice(req).then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(result);
     }).catch(err => {
+        console.log(err)
         if(err.status == 1114){
             res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err);
         }else{

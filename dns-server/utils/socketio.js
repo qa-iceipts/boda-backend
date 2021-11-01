@@ -15,9 +15,10 @@ const { addChat, getChats } = require('../services/chats')
 
 exports = module.exports = function (io) {
 
-   // var connectedUsers = {};
+   // when client connection with new connection 
    io.on('connection', function (socket) {
 
+      
       console.log('A new user connected =>', socket.id);
 
       socket.join(socket.handshake.query.userId);
@@ -67,12 +68,6 @@ exports = module.exports = function (io) {
                                  clickAction: 'pickupRequests_intent'
                                }
                              },
-                             
-                           // data: {
-                           //    title: "New Ride Request",
-                           //    body: "Quote your prices now for customers"
-   
-                           // },
                            tokens: fcmtokens.data,
                        };
                    
@@ -91,7 +86,7 @@ exports = module.exports = function (io) {
                               })
 
                            }
-                           setTimeout(emitData, 60000);
+                           // setTimeout(emitData, 60000);
                         }).catch(err => {
                            console.log(err)
                            socket.emit('error', { data: "error", err: err });

@@ -10,11 +10,15 @@ const server = require('http').createServer(app);
 const io = require('socket.io')(server,{
     cors:{ origin: "*"}
 });
-
+// , 'Consolas, 'Courier New', 'monospace'
 
 
 require('./utils/socketio')(io)
-require('./services/pickup-service').setIO(io)
+
+app.use((req,res,next)=>{
+	req.io = io
+	next()
+})
 
 // path 
 const path = require('path');
