@@ -250,7 +250,7 @@ router.post('/logout', validate(superSchema.logoutSchema), (req, res, next) => {
 });
 
 
-router.post('/login/:role', validate(superSchema.loginSchema), (req, res, next) => {
+router.post('/login/:role', authMiddleware, validate(superSchema.loginSchema), (req, res, next) => {
 
     console.log("login Route Called")
 
