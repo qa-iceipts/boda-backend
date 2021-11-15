@@ -56,7 +56,7 @@ const specs = swaggerJsDoc(options);
 app.use("/api/api-docs", swaggerUI.serve, swaggerUI.setup(specs))
 
 // SWAGGER END
-
+const {handleError} =  require('./utils/error_handler')
 // morgan & winston combined logger setup
 const morgan = require('morgan');
 const winston = require('./utils/logger')
@@ -106,6 +106,11 @@ dbhelper().then(() => {
 	const db = require('./models/index')
 	const routes = require('./routes/routes.js')
 	app.use('/api', routes)
+
+	app.use((err, req, res, next) => {
+
+		handleError(err, res);
+	  });
 
 	app.use("*", (req, res, next) => {
 		const error = {

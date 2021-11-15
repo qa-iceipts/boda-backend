@@ -9,9 +9,11 @@
 /**
  *  import project modules
  */
-
+const util = require('../utils/commonUtils')
+var responseConstant = require("../constants/responseConstants");
 const logger = require('../utils/logger');
 const { user_vehicles_images } = require('../models');
+const {AppError} =  require('../utils/error_handler')
 /**
  * export module
  */
@@ -20,13 +22,13 @@ module.exports = {
         return new Promise(function (resolve, reject) {
             let reqObj = req.body
             console.log("addUserVehiclesImage dao called");
-                    user_vehicles_images.create(reqObj).then(function (result) {
-                        return resolve(result);
-                    }).catch(function (err) {
-                        logger.error('error in addUserVehiclesImage', err);
-                        return reject(err);
-                    });
-              
+            user_vehicles_images.create(reqObj).then(function (result) {
+                return resolve(result);
+            }).catch(function (err) {
+                logger.error('error in addUserVehiclesImage', err);
+                return reject(err);
+            });
+
             console.log("add addUserVehiclesImage dao returned");
 
         }, function (err) {
@@ -60,14 +62,14 @@ module.exports = {
     checkUploadLimit: function (userVehicleId) {
         return new Promise(function (resolve, reject) {
             console.log("getUserVehiclesImage dao called");
-            
+
             let uploadLimit = 6
-            user_vehicles_images.count({ where: { userVehicleId:userVehicleId } }).then((count) => {
+            user_vehicles_images.count({ where: { userVehicleId: userVehicleId } }).then((count) => {
                 console.log(count)
                 if (count < uploadLimit) {
                     return resolve(count)
                 } else {
-                
+
                     return reject("Sorry ! Maximum 6 images are allowed")
                 }
             })
@@ -78,5 +80,33 @@ module.exports = {
             return reject(err);
         });
     },
-    
+
+    deleteVehicleImage: async function (vehicleImageId) {
+        console.log("deleteVehicleImage dao called");
+        let result = await user_vehicles_images.findOne({ where: { id: vehicleImageId },raw:true })
+        // console.log(result)
+        if (!result) {
+            throw new AppError(404, "Not Found");
+        }
+        let imageKey = result.image.split(process.env.AWS_Cloudfront)[1];
+        console.log("image Key => ", imageKey)
+        console.log("add deleteVehicleImage dao returned");
+        return util.responseUtil(null, result, responseConstant.SUCCESS)
+    },
+
+    getVehicleImageById: async function (vehicleImageId) {
+        console.log("getVehicleImageById dao called");
+        let result = await user_vehicles_images.findOne({ where: { id: vehicleImageId },raw:true })
+        // console.log(result)
+        if (!result) {
+            throw new AppError(404, "Not Found");
+        }
+        // let imageKey = result.image.split(process.env.AWS_Cloudfront)[1];
+        // console.log("image Key => ", imageKey)
+        console.log("getVehicleImageById dao returned");
+        return util.responseUtil(null, result, responseConstant.SUCCESS)
+    },
+
+
+
 }

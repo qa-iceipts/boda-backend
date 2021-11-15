@@ -107,11 +107,11 @@ router.post('/devaddUser', validate(superSchema.addUserSchema), (req, res, next)
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/devlogin', validate(superSchema.loginSchema), (req, res, next) => {
+router.post('/devlogin/:role', validate(superSchema.loginSchema), (req, res, next) => {
 
     console.log("login Route Called")
 
-    userService.login(req).then((result) => {
+    userService.login(req,req.params.role).then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(result);
     }, (err) => {
         if (err.status === 1102) {
@@ -250,11 +250,11 @@ router.post('/logout', validate(superSchema.logoutSchema), (req, res, next) => {
 });
 
 
-router.post('/login', authMiddleware, validate(superSchema.loginSchema), (req, res, next) => {
+router.post('/login/:role', validate(superSchema.loginSchema), (req, res, next) => {
 
     console.log("login Route Called")
 
-    userService.login(req).then((result) => {
+    userService.login(req,req.params.role).then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(result);
     }, (err) => {
         if (err.status === 1102) {

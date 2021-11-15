@@ -63,7 +63,7 @@ router.post('/signup', (req, res) => {
 });
 
 router.post('/login',validate(superSchema.adminloginSchema), (req,res)=>{
-    login(req,'admin').then(result=>{
+    login(req,ROLE.ADMIN).then(result=>{
         res.send(result);
     }).catch(err=>{
         res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);

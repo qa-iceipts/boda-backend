@@ -6,8 +6,7 @@
  *  @version 1.0.0
  */
 
-// var async = require('async');
-// var http = require("http");
+const ROLE = require('../utils/roles');
 const logger = require('../utils/logger');
 const usersDao = require('../daos/users-dao');
 const db = require('../models')
@@ -124,7 +123,7 @@ module.exports = {
         });
     },
 
-    getAllUsersByIds : function (req, res) {
+    getAllUsersByIds: function (req, res) {
         return new Promise(function (resolve, reject) {
             usersDao.getAllUsersByIds(req.body.Ids).then(function (result) {
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
@@ -137,7 +136,7 @@ module.exports = {
             return reject(err);
         });
     },
-    getUserImageById : function (req, res) {
+    getUserImageById: function (req, res) {
         return new Promise(function (resolve, reject) {
             usersDao.getUserImageById(req.body.Id).then(function (result) {
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
@@ -151,13 +150,20 @@ module.exports = {
         });
     },
 
+   
     login: function (req, role) {
         return new Promise(function (resolve, reject) {
+            if(!Object.values(ROLE).includes(role)){
+                return reject(util.responseUtil("User role is not Valid :: " + role, null, responseConstant.UNAUTHORIZE));
+            }
             let reqObj = req.body
             console.log(reqObj)
             let whereObj
             // login code start
-            if (role == 'admin') {
+            if (role === ROLE.ADMIN) {
+                if(!reqObj.username){
+                    return reject(util.responseUtil("Username Required :: ", null, responseConstant.UNAUTHORIZE));
+                }
                 whereObj = {
                     [Op.or]: [
                         { phone: reqObj.username },
@@ -165,6 +171,9 @@ module.exports = {
                     ]
                 }
             } else {
+                if(!reqObj.phone){
+                    return reject(util.responseUtil("phone no. Required :: ", null, responseConstant.UNAUTHORIZE));
+                }
                 whereObj = {
                     phone: reqObj.phone
                 }
@@ -175,37 +184,39 @@ module.exports = {
                     model: db.roles,
                     attributes: ['roleName'],
                     required: true
-                }
+                },
+                // raw: true
             }).then((user) => {
 
                 if (!user) {
                     return reject(util.responseUtil(null, null, responseConstant.USER_NOT_FOUND));
-
                 } else {
-                    // console.log(user.dataValues)
-                    if (role == 'admin') {
-                        if (user.dataValues.roleType == 1) {
-                            bcrypt.compare(req.body.password, user.dataValues.password, function (err, result) {
-                                // console.log(result)
-                                if (err) {
-                                    return reject(err);
-                                }
-                                if (!result) {
-                                    return reject(util.responseUtil(null, null, responseConstant.INVALIDE_CREDENTIAL));
-                                } else {
-                                    returnTokens(user).then(function (result) {
-                                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                                    }).catch(function (err) {
-                                        logger.error('error in returnTokens service', err);
-                                        return reject(err);
-                                    });
-                                }
-                            });
-                        } else {
-                            return reject(util.responseUtil("User role is not admin", null, responseConstant.UNAUTHORIZE));
-                        }
+                    console.log("user = >" ,user.dataValues)
+                    let DbRoleName = user.dataValues.role.dataValues.roleName.toLowerCase()
+                    let ReqRoleName = role.toLowerCase()
+                    if (ReqRoleName === ROLE.ADMIN && DbRoleName === ReqRoleName) {
 
-                    } else {
+                        bcrypt.compare(req.body.password, user.dataValues.password, function (err, result) {
+                            // console.log(result)
+                            if (err) {
+                                return reject(err);
+                            }
+                            if (!result) {
+                                return reject(util.responseUtil(null, null, responseConstant.INVALIDE_CREDENTIAL));
+                            } else {
+                                returnTokens(user).then(function (result) {
+                                    return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+                                }).catch(function (err) {
+                                    logger.error('error in returnTokens service', err);
+                                    return reject(err);
+                                });
+                            }
+                        });
+                        // } else {
+                        //     return reject(util.responseUtil("User role is not " +role, null, responseConstant.UNAUTHORIZE));
+                        // }
+
+                    } else if (DbRoleName === ReqRoleName) {
                         returnTokens(user).then(function (result) {
                             return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
                         }).catch(function (err) {
@@ -213,9 +224,10 @@ module.exports = {
                             return reject(err);
                         });
                     }
-
+                    else {
+                        return reject(util.responseUtil("User role is not " + ReqRoleName, null, responseConstant.UNAUTHORIZE));
+                    }
                 }
-
             }).catch(err => {
                 return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
             });
@@ -400,16 +412,16 @@ module.exports = {
         });
 
     },
-    getDriverMetrics : function (driverIds) {
+    getDriverMetrics: function (driverIds) {
         return new Promise(function (resolve, reject) {
             console.log("getDriverMetrics Service :: ")
             db.User.findAll({
                 where: {
-                    id : driverIds,
-                    roleType : 2
+                    id: driverIds,
+                    roleType: 2
                 },
-                attributes: {exclude: ['password']},
-            }).then(result=>{
+                attributes: { exclude: ['password'] },
+            }).then(result => {
                 // console.log(result)
                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
             }).catch(err => {

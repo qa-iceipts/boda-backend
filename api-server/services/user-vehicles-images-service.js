@@ -31,4 +31,12 @@ module.exports = {
         });
 
     },
+
+    deleteUserVehicleImage: async (userVehicleImageId) => {
+        // return Promise.reject(util.responseUtil("err", null, responseConstant.RECORD_NOT_FOUND));
+        console.log("deleteUserVehicleImage Service Called")
+        let result = await users_vehicles_imagesDao.getVehicleImageById(userVehicleImageId)
+        console.log("deleteUserVehicleImage Service Returned",result)
+        return result
+    }
 }

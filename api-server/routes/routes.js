@@ -1,17 +1,19 @@
 const path = require('path')
 const express = require('express');
 const router = express.Router();
-var usersRouter = require('./users');
-var UserVehiclesRouter = require('./user_vehicles');
-var vehiclesRouter = require('./vehicles');
-var mpesaRouter = require('./mpesa');
-var subscriptionsRouter = require('./subscriptions');
-var adminRouter = require('./admin');
-var ridesRouter = require('./rides');
-var fcm_keysRouter = require('./fcm_keys');
-var ratingsRouter = require('./ratings');
-var awsS3Router = require('./awsS3');
-var UserVehiclesImagesRouter = require('./user_vehicle_images');
+
+
+const usersRouter = require('./users');
+const UserVehiclesRouter = require('./user_vehicles');
+const vehiclesRouter = require('./vehicles');
+const mpesaRouter = require('./mpesa');
+const subscriptionsRouter = require('./subscriptions');
+const adminRouter = require('./admin');
+const ridesRouter = require('./rides');
+const fcm_keysRouter = require('./fcm_keys');
+const ratingsRouter = require('./ratings');
+const awsS3Router = require('./awsS3');
+const UserVehiclesImagesRouter = require('./user_vehicle_images');
 
 router.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'))
