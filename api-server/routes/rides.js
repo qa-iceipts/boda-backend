@@ -8,6 +8,7 @@ const {
     verifyAccessToken,
     verifyUser
 } = require("../utils/verifytoken")
+const PromiseHandler = fn => (req, res, next ) => Promise.resolve(fn(req,res,next)).catch(next);
 
 
 
@@ -187,6 +188,8 @@ router.get('/', verifyAccessToken , (req, res, next) => {
 
 
 
+// new apis
 
+router.get('/rideState/:userType/:userId', verifyAccessToken ,PromiseHandler(ridesService.getRideState))
 
 module.exports = router;

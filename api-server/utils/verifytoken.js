@@ -306,9 +306,9 @@ module.exports = {
                 getUser(req).then((user) => {
                     if (user) {
                         if(roles){
-                        let DBroleName = user.role.dataValues.roleName
+                        let DBroleName = user.role.dataValues.roleName.toLowerCase()
                         console.log("DBroleName :: ",DBroleName)
-                        if (roles.length && !roles.includes(DBroleName.toLowerCase())) {
+                        if (roles.length && !roles.includes(DBroleName)) {
                             // user's role is not authorized
                             return res.status(401).json({ message: 'Unauthorized Role' });
                         }

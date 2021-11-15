@@ -12,7 +12,7 @@ const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
 const { getTokensByIds } = require("../services/fcm-service")
 const { sendNotifications } = require('../services/notifications-service')
-
+const {AppError} =  require('../utils/error_handler')
 /**
  * export module
  */
@@ -472,7 +472,14 @@ module.exports = {
 
     },
 
-  
+    getRideState: async function (req, res, next) {
+        console.log("getRideState Service Called ::")
+        let result = await ridesDao.getRideState(req.params.userId,req.params.userType)
+        return res.send(util.responseUtil(null, result, responseConstant.SUCCESS));
+    },
+
+
+
 
 
 }

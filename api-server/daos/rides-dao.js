@@ -18,6 +18,7 @@ const { getPagination, getPagingData } = require('../utils/pagination')
 const {
     Op
 } = require("sequelize");
+const {AppError} =  require('../utils/error_handler')
 /**
  * export module
  */
@@ -263,16 +264,23 @@ module.exports = {
             logger.error('error in getLastWeekReport promise', err);
             return reject(err);
         })
-    }
+    },
 
+    getRideState: async function (userId,userType) {
+        console.log("getRideState dao called",userType,userId);
+        let whereObj = { state : 'BOOKED' }
+        if(userType === 'customer'){
+            whereObj['customer_id']= userId
+        }else{
+            whereObj['driver_id'] = userId
+        }
+        let result = await rides.findOne({ where: whereObj,raw:true })
+        console.log(result)
+        if (!result) {
+            throw new AppError(404, "Not Found");
+        }
+        return result
+    },
 
 
 }
-
-// setTimeout(() => {
-
-//     //   module.exports.getDayWiseReport()
-//     //  module.exports.getMonthWiseReport()
-//     // module.exports.getMonthWiseReport()
-//     // module.exports.getTodaysBooking()
-// }, 2000);
