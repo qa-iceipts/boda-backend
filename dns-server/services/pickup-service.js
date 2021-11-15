@@ -10,10 +10,9 @@ const {
 } = require('../models');
 const { Op } = require("sequelize")
 const { sendNotifications } = require('../services/notifications-service')
-
 const {
     getTokensByIds,
- } = require('../services/socket-io-service')
+} = require('../services/socket-io-service')
 module.exports = {
     getPickupRequests: function (reqObj) {
         return new Promise(function (resolve, reject) {
@@ -24,10 +23,13 @@ module.exports = {
                     driverId: reqObj.driverId
                 },
                 raw: true,
-                limit : 20
+                limit: 20,
+                order: [
+                    ['createdAt', 'DESC'],
+                ],
             }).then(result => {
                 if (result.length > 0) {
-
+                    console.log("result ==> ", result)
                     let origins = reqObj.lat + ',' + reqObj.long
                     let destinations = ''
                     let customerIds = []
@@ -54,14 +56,14 @@ module.exports = {
                             console.log(etaResult.data)
 
                             etaResult.data.rows.forEach((element, index) => {
-                                console.log(element)
+                                // console.log(element)
                                 result[index].distance = element.elements[0].distance.text
                                 result[index].duration = element.elements[0].duration.text
                                 result[index].origin_address = etaResult.data.origin_addresses
 
                             });
 
-                            console.log(result)
+                            // console.log(result)
 
                             axios.post(process.env.API_SERVER + `/users/getAllUsersByIds`, {
                                 "Ids": customerIds
@@ -76,6 +78,7 @@ module.exports = {
                                         }
                                         );
                                     }
+                                    console.log("merged =>  ", merged)
                                     return resolve(util.responseUtil(null, merged, responseConstant.SUCCESS));
                                     // return resolve(merged)
 
@@ -118,27 +121,30 @@ module.exports = {
             let reqObj = req.body
             // console.log(Object.keys(req.io.sockets.sockets))
 
-            rides.findOne({
-                raw: true,
-                where: {
-                    status: [0, 1],
-                    rideId: reqObj.rideId
-                }
-            })
-                .then((rideData) => {
-                    if (rideData) {
-                        return rideData
-                    } else {
-                        return reject("ride not found")
+                rides.findOne({
+                    raw: true,
+                    where: {
+                        id: reqObj.id,
+                        driverId: reqObj.driverId,
+                        rideId: reqObj.rideId,
+                        customerId: reqObj.customerId
+                        // status: [0, 1],
+                        // rideId: reqObj.rideId
                     }
                 })
                 .then((rideData) => {
-                    // console.log("rideData =>", rideData)
-                    return Promise.all([axios.post(process.env.API_SERVER + `/users/getAllUsersByIds`, {
-                        "Ids": reqObj.driverId
-                    }), axios.post(process.env.LOCATION_SERVER + `/getLocationByIds`, {
-                        "Ids": reqObj.driverId
-                    }), rideData,])
+                    if (rideData) {
+                        // return rideData
+                        return Promise.all([axios.post(process.env.API_SERVER + `/users/getAllUsersByIds`, {
+                            "Ids": reqObj.driverId
+                        }), axios.post(process.env.LOCATION_SERVER + `/getLocationByIds`, {
+                            "Ids": reqObj.driverId
+                        }), rideData])
+
+                    } else {
+                        // throw new Error("ride not found")
+                        return Promise.reject("ride not found")
+                    }
                 })
                 .then(([driverUser, driverLocation, rideData]) => {
                     if (driverUser.data.data && driverLocation.data.length > 0) {
@@ -156,71 +162,99 @@ module.exports = {
                                 origins: origins,
                                 key: process.env.MAPS_API_KEY
                             }
-                        }), driverUser, driverLocation, rideData])
+                        }), driverUser, driverLocation])
                     } else {
-                        console.log("users not found quote price")
-                        return reject("users not found quote price")
+                        return Promise.reject("users not found quote price")
                     }
                 })
-                .then(function ([etaResult, driverUser, driverLocation, rideData]) {
+                .then(function ([etaResult, driverUser, driverLocation]) {
 
-                    if (etaResult.data)
+                    if (etaResult.data) {
                         //  console.log("etaResult.data =>",etaResult.data.rows[0].elements[0].distance.text)
 
                         var mergedData = {
-                            rideData: rideData,
                             driverLocation: driverLocation.data[0],
                             driverUser: driverUser.data.data[0],
                             distance: etaResult.data.rows[0].elements[0].distance.text,
                             duration: etaResult.data.rows[0].elements[0].duration.text
                         }
 
-                   
+                        return Promise.all([rides.update({ price: reqObj.price, quoteOption: reqObj.quoteOption, status: 1 }, {
+                            where: {
+                                id: reqObj.id,
+                                driverId: reqObj.driverId,
+                                rideId: reqObj.rideId,
+                            }
+                        }), mergedData])
+                    }
+                    else {
+                        return Promise.reject("users not found quote price")
+                    }
+                })
+                .then(([updateResult, mergedData]) => {
 
-                    return Promise.all([rides.update({ price: reqObj.price, status: 1 }, {
+                    return Promise.all([rides.findOne({
+                        raw: true,
                         where: {
                             id: reqObj.id,
                             driverId: reqObj.driverId,
                             rideId: reqObj.rideId,
+                            customerId: reqObj.customerId
                         }
-                    }),mergedData])
-
+                    }), getTokensByIds(req.body.customerId), mergedData])
+                    // return getTokensByIds(req.body.customerId)
                 })
-                .then(([updateResult,mergedData]) => {
-                    console.log("mergedData => ", mergedData)
-                    // console.log(updateResult)
-                    req.io.to(req.body.customerId).emit("quoteResponse", {
+                .then(([updatedRideData, fcmtokens, mergedData]) => {
+
+                    mergedData.rideData = updatedRideData
+
+                    console.log("merged data => ", mergedData)
+
+                    console.log("fcm_tokens_data =>", fcmtokens.data)
+
+                    let message = {
+
+                        notification: {
+                            title: "Driver Quoted price",
+                            body: `Quoted ride price is ${req.body.price}`
+                        },
+                        android: {
+                            notification: {
+                                clickAction: 'quote_intent'
+                            }
+                        },
+
+                        data: {
+                            data: JSON.stringify({
+                                driverId: req.body.driverId,
+                                rideId: req.body.rideid,
+                                price: req.body.price
+                            })
+                        },
+                        tokens: fcmtokens.data,
+                    };
+
+                    let sendQuoteEvent = req.io.to(req.body.customerId).emit("quoteResponse", {
                         data: mergedData
                     });
+                    let notify = sendNotifications(message)
 
-                    return getTokensByIds(req.body.customerId)
-                }).then((fcmtokens)=>{
-                    console.log(fcmtokens.data)
-                     
-                    let message = {
-           
-                       notification: {
-                          title: "Driver Quoted price",
-                          body: `Quoted ride price is ${req.body.price}`
-                       },
-                       android: {
-                           notification: {
-                             clickAction: 'quote_intent'
-                           }
-                         },
-                         data: req.body,
-                       tokens: fcmtokens.data,
-                   };
+                    return Promise.all([sendQuoteEvent, notify])
 
-                   sendNotifications(message).then((result) => {
-                    return resolve(util.responseUtil(null, `${result.successCount} messages were sent successfully`, responseConstant.SUCCESS));
-                   })
+                })
+                .then(([, notifyResponse]) => {
+                    return resolve(util.responseUtil(null, `${notifyResponse.successCount} messages were sent successfully`, responseConstant.SUCCESS));
                 })
                 .catch(err => {
                     if (err.isAxiosError) {
                         return reject(err.response.data)
-                    } else {
+                    }
+                    else if (err.message) {
                         console.log(err)
+                        return reject(err.message)
+                    }
+                    else {
+                        console.log("inside chain error => ", err)
                         return reject(err)
                     }
                 })
