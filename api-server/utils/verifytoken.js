@@ -61,7 +61,7 @@ module.exports = {
             }
             const secret = process.env.JWT_REF_SECRET
             const options = {
-                expiresIn: '1d',
+                expiresIn: '2m',
                 audience: user.name,
             }
             JWT.sign(payload, secret, options, (err, token) => {
