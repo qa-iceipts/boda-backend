@@ -32,7 +32,7 @@ module.exports = {
             console.log("payload::", payload)
             const secret = process.env.JWT_SECRET
             const options = {
-                expiresIn: '1m',
+                expiresIn: '1h',
                 audience: user.name
             }
             JWT.sign(payload, secret, options, (err, token) => {
@@ -61,7 +61,7 @@ module.exports = {
             }
             const secret = process.env.JWT_REF_SECRET
             const options = {
-                expiresIn: '2m',
+                expiresIn: '1d',
                 audience: user.name,
             }
             JWT.sign(payload, secret, options, (err, token) => {
