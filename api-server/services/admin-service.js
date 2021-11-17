@@ -41,10 +41,19 @@ module.exports = {
                     totalSubscribers: values[4],
                     currentMonthRevenue: values[5],
                     todaysBooking: values[3],
-                    rides: {
-                        daywise: values[0],
-                        weekwise: values[1],
-                        monthwise: values[2]
+                    lineChartCategoryWiseData: {
+                        daily:{
+                            name: "Daily",
+                            series : values[0]
+                        },
+                        weekly:{
+                            name: "weekly",
+                            series : values[1]
+                        },
+                        monthly:{
+                            name: "weekly",
+                            series : values[2]
+                        },
                     },
                     subscriptionData : values[6]
 
