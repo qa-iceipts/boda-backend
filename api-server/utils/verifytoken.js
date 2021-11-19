@@ -168,22 +168,22 @@ module.exports = {
     returnTokens: (user) => {
         return new Promise((resolve, reject) => {
             let accessToken, refreshToken
-            module.exports.signAccessToken(user.dataValues).then(function (result) {
+            module.exports.signAccessToken(user).then(function (result) {
                 accessToken = result
                 console.log("accessToken::",accessToken)
-                module.exports.loginRefreshToken(user.dataValues).then(function (result1) {
+                module.exports.loginRefreshToken(user).then(function (result1) {
                     refreshToken = result1
                     console.log("refreshToken::", refreshToken)
 
                     module.exports.returnRefreshTimestamp(refreshToken).then(function (exp) {
                         if (exp) {
                             let tokenObj = {
-                                userId: user.dataValues.id,
+                                userId: user.id,
                                 refresh_token: refreshToken,
                                 timestamp: exp,
                                 is_used: '0'
                             }
-                            delete user.dataValues.password
+                            delete user.password
                             db.tokens.create(tokenObj).then(() => {
                                 return resolve({
                                     tokens: {

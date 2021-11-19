@@ -13,11 +13,11 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       // User.belongsTo(models.roles); 
-      User.belongsTo(models.roles, {foreignKey: 'roleType', targetKey: 'type'}); // Adds fk_role to User
+      User.belongsTo(models.roles, { foreignKey: 'roleType', targetKey: 'type' }); // Adds fk_role to User
       User.hasMany(models.user_subscriptions);
       // User.hasMany(models.rides);
-       User.hasMany(models.rides,{foreignKey: 'customer_id',as: 'customer'});
-       User.hasMany(models.rides,{foreignKey: 'driver_id',as: 'driver'});
+      User.hasMany(models.rides, { foreignKey: 'customer_id', as: 'customer' });
+      User.hasMany(models.rides, { foreignKey: 'driver_id', as: 'driver' });
       // User.hasMany(models.rides, {foreignKey: 'driver_id'});
       User.hasMany(models.fcm_keys);
       User.hasMany(models.user_vehicles)
@@ -30,18 +30,18 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
     },
-    
+
     name: DataTypes.STRING,
     phone: {
       type: DataTypes.STRING,
       unique: true
     },
     email: {
-      type:DataTypes.STRING,
+      type: DataTypes.STRING,
       unique: true
     },
-    password : {
-      type:DataTypes.STRING,
+    password: {
+      type: DataTypes.STRING,
     },
     address: DataTypes.STRING,
     country: DataTypes.STRING,
@@ -52,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
     about_me: DataTypes.STRING,
     license: DataTypes.STRING,
     payment_mode: DataTypes.INTEGER,
-    ratings : DataTypes.FLOAT
+    ratings: DataTypes.FLOAT,
   }, {
     sequelize,
     modelName: 'User',

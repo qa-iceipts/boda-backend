@@ -9,8 +9,9 @@
 /**
  *  import project modules
  */
-
+const HttpStatusCodes = require('http-status-codes').StatusCodes;
 const logger = require('../utils/logger');
+const { AppError } = require('../utils/error_handler');
 const db = require('../models');
 const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
@@ -22,72 +23,76 @@ const {
  * export module
  */
 module.exports = {
-    addUser: function (req) {
-        return new Promise(function (resolve, reject) {
-            let reqObj = req.body
-            logger.debug("Add user dao called");
-            db.User.findAll({
-                where: {
-                    email: reqObj.email
+
+    addUser: async function (reqObj) {
+        logger.debug("Add user dao called =>", reqObj);
+        let result = await db.User.findAll({
+            where: {
+                [Op.or]: {
+                    email: reqObj.email,
+                    phone: reqObj.phone
                 }
-            }).then(function (result) {
-                console.log("res::", result.length)
-                if (result.length > 0) {
-                    return reject("Email Already Registered");
-
-                } else {
-                    db.User.findAll({
-                        where: {
-                            phone: reqObj.phone
-                        }
-                    }).then(function (result) {
-                        // console.log("res::", result.length)
-                        if (result.length > 0) {
-                            return reject("Mobile Already Registered");
-                        } else {
-                            db.User.create(reqObj).then(res => {
-                                return resolve(res.dataValues);
-                                // let accessToken, refreshToken
-                                // signAccessToken(res.dataValues).then(function (result) {
-                                //     accessToken = result
-                                //     console.log(accessToken)
-                                //     loginRefreshToken(res.dataValues).then(function (result1) {
-                                //         refreshToken = result1
-                                //         console.log("refreshToken::", refreshToken)
-                                //         return resolve({
-
-                                //             tokens: {
-                                //                 accesstoken: accessToken,
-                                //                 refreshtoken: refreshToken
-                                //             },
-                                //             user: res.dataValues
-                                //         });
-
-                                //     });
-                                // });
-
-                            }).catch(err => {
-                                return reject(err);
-                            })
-                        }
-
-                    }).catch(function (err) {
-                        logger.error('error in add user', err);
-                        return reject(err);
-                    });
-                }
-
-            }).catch(function (err) {
-                logger.error('error in add user', err);
-                return reject(err);
-            });
-            logger.debug("add user dao returned");
-
-        }, function (err) {
-            logger.error('error in add user promise', err);
-            return reject(err);
-        });
+            },
+            raw: true
+        })
+        if (result.length > 0) {
+            throw new AppError(HttpStatusCodes.CONFLICT, "Email or Mobile Already Registered");
+        }
+        let user = await db.User.create(reqObj)
+        logger.debug("add user dao returned");
+        return user
     },
+
+    getRoleName: async function (user) {
+        return (await user.getRole({ attributes: ['roleName'], raw: true }))['roleName'].toLowerCase()
+    },
+
+    // addUser: function (req) {
+    //     return new Promise(function (resolve, reject) {
+    //         let reqObj = req.body
+    //         logger.debug("Add user dao called");
+    //         db.User.findAll({
+    //             where: {
+    //                 email: reqObj.email
+    //             }
+    //         }).then(function (result) {
+    //             if (result.length > 0) {
+    //                 return reject("Email Already Registered");
+
+    //             } else {
+    //                 db.User.findAll({
+    //                     where: {
+    //                         phone: reqObj.phone
+    //                     }
+    //                 }).then(function (result) {
+    //                     // console.log("res::", result.length)
+    //                     if (result.length > 0) {
+    //                         return reject("Mobile Already Registered");
+    //                     } else {
+    //                         db.User.create(reqObj).then(res => {
+    //                             return resolve(res.dataValues);
+    //                         }).catch(err => {
+    //                             return reject(err);
+    //                         })
+    //                     }
+
+    //                 }).catch(function (err) {
+    //                     logger.error('error in add user', err);
+    //                     return reject(err);
+    //                 });
+    //             }
+
+    //         }).catch(function (err) {
+    //             logger.error('error in add user', err);
+    //             return reject(err);
+    //         });
+    //         logger.debug("add user dao returned");
+
+    //     }, function (err) {
+    //         logger.error('error in add user promise', err);
+    //         return reject(err);
+    //     });
+    // },
 
     checkUserExists: function (req, res) {
         return new Promise(function (resolve, reject) {
@@ -235,7 +240,7 @@ module.exports = {
                     id: id
                 },
                 attributes: ["profile_image"],
-                raw : true
+                raw: true
             }).then(function (result) {
                 // console.log("res::", result)
                 if (result) {
@@ -263,9 +268,9 @@ module.exports = {
                 where: {
                     id: id
                 },
-                attributes: { 
+                attributes: {
                     include: [[db.Sequelize.fn("COUNT", db.Sequelize.col("driver.id")), "totalRides"]],
-                    
+
                 },
                 include: [
                     {
@@ -280,9 +285,9 @@ module.exports = {
                     {
                         model: db.rides,
                         as: 'driver',
-                        attributes :[],
-                        where : {
-                            state : ['COMPLETED']
+                        attributes: [],
+                        where: {
+                            state: ['COMPLETED']
                             // is_booked:1 
                         },
                         required: false
@@ -308,7 +313,7 @@ module.exports = {
             return reject(err);
         });
     },
-    
+
     getAllUsers: function (req) {
         return new Promise(function (resolve, reject) {
             console.log("getAllUsers dao called");
@@ -382,18 +387,18 @@ module.exports = {
         });
     },
 
-    getAllUsersByIds : function (Ids) {
+    getAllUsersByIds: function (Ids) {
         return new Promise(function (resolve, reject) {
             console.log("getAllUsersByIds Dao Called ::")
             db.User.findAll({
                 where: { id: Ids },
-                attributes: {exclude: ['password']},
-                
-              }).then(function (result) {
+                attributes: { exclude: ['password'] },
+
+            }).then(function (result) {
                 //   console.log(result[0].dataValues)
-                if(result.length > 0){
+                if (result.length > 0) {
                     return resolve(result);
-                }else{
+                } else {
                     return reject("No users found")
                 }
             }).catch(function (err) {
@@ -406,6 +411,6 @@ module.exports = {
             logger.error('error in add getAllUsersByIds promise', err);
             return reject(err);
         });
-}
+    }
 
 }

@@ -8,7 +8,9 @@
 
 const ROLE = require('../utils/roles');
 const logger = require('../utils/logger');
+const { AppError } = require('../utils/error_handler');
 const usersDao = require('../daos/users-dao');
+const HttpStatusCodes = require('http-status-codes').StatusCodes;
 const db = require('../models')
 const { Op } = require("sequelize");
 const util = require('../utils/commonUtils')
@@ -24,42 +26,123 @@ const {
     inValidateAllUser,
     verifyRefreshTokenWithdb,
     returnTokens
-} = require('../utils/verifytoken')
+} = require('../utils/verifytoken');
+const { sendResponse } = require('../utils/commonUtils');
 /**
  * export module
  */
 
 module.exports = {
 
-    addUser: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("Insert Obj in addUser Service ::", req.body)
-            usersDao.addUser(req).then(function (result) {
-                ;
-                if (result) {
-                    let req = {
-                        body: {
-                            phone: result.phone
-                        }
-                    }
-                    module.exports.login(req).then(loginres => {
-                        return resolve(loginres);
-                    }).catch(err => {
-                        logger.error('error in signup login funct Call', err);
-                        return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                    })
-                }
-
-            }).catch(function (err) {
-                logger.error('error in useraddservice', err);
-                return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
-            });
-        }, function (err) {
-            logger.error('error in add user promise', err);
-            return reject(err);
-        });
-
+    addUser: async function (req, res, next) {
+        // console.log("Insert Obj in addUser Service ::", req.body)
+        let user = await usersDao.addUser(req.body)
+        if (user) {
+            let roleName = await usersDao.getRoleName(user)
+            if (!roleName) throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Role Undefined")
+            req.body = { phone: user.phone }
+            req.params = { roleName }
+            // await module.exports.login(req, userRoleName)
+            next()
+            // res.status(HttpStatusCodes.OK).send(sendResponse(result))
+            // module.exports.login(req, result.roleType).then(loginres => {
+            //     return resolve(loginres);
+            // }).catch(err => {
+            //     logger.error('error in signup login funct Call', err);
+            //     return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+            // })
+        } else {
+            throw new AppError((HttpStatusCodes.INTERNAL_SERVER_ERROR), "something went wrong")
+        }
     },
+
+    // admin , gm , employee role based login
+    login: async function (req, res, next) {
+
+        let roleName = req.params.roleName
+        let reqObj = req.body
+        console.log("login service called=>", reqObj, "rolename=>", roleName)
+        if (!Object.values(ROLE).includes(roleName)) {
+            throw new AppError(HttpStatusCodes.UNAUTHORIZED, "User role is not Valid " + roleName)
+        }
+        let whereObj
+        if (roleName === ROLE.ADMIN) {
+            if (!reqObj.username) {
+                throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Username/Password Required for admin")
+            }
+            whereObj = {
+                [Op.or]: [
+                    { phone: reqObj.username },
+                    { email: reqObj.username }
+                ]
+            }
+        } else {
+            if (!reqObj.phone) throw new AppError(HttpStatusCodes.UNAUTHORIZED, "phone no. Required !!")
+            whereObj = {
+                phone: reqObj.phone
+            }
+        }
+        let user = await db.User.findOne({
+            where: whereObj,
+            include: {
+                model: db.roles,
+                attributes: ['roleName'],
+                required: true
+            },
+        })
+
+        if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "USER_NOT_FOUND")
+
+        // console.log("user = >", user.dataValues)
+
+        let DbRoleName = user.dataValues.role.roleName.toLowerCase()
+
+        if (roleName === ROLE.ADMIN) {
+
+            let matched = await bcrypt.compare(req.body.password, user.dataValues.password)
+            if (!matched) throw new AppError(HttpStatusCodes.BAD_REQUEST, "INVALID CREDENTIALS")
+
+        }
+        if (DbRoleName === roleName) {
+            console.log(roleName,"++==",DbRoleName)
+            let data = await returnTokens(user)
+            res.status(HttpStatusCodes.OK).send(sendResponse(data))
+        }
+        else {
+            throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Unathorized ! User role is not " + roleName)
+        }
+    },
+
+    // addUser: function (req) {
+    //     return new Promise(function (resolve, reject) {
+    //         console.log("Insert Obj in addUser Service ::", req.body)
+    //         usersDao.addUser(req).then(function (result) {
+
+    //             if (result) {
+    //                 console.log(result)
+    //                 let req = {
+    //                     body: {
+    //                         phone: result.phone
+    //                     }
+    //                 }
+    //                 module.exports.login(req,result.roleType).then(loginres => {
+    //                     return resolve(loginres);
+    //                 }).catch(err => {
+    //                     logger.error('error in signup login funct Call', err);
+    //                     return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+    //                 })
+    //             }
+
+    //         }).catch(function (err) {
+    //             logger.error('error in useraddservice', err);
+    //             return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
+    //         });
+    //     }, function (err) {
+    //         logger.error('error in add user promise', err);
+    //         return reject(err);
+    //     });
+
+    // },
     updateUser: function (req) {
         return new Promise(function (resolve, reject) {
             console.log("Insert Obj in updateUser Service ::", req.body)
@@ -150,96 +233,96 @@ module.exports = {
         });
     },
 
-   
-    login: function (req, role) {
-        return new Promise(function (resolve, reject) {
-            if(!Object.values(ROLE).includes(role)){
-                return reject(util.responseUtil("User role is not Valid :: " + role, null, responseConstant.UNAUTHORIZE));
-            }
-            let reqObj = req.body
-            console.log(reqObj)
-            let whereObj
-            // login code start
-            if (role === ROLE.ADMIN) {
-                if(!reqObj.username){
-                    return reject(util.responseUtil("Username Required :: ", null, responseConstant.UNAUTHORIZE));
-                }
-                whereObj = {
-                    [Op.or]: [
-                        { phone: reqObj.username },
-                        { email: reqObj.username }
-                    ]
-                }
-            } else {
-                if(!reqObj.phone){
-                    return reject(util.responseUtil("phone no. Required :: ", null, responseConstant.UNAUTHORIZE));
-                }
-                whereObj = {
-                    phone: reqObj.phone
-                }
-            }
-            db.User.findOne({
-                where: whereObj,
-                include: {
-                    model: db.roles,
-                    attributes: ['roleName'],
-                    required: true
-                },
-                // raw: true
-            }).then((user) => {
 
-                if (!user) {
-                    return reject(util.responseUtil(null, null, responseConstant.USER_NOT_FOUND));
-                } else {
-                    console.log("user = >" ,user.dataValues)
-                    let DbRoleName = user.dataValues.role.dataValues.roleName.toLowerCase()
-                    let ReqRoleName = role.toLowerCase()
-                    if (ReqRoleName === ROLE.ADMIN && DbRoleName === ReqRoleName) {
+    // login: function (req, role) {
+    //     return new Promise(function (resolve, reject) {
+    //         if (!Object.values(ROLE).includes(role)) {
+    //             return reject(util.responseUtil("User role is not Valid :: " + role, null, responseConstant.UNAUTHORIZE));
+    //         }
+    //         let reqObj = req.body
+    //         console.log(reqObj)
+    //         let whereObj
+    //         // login code start
+    //         if (role === ROLE.ADMIN) {
+    //             if (!reqObj.username) {
+    //                 return reject(util.responseUtil("Username Required :: ", null, responseConstant.UNAUTHORIZE));
+    //             }
+    //             whereObj = {
+    //                 [Op.or]: [
+    //                     { phone: reqObj.username },
+    //                     { email: reqObj.username }
+    //                 ]
+    //             }
+    //         } else {
+    //             if (!reqObj.phone) {
+    //                 return reject(util.responseUtil("phone no. Required :: ", null, responseConstant.UNAUTHORIZE));
+    //             }
+    //             whereObj = {
+    //                 phone: reqObj.phone
+    //             }
+    //         }
+    //         db.User.findOne({
+    //             where: whereObj,
+    //             include: {
+    //                 model: db.roles,
+    //                 attributes: ['roleName'],
+    //                 required: true
+    //             },
+    //             // raw: true
+    //         }).then((user) => {
 
-                        bcrypt.compare(req.body.password, user.dataValues.password, function (err, result) {
-                            // console.log(result)
-                            if (err) {
-                                return reject(err);
-                            }
-                            if (!result) {
-                                return reject(util.responseUtil(null, null, responseConstant.INVALIDE_CREDENTIAL));
-                            } else {
-                                returnTokens(user).then(function (result) {
-                                    return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                                }).catch(function (err) {
-                                    logger.error('error in returnTokens service', err);
-                                    return reject(err);
-                                });
-                            }
-                        });
-                        // } else {
-                        //     return reject(util.responseUtil("User role is not " +role, null, responseConstant.UNAUTHORIZE));
-                        // }
+    //             if (!user) {
+    //                 return reject(util.responseUtil(null, null, responseConstant.USER_NOT_FOUND));
+    //             } else {
+    //                 console.log("user = >", user.dataValues)
+    //                 let DbRoleName = user.dataValues.role.dataValues.roleName.toLowerCase()
+    //                 let ReqRoleName = role.toLowerCase()
+    //                 if (ReqRoleName === ROLE.ADMIN && DbRoleName === ReqRoleName) {
 
-                    } else if (DbRoleName === ReqRoleName) {
-                        returnTokens(user).then(function (result) {
-                            return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                        }).catch(function (err) {
-                            logger.error('error in returnTokens service', err);
-                            return reject(err);
-                        });
-                    }
-                    else {
-                        return reject(util.responseUtil("User role is not " + ReqRoleName, null, responseConstant.UNAUTHORIZE));
-                    }
-                }
-            }).catch(err => {
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            });
+    //                     bcrypt.compare(req.body.password, user.dataValues.password, function (err, result) {
+    //                         // console.log(result)
+    //                         if (err) {
+    //                             return reject(err);
+    //                         }
+    //                         if (!result) {
+    //                             return reject(util.responseUtil(null, null, responseConstant.INVALIDE_CREDENTIAL));
+    //                         } else {
+    //                             returnTokens(user).then(function (result) {
+    //                                 return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+    //                             }).catch(function (err) {
+    //                                 logger.error('error in returnTokens service', err);
+    //                                 return reject(err);
+    //                             });
+    //                         }
+    //                     });
+    //                     // } else {
+    //                     //     return reject(util.responseUtil("User role is not " +role, null, responseConstant.UNAUTHORIZE));
+    //                     // }
 
-            // login ends
+    //                 } else if (DbRoleName === ReqRoleName) {
+    //                     returnTokens(user).then(function (result) {
+    //                         return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+    //                     }).catch(function (err) {
+    //                         logger.error('error in returnTokens service', err);
+    //                         return reject(err);
+    //                     });
+    //                 }
+    //                 else {
+    //                     return reject(util.responseUtil("User role is not " + ReqRoleName, null, responseConstant.UNAUTHORIZE));
+    //                 }
+    //             }
+    //         }).catch(err => {
+    //             return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+    //         });
 
-        }, function (err) {
-            logger.error('error in login user promise', err);
-            return reject(err);
-        });
+    //         // login ends
 
-    },
+    //     }, function (err) {
+    //         logger.error('error in login user promise', err);
+    //         return reject(err);
+    //     });
+
+    // },
     checkUserExists: function (req, res) {
         return new Promise(function (resolve, reject) {
             usersDao.checkUserExists(req).then(function (result) {
@@ -327,54 +410,6 @@ module.exports = {
 
         }
     },
-    // loginss: function (req) {
-    //     return new Promise(function (resolve, reject) {
-    //         let reqObj = req.body
-    //         // login code start
-    //         db.User.findOne({
-    //             where: {
-    //                 phone: reqObj.phone
-    //             }
-    //         }).then(user => {
-
-    //             if (!user) {
-    //                 return reject(util.responseUtil(null, null, responseConstant.USER_NOT_FOUND));
-
-    //             } else {
-
-    //                 let accessToken, refreshToken
-    //                 signAccessToken(user.dataValues).then(function (result) {
-    //                     accessToken = result
-    //                     console.log(accessToken)
-    //                     loginRefreshToken(user.dataValues).then(function (result1) {
-    //                         refreshToken = result1
-    //                         console.log("refreshToken::", refreshToken)
-    //                         return resolve({
-
-    //                             tokens: {
-    //                                 accesstoken: accessToken,
-    //                                 refreshtoken: refreshToken
-    //                             },
-    //                             user: user.dataValues
-    //                         });
-
-    //                     });
-    //                 });
-    //             }
-
-    //         }).catch(err => {
-    //             return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-    //         });
-
-    //         // login ends
-
-    //     }, function (err) {
-    //         logger.error('error in login user promise', err);
-    //         return reject(err);
-    //     });
-
-    // },
-
     verifyjwttoken: function (req, res) {
 
         return new Promise(function (resolve, reject) {

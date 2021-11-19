@@ -13,7 +13,7 @@
 
 var constants = {};
 
-constants.SUCCESS = 0;
+constants.SUCCESS = 1;
 
 constants.SEQUELIZE_DATABASE_ERROR = 1001;
 constants.SEQUELIZE_VALIDATION_ERROR = 1002;

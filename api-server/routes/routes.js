@@ -35,4 +35,13 @@ router.get('/health' ,(req,res,next)=>{
 	res.sendFile(path.join(__dirname, '../public/health.html'))
 })
 
+
+router.use("*", (req, res, next) => {
+    const error = {
+        status: 404,
+        message: "API ENDPOINT NOT FOUND ON SERVER",
+    };
+    res.status(404).send(error);
+});
+
 module.exports = router;

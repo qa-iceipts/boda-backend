@@ -46,6 +46,12 @@ module.exports = {
             }
         }
         return response;
-    },    
+    }, 
+    
+    sendResponse: function(data,status){
+        return{
+            success:true,status:status?status:200,data:data
+        };
+    }
 }
 

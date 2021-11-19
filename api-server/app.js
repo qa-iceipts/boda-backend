@@ -7,14 +7,14 @@ const expressValidator = require('express-validator');
 
 var cron = require('node-cron');
 
-const {DestroyCronJob} = require("./utils/verifytoken")
+const { DestroyCronJob } = require("./utils/verifytoken")
 
 cron.schedule('0 8 * * 1', () => {
 	// Runs 8 AM on every Monday
- 	console.log('running a task every monday 8 AM');
-	 DestroyCronJob().then(result=>{
-		console.log("result CRON JOB ::",result)
-	}).catch(err=>{
+	console.log('running a task every monday 8 AM');
+	DestroyCronJob().then(result => {
+		console.log("result CRON JOB ::", result)
+	}).catch(err => {
 		console.log(err)
 	})
 });
@@ -48,7 +48,7 @@ const options = {
 		servers: [{
 			url: "http://localhost:4001",
 			description: "My API Documentation",
-		}, ],
+		},],
 	},
 	apis: ["./Routes/*.js"],
 };
@@ -56,7 +56,7 @@ const specs = swaggerJsDoc(options);
 app.use("/api/api-docs", swaggerUI.serve, swaggerUI.setup(specs))
 
 // SWAGGER END
-const {handleError} =  require('./utils/error_handler')
+const { handleError } = require('./utils/error_handler')
 // morgan & winston combined logger setup
 const morgan = require('morgan');
 const winston = require('./utils/logger')
@@ -108,16 +108,7 @@ dbhelper().then(() => {
 	app.use('/api', routes)
 
 	app.use((err, req, res, next) => {
-
 		handleError(err, res);
-	  });
-
-	app.use("*", (req, res, next) => {
-		const error = {
-			status: 404,
-			message: "API ENDPOINT NOT FOUND ON SERVER",
-		};
-		res.status(404).send(error);
 	});
 	// sync the db
 	db.sequelize.sync({
