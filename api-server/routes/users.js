@@ -87,10 +87,10 @@ router.get('/', function (req, res) {
 
 // router.post('/login/:roleNames', (req,res)=>res.send({yy: "#3"}))
 
-router.post('/addUser', validate(superSchema.addUserSchema), PromiseHandler(userService.addUser), PromiseHandler(userService.login))
+router.post('/addUser',authMiddleware, validate(superSchema.addUserSchema), PromiseHandler(userService.addUser), PromiseHandler(userService.login))
 
 
-router.post('/login/:roleName', validate(superSchema.loginSchema), PromiseHandler(userService.login))
+router.post('/login/:roleName',authMiddleware, validate(superSchema.loginSchema), PromiseHandler(userService.login))
 
 router.post('/devaddUser', validate(superSchema.addUserSchema), PromiseHandler(userService.login))
 
