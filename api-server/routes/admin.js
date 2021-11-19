@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger')
+const { PromiseHandler } = require('../utils/error_handler')
 const HttpStatus = require('http-status-codes');
 const adminService = require('../services/admin-service');
-const {login} = require('../services/user-service');
-const {validate,superSchema}  = require('../utils/validator')
+const { login } = require('../services/user-service');
+const { validate, superSchema } = require('../utils/validator')
 const bcrypt = require('bcrypt');
 const ROLE = require('../utils/roles')
 const {
@@ -18,24 +19,24 @@ const {
 
 
 router.post('/signup', (req, res) => {
-    
+
     let userObj = req.body
     const saltRounds = 10;
-    bcrypt.hash(userObj.password, saltRounds, function(err, hash) {
+    bcrypt.hash(userObj.password, saltRounds, function (err, hash) {
         // Store hash in your password DB.
-        if(err){
+        if (err) {
             res.status(500).json({
                 message: "Something Went Wrong!!",
-                error : err
+                error: err
             });
-        }else{
+        } else {
             User.findOrCreate({
                 where: { email: userObj.email },
                 defaults: {
-                    name : userObj.name,
-                    email : userObj.email,
-                    password : hash,
-                    roleType : 1, //admin
+                    name: userObj.name,
+                    email: userObj.email,
+                    password: hash,
+                    roleType: 1, //admin
                 }
             }).then(result => {
                 if (result[1] == false) {
@@ -53,7 +54,7 @@ router.post('/signup', (req, res) => {
             }).catch(error => {
                 res.status(500).json({
                     message: "Something Went Wrong!!",
-                    error : error
+                    error: error
                 });
             });
         }
@@ -62,19 +63,25 @@ router.post('/signup', (req, res) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/login',validate(superSchema.adminloginSchema), (req,res)=>{
-    login(req,ROLE.ADMIN).then(result=>{
-        res.send(result);
-    }).catch(err=>{
-        res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
-    })
-}, (err) => {
-    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-});
+router.post('/login', validate(superSchema.adminloginSchema), (req, res,next) => {
+    req.params = {
+        roleName : ROLE.ADMIN
+    }
+    next()
+}, PromiseHandler(login))
 
-router.get('/dashboard', verifyAccessToken ,  authorize([ROLE.ADMIN]),(req, res, next) => {
+//     login(req,ROLE.ADMIN).then(result=>{
+//         res.send(result);
+//     }).catch(err=>{
+//         res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
+//     })
+// }, (err) => {
+//     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+// });
 
-    console.log("adminDashboard / get Route Called",req.payload.id)
+router.get('/dashboard', verifyAccessToken, authorize([ROLE.ADMIN]), (req, res, next) => {
+
+    console.log("adminDashboard / get Route Called", req.payload.id)
     adminService.adminDashboard().then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(result);
     }, (err) => {
