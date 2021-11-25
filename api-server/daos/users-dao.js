@@ -415,10 +415,14 @@ module.exports = {
 
     disableUser: async function (userId) {
         let user = await db.User.unscoped().findOne({where : {id : userId }})
-        console.log(user)
-        user.isActive = false
+        if(!user) throw new AppError(HttpStatusCodes.NOT_FOUND,"Not Found")
+        user.isActive = !user.isActive
         user.save()
-        return ("User Disabled")
+        return {
+            id : user.id,
+            name:user.name,
+            isActive :user.isActive
+        }
     }
 
 
