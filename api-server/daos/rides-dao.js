@@ -274,8 +274,9 @@ module.exports = {
         } else {
             whereObj['driver_id'] = userId
         }
-        let result = await rides.findOne({ where: whereObj, raw: true })
-        console.log(result)
+        let result = await rides.findOne({ where: whereObj , include : { model:user_vehicles }})
+        // console.log(result)
+        // console.log(await result.getUser_vehicles())
         if (!result) {
             throw new AppError(404, "Not Found");
         }
