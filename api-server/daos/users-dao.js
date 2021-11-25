@@ -418,6 +418,7 @@ module.exports = {
         if(!user) throw new AppError(HttpStatusCodes.NOT_FOUND,"Not Found")
         user.isActive = !user.isActive
         user.save()
+        // console.log(user)
         return {
             id : user.id,
             name:user.name,
