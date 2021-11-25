@@ -470,4 +470,9 @@ module.exports = {
 
     },
 
+    disableUser :async function (req,res,next){
+        let result =  await usersDao.disableUser(req.params.userId)
+        res.status(HttpStatusCodes.OK).send(sendResponse(result))
+    }
+
 }

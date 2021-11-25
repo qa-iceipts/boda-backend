@@ -120,7 +120,7 @@ module.exports = {
                 }
             }
 
-            db.User.findAll({
+            db.User.unscoped().findAll({
                 where: whereObj
 
             }).then(user => {
@@ -338,7 +338,7 @@ module.exports = {
             }
             // console.log(roleName)
 
-            db.User.findAndCountAll({
+            db.User.unscoped().findAndCountAll({
                 include: [{
                     model: db.roles,
                     attributes: [],
@@ -411,6 +411,15 @@ module.exports = {
             logger.error('error in add getAllUsersByIds promise', err);
             return reject(err);
         });
+    },
+
+    disableUser: async function (userId) {
+        let user = await db.User.unscoped().findOne({where : {id : userId }})
+        console.log(user)
+        user.isActive = false
+        user.save()
+        return ("User Disabled")
     }
+
 
 }

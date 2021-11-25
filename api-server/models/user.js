@@ -30,7 +30,6 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: DataTypes.UUIDV4,
     },
-
     name: DataTypes.STRING,
     phone: {
       type: DataTypes.STRING,
@@ -53,7 +52,29 @@ module.exports = (sequelize, DataTypes) => {
     license: DataTypes.STRING,
     payment_mode: DataTypes.INTEGER,
     ratings: DataTypes.FLOAT,
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
   }, {
+
+    // scopes
+    defaultScope: {
+      where: {
+        isActive: true
+      }
+    },
+    scopes: {
+      notActiveUsers: {
+        where: {
+          isActive: false
+        }
+      },
+      allUsers: {
+        where: {
+        }
+      },
+    },
     sequelize,
     modelName: 'User',
   });
