@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     rate: DataTypes.FLOAT,
     min_rate : DataTypes.FLOAT,
+    km_rate : DataTypes.FLOAT,
     max_rate : DataTypes.FLOAT,
     persons : DataTypes.INTEGER,
     currency: DataTypes.STRING,
