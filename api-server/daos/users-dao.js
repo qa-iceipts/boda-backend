@@ -120,15 +120,16 @@ module.exports = {
                 }
             }
 
-            db.User.unscoped().findAll({
-                where: whereObj
+            db.User.unscoped().findOne({
+                where: whereObj,
 
             }).then(user => {
                 // for signup part
+                // console.log(user)
                 if (req.body.email) {
-                    if (user.length > 0) {
-
-                        return reject(util.responseUtil("User Already exists with phone or email, please try login!", null, responseConstant.USER_ALREADY_EXIST));
+                    if (user) {
+                        
+                        return reject(util.responseUtil("User Already exists with phone or email, please try login!", {role:user.roleType}, responseConstant.USER_ALREADY_EXIST));
 
                     } else {
                         return resolve("User not exists, you can signup!!")
@@ -136,8 +137,8 @@ module.exports = {
                 }
                 // for login part
                 else {
-                    if (user.length > 0) {
-                        return resolve("User Found with phone!");
+                    if (user) {
+                        return resolve({message:"User Found with phone!",role:user.roleType});
 
                     } else {
                         return reject(util.responseUtil("User not found, please signup first !!", null, responseConstant.USER_NOT_FOUND));
