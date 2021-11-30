@@ -26,7 +26,7 @@ module.exports = {
 
     addUser: async function (reqObj) {
         logger.debug("Add user dao called =>", reqObj);
-        let result = await db.User.findAll({
+        let result = await db.User.unscoped().findAll({
             where: {
                 [Op.or]: {
                     email: reqObj.email,
@@ -128,8 +128,11 @@ module.exports = {
                 // console.log(user)
                 if (req.body.email) {
                     if (user) {
-                        
-                        return reject(util.responseUtil("User Already exists with phone or email, please try login!", {role:user.roleType}, responseConstant.USER_ALREADY_EXIST));
+
+                        return reject(util.responseUtil({
+                            message: "User Already exists with phone or email, please try login!",
+                            role: user.roleType
+                        }, null, responseConstant.USER_ALREADY_EXIST));
 
                     } else {
                         return resolve("User not exists, you can signup!!")
@@ -138,7 +141,7 @@ module.exports = {
                 // for login part
                 else {
                     if (user) {
-                        return resolve({message:"User Found with phone!",role:user.roleType});
+                        return resolve({ message: "User Found with phone!", role: user.roleType });
 
                     } else {
                         return reject(util.responseUtil("User not found, please signup first !!", null, responseConstant.USER_NOT_FOUND));
@@ -415,15 +418,15 @@ module.exports = {
     },
 
     disableUser: async function (userId) {
-        let user = await db.User.unscoped().findOne({where : {id : userId }})
-        if(!user) throw new AppError(HttpStatusCodes.NOT_FOUND,"Not Found")
+        let user = await db.User.unscoped().findOne({ where: { id: userId } })
+        if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "Not Found")
         user.isActive = !user.isActive
         user.save()
         // console.log(user)
         return {
-            id : user.id,
-            name:user.name,
-            isActive :user.isActive
+            id: user.id,
+            name: user.name,
+            isActive: user.isActive
         }
     }
 
