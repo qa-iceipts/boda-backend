@@ -22,8 +22,8 @@ const multer = require('multer')
 const s3 = new S3({
     accessKeyId: AWS_Access_Key_ID,
     secretAccessKey: AWS_Secret_Access_ID,
-    bucket: "testboda",
-    region: "us-west-1"
+    bucket: "staging-bodadrop-common",
+    region: "af-south-1"
 });
 // console.log("AWSS3 test",{
 // accessKeyId: AWS_Access_Key_ID,
@@ -156,8 +156,7 @@ const fileFilter = (req, file, cb) => {
 // multerS3 configurations
 const multerS3Config = multerS3({
     s3: s3,
-  
-    bucket: "testboda",
+    bucket: "staging-bodadrop-common",
     metadata: function (req, file, cb) {
         cb(null, { fieldName: file.fieldname });
     },
