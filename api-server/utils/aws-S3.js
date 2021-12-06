@@ -32,10 +32,10 @@ Bucket: AWS_Bucket_Name,
 region: AWS_REGION
 })
 s3.config.update({
-    accessKeyId: AWS_Access_Key_ID,
-    secretAccessKey: AWS_Secret_Access_ID,
-    Bucket: AWS_Bucket_Name,
-    region: AWS_REGION
+    accessKeyId: "AKIAYDH747QC5VZGNXAH",
+    secretAccessKey: "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",
+    Bucket: "staging-bodadrop-common",
+    region: "af-south-1"
 });
 
 //delete file
