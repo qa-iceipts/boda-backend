@@ -34,8 +34,8 @@ region: AWS_REGION
 s3.config.update({
     accessKeyId: "AKIAYDH747QC5VZGNXAH",
     secretAccessKey: "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",
-    Bucket: "staging-bodadrop-common",
-    region: "af-south-1"
+    // Bucket: "staging-bodadrop-common",
+    // region: "af-south-1"
 });
 
 //delete file
@@ -153,7 +153,7 @@ const fileFilter = (req, file, cb) => {
 // multerS3 configurations
 const multerS3Config = multerS3({
     s3: s3,
-    bucket: AWS_Bucket_Name,
+    bucket: "staging-bodadrop-common",
     metadata: function (req, file, cb) {
         cb(null, { fieldName: file.fieldname });
     },
