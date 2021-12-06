@@ -18,25 +18,27 @@ const multer = require('multer')
 //         region: AWS_REGION
 //     },
 // });
-const s3 = new S3()
-// const s3 = new S3({
-//     accessKeyId: AWS_Access_Key_ID,
-//     secretAccessKey: AWS_Secret_Access_ID,
-//     Bucket: AWS_Bucket_Name,
-//     region: AWS_REGION
-// });
-console.log("AWSS3 test",{
-accessKeyId: AWS_Access_Key_ID,
-secretAccessKey: AWS_Secret_Access_ID,
-Bucket: AWS_Bucket_Name,
-region: AWS_REGION
-})
-s3.config.update({
-    accessKeyId: "AKIAYDH747QC5VZGNXAH",
-    secretAccessKey: "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",
-    // Bucket: "staging-bodadrop-common",
-    // region: "af-south-1"
+// const s3 = new S3()
+const s3 = new S3({
+    accessKeyId: AWS_Access_Key_ID,
+    secretAccessKey: AWS_Secret_Access_ID,
+    bucket: "testboda",
+    region: "us-west-1"
 });
+// console.log("AWSS3 test",{
+// accessKeyId: AWS_Access_Key_ID,
+// secretAccessKey: AWS_Secret_Access_ID,
+// Bucket: AWS_Bucket_Name,
+// region: AWS_REGION
+// })
+// s3.config.update({
+//     accessKeyId: "AKIAYDH747QC5VZGNXAH",
+//     secretAccessKey: "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",
+//     // s3BucketEndpoint: false,
+//     // endpoint: "https://testboda.s3.us-west-1.amazonaws.com",
+//     Bucket: "testboda",
+//     region: "us-west-1"
+// });
 
 //delete file
 function deleteFile(key) {
@@ -92,6 +94,7 @@ const listObjectsInBucket = (bucketName) => {
         }
     });
 }
+// listObjectsInBucket("testboda")
 
 const clearBucket = (bucket) => {
     // var self = this;
@@ -153,7 +156,8 @@ const fileFilter = (req, file, cb) => {
 // multerS3 configurations
 const multerS3Config = multerS3({
     s3: s3,
-    bucket: "staging-bodadrop-common",
+  
+    bucket: "testboda",
     metadata: function (req, file, cb) {
         cb(null, { fieldName: file.fieldname });
     },
