@@ -18,8 +18,20 @@ const multer = require('multer')
 //         region: AWS_REGION
 //     },
 // });
-
-const s3 = new S3({
+const s3 = new S3()
+// const s3 = new S3({
+//     accessKeyId: AWS_Access_Key_ID,
+//     secretAccessKey: AWS_Secret_Access_ID,
+//     Bucket: AWS_Bucket_Name,
+//     region: AWS_REGION
+// });
+console.log("AWSS3",{
+accessKeyId: AWS_Access_Key_ID,
+secretAccessKey: AWS_Secret_Access_ID,
+Bucket: AWS_Bucket_Name,
+region: AWS_REGION
+})
+s3.config.update({
     accessKeyId: AWS_Access_Key_ID,
     secretAccessKey: AWS_Secret_Access_ID,
     Bucket: AWS_Bucket_Name,
