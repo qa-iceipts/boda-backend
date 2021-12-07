@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     lat: DataTypes.STRING,
     long: DataTypes.STRING,
-    time: DataTypes.DATE,
+    // time: DataTypes.DATE,
     online: DataTypes.BOOLEAN
   }, {
     sequelize,

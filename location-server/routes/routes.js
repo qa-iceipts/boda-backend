@@ -59,7 +59,6 @@ router.post("/getNearbyDrivers", (req, res) => {
     userLocationService.getNearbyDrivers(req).then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(result);
     }).catch(err => {
-       
         if (err.status = 1114) {
             res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err);
         } else {

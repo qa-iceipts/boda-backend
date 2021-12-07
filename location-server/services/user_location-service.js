@@ -53,7 +53,10 @@ module.exports = {
         return new Promise(function (resolve, reject) {
 
             user_location.findOne({
-                where: { user_id: user_id }
+                where: { user_id: user_id },
+                attributes : {
+                    exclude : ['createdAt','updatedAt']
+                }
             }).then((result) => {
                 if (result) {
                     return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
@@ -77,23 +80,23 @@ module.exports = {
         return new Promise(function (resolve, reject) {
 
             user_location.findAll({
-                where : {
-                    user_id :Ids
+                where: {
+                    user_id: Ids
                 },
-                attributes : ["lat","long","user_id"]
-            }).then(result=>{
-                if(result.length > 0){
+                attributes: ["lat", "long", "user_id"]
+            }).then(result => {
+                if (result.length > 0) {
                     return resolve(result)
-                }else{
-                    return reject("Not found")
+                } else {
+                    return reject({ msg: "Not found" })
                 }
-                
-            }).catch(err=>{
+
+            }).catch(err => {
                 console.log(err)
                 return reject(err)
             })
-                   
-                    
+
+
         }, function (err) {
             logger.error('error in  getLocationByIds', err);
             return reject(err);
@@ -103,21 +106,18 @@ module.exports = {
 
     getNearbyDrivers: function (req) {
         return new Promise(function (resolve, reject) {
+
             let { user_id, lat, long, radius, vehicle_type } = req.body
-            //  let destinations = lat + ',' + long
 
             let result = util.getMinMaxLatLong(lat, long, radius)
-            let minLoc = {
-                lat: result.minLattitude,
-                lng: result.minLongitude
-            }
-            let maxLoc = {
-                lat: result.maxLattitude,
-                lng: result.maxLongitude
-            }
-            let distance_KM = util.calculateDistance(minLoc.lat, minLoc.lng, maxLoc.lat, maxLoc.lng, "K")
-            console.log(result, distance_KM);
 
+            let minLoc = { lat: result.minLattitude, lng: result.minLongitude }
+            let maxLoc = { lat: result.maxLattitude, lng: result.maxLongitude }
+
+            let distance_KM = util.calculateDistance(minLoc.lat, minLoc.lng, maxLoc.lat, maxLoc.lng, "K")
+
+            console.log(result, distance_KM);
+            // query where Obj
             let whereObj = {
                 lat: {
                     [Op.between]: [result.minLattitude, result.maxLattitude]
@@ -126,16 +126,18 @@ module.exports = {
                     [Op.between]: [result.minLongitude, result.maxLongitude]
                 },
                 online: true,
-                user_type: 2,
+                user_type: 2, // DRIVER === 2
                 user_id: {
                     [Op.not]: user_id
                 },
-                // vehicle_type :  vehicle_type ? vehicle_type : "attributeTwoToo"
             }
             if (vehicle_type != 'all') {
                 whereObj.vehicle_type = vehicle_type
             }
-            user_location.findAndCountAll({ where: whereObj }).then((nearbyUsers) => {
+
+            user_location.findAndCountAll({
+                where: whereObj, attributes: { exclude: ['createdAt', 'updatedAt'] }
+            }).then((nearbyUsers) => {
 
                 if (nearbyUsers.count > 0) {
                     //vehicle count
@@ -144,7 +146,6 @@ module.exports = {
                         // `(obj[v.status] || 0)` returns the property value if defined
                         // or 0 ( since `undefined` is a falsy value
                         obj[v.dataValues.vehicle_type] = (obj[v.dataValues.vehicle_type] || 0) + 1;
-
                         obj[1] = (obj[1] || 0);
                         obj[2] = (obj[2] || 0);
                         obj[3] = (obj[3] || 0);
@@ -153,51 +154,9 @@ module.exports = {
                         return obj;
                         // set the initial value as an object
                     }, {})
-                    console.log( nearbyUsers.VehicleCount )
-               
+
+                    console.log(nearbyUsers.VehicleCount)
                     return resolve(nearbyUsers)
-                    // let origins = ''
-                    // nearbyUsers.rows.forEach((element,index )=> {
-                    //     origins += element.lat + ',' +element.long 
-                    //     if(index != nearbyUsers.rows.length-1){
-                    //         origins += '|'
-                    //     }
-                    // });
-                    // console.log(destinations,"origins",origins)
-
-                    // let url = `https://maps.googleapis.com/maps/api/distancematrix/json?destinations=${destinations}&origins=${origins}&key=${process.env.MAPS_API_KEY}`
-
-                    // console.log(url)
-
-                    // axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
-                    //     params: {
-                    //       destinations: destinations,
-                    //       origins : origins,
-                    //       key : process.env.MAPS_API_KEY
-                    //     }
-                    //   })
-                    //   .then(function (response) {
-
-                    //     if(response.data)
-                    //     console.log(response.data);
-
-                    //     nearbyUsers.rows.forEach((element,index )=> {
-                    //         nearbyUsers.rows[index].dataValues.distance = response.data.rows[index].elements[0].distance.text
-                    //        nearbyUsers.rows[index].dataValues.duration = response.data.rows[index].elements[0].duration.text
-                    //     });
-                    //     console.log(nearbyUsers.rows[0].dataValues)
-                    //     return resolve({
-                    //         result,
-                    //         distance_KM,
-                    //         data : response.data,
-                    //         nearbyUsers : nearbyUsers.rows
-                    //     });
-                    //   })
-                    //   .catch(function (error) {
-                    //     console.log(error);
-                    //     return reject(err);
-                    //   })
-
                 }
                 else {
                     return reject({ msg: "No Nearby Drivers Found" });
