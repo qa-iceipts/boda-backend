@@ -54,15 +54,14 @@ const handleUnknownExceptions = (err, res) => {
 
 const handleError = (err, res) => {
     if (err.statusCode == 400 || err.statusCode == 409 || err.statusCode == 401 || err.statusCode == 404) {
-    
-            console.log("in Central handler Known APP ERROR =>",err.name, err.message)
-        
-       
+        console.log("in Central handler Known APP ERROR =>", err.name, err.message)
     } else {
         console.log("in central err handler =>", err.stack)
     }
     err instanceof AppError ? handleKnownExceptions(err, res) : handleUnknownExceptions(err, res);
 };
+
+
 
 const PromiseHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 

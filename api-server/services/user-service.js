@@ -36,14 +36,19 @@ module.exports = {
 
     addUser: async function (req, res, next) {
         // console.log("Insert Obj in addUser Service ::", req.body)
+        let { password } = req.body
+        let hash = await bcrypt.hash(password, 10)
+        req.body.password = hash
+
         let user = await usersDao.addUser(req.body)
         if (user) {
-            let roleName = await usersDao.getRoleName(user)
-            if (!roleName) throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Role Undefined")
-            req.body = { phone: user.phone }
-            req.params = { roleName }
+            return res.status(HttpStatusCodes.OK).send(sendResponse("signup"))
+            // let roleName = await usersDao.getRoleName(user)
+            // if (!roleName) throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Role Undefined")
+            // req.body = { username: user.phone, password: password }
+            // req.params = { roleName }
             // await module.exports.login(req, userRoleName)
-            next()
+            // next()
             // res.status(HttpStatusCodes.OK).send(sendResponse(result))
             // module.exports.login(req, result.roleType).then(loginres => {
             //     return resolve(loginres);
@@ -60,28 +65,28 @@ module.exports = {
     login: async function (req, res, next) {
 
         let roleName = req.params.roleName
-        let reqObj = req.body
-        console.log("login service called=>", reqObj, "rolename=>", roleName)
+        let {username,password} = req.body
+        console.log("login service called=>", req.body, "rolename=>", roleName)
         if (!Object.values(ROLE).includes(roleName)) {
             throw new AppError(HttpStatusCodes.UNAUTHORIZED, "User role is not Valid " + roleName)
         }
         let whereObj
-        if (roleName === ROLE.ADMIN) {
-            if (!reqObj.username) {
-                throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Username/Password Required for admin")
-            }
-            whereObj = {
-                [Op.or]: [
-                    { phone: reqObj.username },
-                    { email: reqObj.username }
-                ]
-            }
-        } else {
-            if (!reqObj.phone) throw new AppError(HttpStatusCodes.UNAUTHORIZED, "phone no. Required !!")
-            whereObj = {
-                phone: reqObj.phone
-            }
+        // if (roleName === ROLE.ADMIN) {
+        //     if (!reqObj.username) {
+        //         throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Username/Password Required for admin")
+        //     }
+        whereObj = {
+            [Op.or]: [
+                { phone: username },
+                { email: username }
+            ]
         }
+        // } else {
+        //     if (!reqObj.phone) throw new AppError(HttpStatusCodes.UNAUTHORIZED, "phone no. Required !!")
+        //     whereObj = {
+        //         phone: reqObj.phone
+        //     }
+        // }
         let user = await db.User.findOne({
             where: whereObj,
             include: {
@@ -90,59 +95,25 @@ module.exports = {
                 required: true
             },
         })
-
         if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "USER_NOT_FOUND")
-
         // console.log("user = >", user.dataValues)
-
         let DbRoleName = user.dataValues.role.roleName.toLowerCase()
 
-        if (roleName === ROLE.ADMIN) {
-
-            let matched = await bcrypt.compare(req.body.password, user.dataValues.password)
-            if (!matched) throw new AppError(HttpStatusCodes.BAD_REQUEST, "INVALID CREDENTIALS")
-
-        }
+        // if (roleName === ROLE.ADMIN) {
+        let matched = await bcrypt.compare(req.body.password, user.dataValues.password)
+        if (!matched) throw new AppError(HttpStatusCodes.BAD_REQUEST, "INVALID CREDENTIALS-PASSWORD")
+        // }
+        
         if (DbRoleName === roleName) {
-            console.log(roleName,"++==",DbRoleName)
+            console.log(roleName, "++==", DbRoleName)
             let data = await returnTokens(user)
             res.status(HttpStatusCodes.OK).send(sendResponse(data))
         }
         else {
-            throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Unathorized ! User role is not " + roleName)
+            throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Unathorized api ! User role is  " + DbRoleName)
         }
     },
 
-    // addUser: function (req) {
-    //     return new Promise(function (resolve, reject) {
-    //         console.log("Insert Obj in addUser Service ::", req.body)
-    //         usersDao.addUser(req).then(function (result) {
-
-    //             if (result) {
-    //                 console.log(result)
-    //                 let req = {
-    //                     body: {
-    //                         phone: result.phone
-    //                     }
-    //                 }
-    //                 module.exports.login(req,result.roleType).then(loginres => {
-    //                     return resolve(loginres);
-    //                 }).catch(err => {
-    //                     logger.error('error in signup login funct Call', err);
-    //                     return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-    //                 })
-    //             }
-
-    //         }).catch(function (err) {
-    //             logger.error('error in useraddservice', err);
-    //             return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
-    //         });
-    //     }, function (err) {
-    //         logger.error('error in add user promise', err);
-    //         return reject(err);
-    //     });
-
-    // },
     updateUser: function (req) {
         return new Promise(function (resolve, reject) {
             console.log("Insert Obj in updateUser Service ::", req.body)
@@ -410,6 +381,7 @@ module.exports = {
 
         }
     },
+
     verifyjwttoken: function (req, res) {
 
         return new Promise(function (resolve, reject) {
@@ -470,8 +442,8 @@ module.exports = {
 
     },
 
-    disableUser :async function (req,res,next){
-        let result =  await usersDao.disableUser(req.params.userId)
+    disableUser: async function (req, res, next) {
+        let result = await usersDao.disableUser(req.params.userId)
         res.status(HttpStatusCodes.OK).send(sendResponse(result))
     }
 

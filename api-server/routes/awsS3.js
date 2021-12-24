@@ -28,35 +28,23 @@ router.post('/uploadProfile', verifyAccessToken, authorize([ROLE.ADMIN, ROLE.DRI
 //, verifyAccessToken, authorize([ROLE.ADMIN, ROLE.DRIVER])
 router.post('/uploadVehicleImage/:userVehicleId',
     function (req, res, next) {
-        
+
         req.subdir = 'vehicles/';
         AwsService.uploadVehicleImage(req, res, next).then((result) => {
             res.status(HttpStatus.StatusCodes.OK).send(result);
         }).catch(err => {
             console.log(err)
             logger.error(err)
-            if(err.status == 1114){
-                 res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err);
-            }else{
-                    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+            if (err.status == 1114) {
+                res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err);
+            } else {
+                res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
             }
-           
+
         });
 
     })
 
-router.post('/upload645748', function (req, res, next) {
-
-    req.subdir = 'files/';
-    AwsService.upload(req, res, next).then((result) => {
-        res.status(HttpStatus.StatusCodes.OK).send(result);
-    }).catch(err => {
-        console.log(err)
-        logger.error(err)
-        res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-    });
-
-})
 
 
 module.exports = router;

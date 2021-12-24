@@ -18,7 +18,6 @@ cron.schedule('0 8 * * 1', () => {
 		console.log(err)
 	})
 });
-
 // path 
 const path = require('path');
 

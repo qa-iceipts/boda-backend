@@ -18,68 +18,20 @@ router.get('/', function (req, res) {
 });
 
 // Routes
-/**
- * @swagger
- * /addUser:
- *   post:
- *     tags:
- *     - "Users"
- *     summary: "Add a new User/Signup"
- *     description: ""
- *     operationId: "addUser"
- *     consumes:
- *     - "application/json"
- *     produces:
- *     - "application/json"
- *     parameters:
- *     - in: "body"
- *       name: "body"
- *       description: "User object that needs to be added"
- *       required: true
- *       schema:
- *         $ref: "#/definitions/Users"
- *     responses:
- *       "405":
- *         description: "Invalid input"
- *     security:
- *     - petstore_auth:
- *       - "write:pets"
- *       - "read:pets"
- * 
- * definitions:
- *  Users:
- *   type: object
- *   required:
- *     - name
- *     - phone
- *     - email
- *   properties:
- *     phone:
- *       type: string
- *       example: "8234567890"
- *     name:
- *       type: string
- *       example: "Deepesh Kushwaha"
- *     email:
- *       type: string
- *       example: "deepesh@gmail.com"
- *     roleId:
- *       type: string
- *       description: Role Driver(2) Or Customer(3)
- *       enum:
- *         - 2
- *         - 3
- */
 
-router.post('/addUser', authMiddleware, validate(superSchema.addUserSchema), PromiseHandler(userService.addUser), PromiseHandler(userService.login))
+// add User Route For app with otp verify
+router.post('/addUser', validate(superSchema.addUserSchema), PromiseHandler(userService.addUser))
 
+// login route with Otp //commented removed MW -- authMiddleware
+router.post('/login/:roleName', validate(superSchema.adminloginSchema), PromiseHandler(userService.login))
 
-router.post('/login/:roleName', authMiddleware, validate(superSchema.loginSchema), PromiseHandler(userService.login))
+// // development add User without Otp
+// router.post('/devaddUser', validate(superSchema.addUserSchema), PromiseHandler(userService.addUser), PromiseHandler(userService.login))
 
-router.post('/devaddUser', validate(superSchema.addUserSchema), PromiseHandler(userService.addUser), PromiseHandler(userService.login))
+// // development Login without Otp
+// router.post('/devlogin/:roleName', validate(superSchema.adminloginSchema), PromiseHandler(userService.login))
 
-router.post('/devlogin/:roleName', validate(superSchema.loginSchema), PromiseHandler(userService.login))
-
+// disable User with userId
 router.put('/disableUser/:userId',verifyAccessToken, authorize(ROLE.ADMIN) , PromiseHandler(userService.disableUser))
 
 
@@ -175,7 +127,6 @@ router.put('/updateUser', verifyAccessToken, (req, res) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-
 router.post('/logout', validate(superSchema.logoutSchema), (req, res, next) => {
 
     console.log("Logout User Route Called")
@@ -194,30 +145,6 @@ router.post('/logout', validate(superSchema.logoutSchema), (req, res, next) => {
     logger.error("router error", err);
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
-
-
-// router.post('/login/:role', authMiddleware, validate(superSchema.loginSchema), (req, res, next) => {
-
-//     console.log("login Route Called")
-
-//     userService.login(req, req.params.role).then((result) => {
-//         res.status(HttpStatus.StatusCodes.OK).send(result);
-//     }, (err) => {
-//         if (err.status === 1102) {
-//             res.status(HttpStatus.StatusCodes.CONFLICT).send(err)
-//         }
-//         else if (err.status === 1130) {
-//             res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
-//         }
-//         else {
-//             res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-//         }
-//     });
-
-// }, (err) => {
-//     logger.error("router error", err);
-//     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-// });
 
 router.post('/verifyjwttoken', (req, res, next) => {
 

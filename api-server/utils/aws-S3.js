@@ -1,133 +1,30 @@
+// .env
 require('dotenv').config()
-const fs = require('fs')
+// S3 & uuid require
 const S3 = require('aws-sdk/clients/s3')
 const { v4: uuidv4 } = require('uuid')
-const AWS_Bucket_Name = process.env.AWS_Bucket_Name
-const AWS_Access_Key_ID = process.env.AWS_Access_Key_ID
-const AWS_Secret_Access_ID = process.env.AWS_Secret_Access
-const AWS_Cloudfront = process.env.AWS_Cloudfront
-const AWS_REGION = process.env.AWS_REGION
 const multerS3 = require('multer-s3')
 const multer = require('multer')
+const { AWS_Bucket_Name, AWS_Access_Key_ID, AWS_Secret_Access_ID, AWS_REGION } = process.env
 
-
-// const s3 = new S3({
-//     credentials: {
-//         accessKeyId: AWS_Access_Key_ID,
-//         secretAccessKey: AWS_Secret_Access_ID,
-//         region: AWS_REGION
-//     },
-// });
-// const s3 = new S3()
+// initialize S3 object
 const s3 = new S3({
     accessKeyId: AWS_Access_Key_ID,
     secretAccessKey: AWS_Secret_Access_ID,
-    bucket: "staging-bodadrop-common",
-    region: "af-south-1"
+    bucket: AWS_Bucket_Name,
+    region: AWS_REGION
 });
-// console.log("AWSS3 test",{
-// accessKeyId: AWS_Access_Key_ID,
-// secretAccessKey: AWS_Secret_Access_ID,
-// Bucket: AWS_Bucket_Name,
-// region: AWS_REGION
-// })
-// s3.config.update({
-//     accessKeyId: "AKIAYDH747QC5VZGNXAH",
-//     secretAccessKey: "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",
-//     // s3BucketEndpoint: false,
-//     // endpoint: "https://testboda.s3.us-west-1.amazonaws.com",
-//     Bucket: "testboda",
-//     region: "us-west-1"
-// });
 
-//delete file
+//delete file with Key
 function deleteFile(key) {
     s3.deleteObject({ Bucket: AWS_Bucket_Name, Key: key }, (err, data) => {
         if (err) {
             console.log(err)
         }
-        console.log("data::",data);
+        console.log("data::", data);
         return data
     });
 }
-exports.deleteFile = deleteFile
-
-// downloads a file from s3
-function getFileStream(fileKey) {
-    const downloadParams = {
-        Key: fileKey,
-        Bucket: AWS_Bucket_Name
-    }
-    s3.getObject(downloadParams, function(err,data){
-        if (err) {
-            console.log("Error", err);
-          } else {
-            console.log("getObject", data);
-          }
-    })
-    
-    return s3.getObject(downloadParams).createReadStream()
-}
-
-//list all buckets
-const listBuckets = () => {
-    s3.listBuckets(function(err, data) {
-        if (err) {
-          console.log("Error", err);
-        } else {
-          console.log("Success", data.Buckets);
-        }
-    });
-}
-const listObjectsInBucket = (bucketName) => {
-    // Create the parameters for calling listObjects
-    var bucketParams = {
-        Bucket : bucketName,
-    };
-  
-    // Call S3 to obtain a list of the objects in the bucket
-    s3.listObjects(bucketParams, function(err, data) {
-        if (err) {
-            console.log("Error", err);
-        } else {
-            console.log("Success", data);
-        }
-    });
-}
-// listObjectsInBucket("testboda")
-
-const clearBucket = (bucket) => {
-    // var self = this;
-    console.log("clear Bucket :: Called")
-    s3.listObjects({Bucket: bucket}, function (err, data) {
-        if (err) {
-            console.log("error listing bucket objects "+err);
-            return;
-        }
-        var items = data.Contents;
-        for (var i = 0; i < items.length; i += 1) {
-           
-            var deleteParams = {Bucket: bucket, Key: items[i].Key};
-            // s3.deleteObject(client, deleteParams);
-
-            s3.deleteObject(deleteParams, function(err, data) {
-                if (err) console.log(err, err.stack);  // error
-                else  console.log("deleted");                 // deleted
-              });
-        }
-    });
-}
-
-// code for testing aws
-
-// setTimeout(() => {
-//     //  clearBucket('staging-bodadrop-common')
-//     listObjectsInBucket('staging-bodadrop-common')
-//     //  getFileStream("profile/2021-10-20T17:50:59.823Z2a1d10bb-03a8-42c5-a012-b09dc110aece-12329.jpg")
-//     // deleteFile("profile/2021-10-20T17:33:26.071Zd713d9b9-dbcc-4be3-91cd-32feb001bd85-12329.jpg")
-// }, 2000);
-
-
 // whole new idea code with multer S3
 
 // this is just to test locally if multer is working fine.
@@ -143,7 +40,7 @@ const storage = multer.diskStorage({
 
 // file types check
 const fileFilter = (req, file, cb) => {
-    console.log("filefilter",file)
+    console.log("filefilter", file)
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/jpg') {
         cb(null, true)
     } else {
@@ -152,16 +49,15 @@ const fileFilter = (req, file, cb) => {
     }
 
 }
-
 // multerS3 configurations
 const multerS3Config = multerS3({
     s3: s3,
-    bucket: "staging-bodadrop-common",
+    bucket: AWS_Bucket_Name,
     metadata: function (req, file, cb) {
         cb(null, { fieldName: file.fieldname });
     },
     key: function (req, file, cb) {
-        console.log("filedetails",file)
+        console.log("filedetails", file)
         cb(null, req.subdir + new Date().toISOString() + uuidv4() + '-' + file.originalname)
     },
     contentDisposition: 'inline',
@@ -177,7 +73,80 @@ const uploadFile = multer({
     }
 })
 
-exports.getFileStream = getFileStream
-exports.uploadFile = uploadFile
+// // old Code starts
+
+// // downloads a file from s3
+// function getFileStream(fileKey) {
+//     const downloadParams = {
+//         Key: fileKey,
+//         Bucket: AWS_Bucket_Name
+//     }
+//     s3.getObject(downloadParams, function (err, data) {
+//         if (err) {
+//             console.log("Error", err);
+//         } else {
+//             console.log("getObject", data);
+//         }
+//     })
+
+//     return s3.getObject(downloadParams).createReadStream()
+// }
+
+// //list all buckets
+// const listBuckets = () => {
+//     s3.listBuckets(function (err, data) {
+//         if (err) {
+//             console.log("Error", err);
+//         } else {
+//             console.log("Success", data.Buckets);
+//         }
+//     });
+// }
+// const listObjectsInBucket = (bucketName) => {
+//     // Create the parameters for calling listObjects
+//     var bucketParams = {
+//         Bucket: bucketName,
+//     };
+
+//     // Call S3 to obtain a list of the objects in the bucket
+//     s3.listObjects(bucketParams, function (err, data) {
+//         if (err) {
+//             console.log("Error", err);
+//         } else {
+//             console.log("Success", data);
+//         }
+//     });
+// }
+// // listObjectsInBucket("testboda")
+// const clearBucket = (bucket) => {
+//     // var self = this;
+//     console.log("clear Bucket :: Called")
+//     s3.listObjects({ Bucket: bucket }, function (err, data) {
+//         if (err) {
+//             console.log("error listing bucket objects " + err);
+//             return;
+//         }
+//         var items = data.Contents;
+//         for (var i = 0; i < items.length; i += 1) {
+
+//             var deleteParams = { Bucket: bucket, Key: items[i].Key };
+//             // s3.deleteObject(client, deleteParams);
+
+//             s3.deleteObject(deleteParams, function (err, data) {
+//                 if (err) console.log(err, err.stack);  // error
+//                 else console.log("deleted");                 // deleted
+//             });
+//         }
+//     });
+// }
+// // old code ends
+
+
+module.exports = {
+    deleteFile,
+    uploadFile
+}
+
+
 
 
