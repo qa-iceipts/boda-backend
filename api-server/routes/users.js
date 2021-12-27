@@ -221,6 +221,10 @@ router.post('/getDriverMetrics', (req, res) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
+router.post('/forgotPassword', PromiseHandler(userService.forgotPassword));
 
+router.post('/verifyOTP', PromiseHandler(userService.verifyOTP));
+
+router.post('/changePassword', PromiseHandler(userService.changePassword));
 
 module.exports = router;

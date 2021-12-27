@@ -55,7 +55,14 @@ module.exports = (sequelize, DataTypes) => {
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
-    }
+    },
+    verificationToken: { type: DataTypes.STRING },
+    verified: { type: DataTypes.DATE },
+    resetToken: { type: DataTypes.STRING },
+    resetTokenExpires: { type: DataTypes.DATE },
+    passwordReset: { type: DataTypes.DATE },
+    
+
   }, {
 
     // scopes

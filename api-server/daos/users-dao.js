@@ -428,7 +428,50 @@ module.exports = {
             name: user.name,
             isActive: user.isActive
         }
-    }
+    },
+
+    forgotPassword: async function ({ email }) {
+
+        const user = await db.User.unscoped().findOne({ where: { email } });
+
+        // always return ok response to prevent email enumeration
+        if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "Not Found");
+
+        // create reset token that expires after 24 hours
+        let otp = Math.floor(100000 + Math.random() * 900000)
+        user.resetToken = otp;
+        user.resetTokenExpires = new Date(Date.now() + 5 * 60 * 1000);
+        await user.save();
+        console.log(otp)
+        await util.sendEmail({
+            to: user.email,
+            subject: 'FIFM Reset Password - OTP',
+            html: `<h4>FIFM RESET PASSWORD REQUEST</h4><h4>Please enter this OTP in the APP</h4>
+                   <h3>${user.resetToken}</h3>`
+        });
+    },
+
+
+    verifyOTP: async function ({ email, otp }) {
+
+        const user = await db.User.unscoped().findOne({ where: { email }, attributes: ['resetToken', 'resetTokenExpires', 'id'] });
+
+        if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "Not Found");
+
+        if (user.resetToken === otp) {
+            if (user.resetTokenExpires < Date.now()) {
+                return user
+            }
+            else {
+                throw new AppError(HttpStatusCodes.NOT_ACCEPTABLE, "OTP EXPIRED");
+            }
+        } else {
+            throw new AppError(HttpStatusCodes.BAD_REQUEST, "Wrong OTP");
+        }
+
+    },
+
+
 
 
 }

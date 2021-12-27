@@ -65,7 +65,7 @@ module.exports = {
     login: async function (req, res, next) {
 
         let roleName = req.params.roleName
-        let {username,password} = req.body
+        let { username, password } = req.body
         console.log("login service called=>", req.body, "rolename=>", roleName)
         if (!Object.values(ROLE).includes(roleName)) {
             throw new AppError(HttpStatusCodes.UNAUTHORIZED, "User role is not Valid " + roleName)
@@ -103,7 +103,7 @@ module.exports = {
         let matched = await bcrypt.compare(req.body.password, user.dataValues.password)
         if (!matched) throw new AppError(HttpStatusCodes.BAD_REQUEST, "INVALID CREDENTIALS-PASSWORD")
         // }
-        
+
         if (DbRoleName === roleName) {
             console.log(roleName, "++==", DbRoleName)
             let data = await returnTokens(user)
@@ -445,6 +445,28 @@ module.exports = {
     disableUser: async function (req, res, next) {
         let result = await usersDao.disableUser(req.params.userId)
         res.status(HttpStatusCodes.OK).send(sendResponse(result))
+    },
+
+    forgotPassword: async function (req, res, next) {
+        await usersDao.forgotPassword(req.body)
+        res.send(sendResponse('Please check your email for password reset instructions'))
+    },
+
+    verifyOTP: async function (req, res, next) {
+        await usersDao.verifyOTP(req.body)
+        res.send(util.sendResponse("verified"))
+    },
+
+    changePassword: async function (req, res, next) {
+
+        let user = await usersDao.verifyOTP(req.body)
+        req.body.password = await bcrypt.hash(req.body.password, 10)
+
+        user.password =  req.body.password
+        user.resetToken = null
+        user.resetTokenExpires = null
+        user.save()
+        res.send(sendResponse('Password Changed Successfully'))
     }
 
 }

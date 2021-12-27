@@ -1,10 +1,9 @@
 'use strict';
 
 var crypto = require('crypto');
-// var nodemailer = require('nodemailer');
-var https = require('http');
-var constant = require("../constants/constants");
-
+const nodemailer = require('nodemailer');
+const env = process.env.NODE_ENV || 'development';
+const config = require('../config/config')[env];
 /**
  * export module
  */
@@ -46,12 +45,33 @@ module.exports = {
             }
         }
         return response;
-    }, 
-    
-    sendResponse: function(data,status){
-        return{
-            success:true,status:status?status:200,data:data
+    },
+
+    sendResponse: function (data, status) {
+        return {
+            success: true, status: status ? status : 200, data: data
         };
+    },
+
+    randomTokenString: function () {
+        return crypto.randomBytes(40).toString('hex');
+    },
+
+    sendEmail: async function ({ to, subject, html, from = config.emailFrom }) {
+        const transporter = nodemailer.createTransport(config.smtpOptions);
+        let result = await transporter.sendMail({ from, to, subject, html });
+        console.log("mail response", result)
+
+    },
+
+    sendPasswordResetEmail: async function (user, origin) {
+        let message;
+        await module.exports.sendEmail({
+            to: user.email,
+            subject: 'FIFM Reset Password - OTP',
+            html: `<h2>FIFM RESET PASSWORD REQUEST</h2><h4>Please enter this OTP in the APP</h4>
+                   ${message}`
+        });
     }
 }
 
