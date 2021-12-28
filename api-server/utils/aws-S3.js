@@ -1,6 +1,7 @@
 // .env
 require('dotenv').config()
 // S3 & uuid require
+const aws = require('aws-sdk')
 const S3 = require('aws-sdk/clients/s3')
 const { v4: uuidv4 } = require('uuid')
 const multerS3 = require('multer-s3')
@@ -8,12 +9,22 @@ const multer = require('multer')
 const { AWS_Bucket_Name, AWS_Access_Key_ID, AWS_Secret_Access, AWS_REGION } = process.env
 
 // initialize S3 object
-const s3 = new S3({
-    accessKeyId: AWS_Access_Key_ID,
-    secretAccessKey: AWS_Secret_Access,
-    // Bucket: AWS_Bucket_Name,
-    region: AWS_REGION
-});
+// const s3 = new S3({
+//     // accessKeyId: AWS_Access_Key_ID,
+//     // secretAccessKey: AWS_Secret_Access,
+//     // // Bucket: AWS_Bucket_Name,
+//     // region: AWS_REGION
+// });
+
+aws.config.update({
+    accessKeyId: "AKIAYDH747QC5VZGNXAH" ,
+    secretAccessKey: "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",
+    region: "us-west-1",
+    bucket: "testboda",
+    // endpoint: "http://testboda.s3.amazonaws.com"
+  });
+const s3 = new aws.S3()
+
 console.log({
     accessKeyId: AWS_Access_Key_ID,
     secretAccessKey: AWS_Secret_Access,
