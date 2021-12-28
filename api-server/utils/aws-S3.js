@@ -11,7 +11,7 @@ const { AWS_Bucket_Name, AWS_Access_Key_ID, AWS_Secret_Access, AWS_REGION } = pr
 const s3 = new S3({
     accessKeyId: AWS_Access_Key_ID,
     secretAccessKey: AWS_Secret_Access,
-    bucket: AWS_Bucket_Name,
+    // bucket: AWS_Bucket_Name,
     region: AWS_REGION
 });
 console.log({
@@ -22,7 +22,7 @@ console.log({
 })
 //delete file with Key
 function deleteFile(key) {
-    s3.deleteObject({ Bucket: AWS_Bucket_Name, Key: key }, (err, data) => {
+    s3.deleteObject({ bucket: AWS_Bucket_Name, Key: key }, (err, data) => {
         if (err) {
             console.log(err)
         }
