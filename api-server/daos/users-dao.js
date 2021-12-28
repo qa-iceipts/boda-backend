@@ -459,7 +459,7 @@ module.exports = {
         if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "Not Found");
 
         if (user.resetToken === otp) {
-            if (user.resetTokenExpires < Date.now()) {
+            if (user.resetTokenExpires > Date.now()) {
                 return user
             }
             else {

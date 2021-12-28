@@ -42,7 +42,16 @@ module.exports = {
 
         let user = await usersDao.addUser(req.body)
         if (user) {
-            return res.status(HttpStatusCodes.OK).send(sendResponse("signup"))
+            let roleName = await usersDao.getRoleName(user)
+            req.params = {
+                roleName: roleName
+            }
+            req.body = {
+                "username": user.dataValues.email,
+                "password": password
+            }
+            next()
+            // return res.status(HttpStatusCodes.OK).send(sendResponse("signup"))
             // let roleName = await usersDao.getRoleName(user)
             // if (!roleName) throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Role Undefined")
             // req.body = { username: user.phone, password: password }
@@ -462,7 +471,7 @@ module.exports = {
         let user = await usersDao.verifyOTP(req.body)
         req.body.password = await bcrypt.hash(req.body.password, 10)
 
-        user.password =  req.body.password
+        user.password = req.body.password
         user.resetToken = null
         user.resetTokenExpires = null
         user.save()
