@@ -33,6 +33,7 @@ module.exports = {
     "JWT_SECRET": process.env.JWT_SECRET,
     "JWT_SECRET_EXPIRY_SEC": process.env.JWT_SECRET_EXPIRY_SEC,
     "JWT_TOKEN_ALGORITHM_TYPE": process.env.JWT_TOKEN_ALGORITHM_TYPE,
+    "emailFrom": "support@fifm.com",
     "smtpOptions": {
       host: 'mail.iceipts.com',
       port: 587,
