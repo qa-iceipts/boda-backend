@@ -36,16 +36,16 @@ const handleUnknownExceptions = (err, res) => {
         return res.status(409).json(
             {
                 success: 0, error: 'Foreign Key Violation',
-                ...(process.env.NODE_ENV === development) && { message: err.message },
-                ...(process.env.NODE_ENV === development) && { stack: err.stack }
+                ...(process.env.NODE_ENV === development  && err.message) && { message: err.message },
+                ...(process.env.NODE_ENV === development  && err.stack) && { stack: err.stack }
             }
         );
     } else {
         return res.status(500).json(
             {
-                success: 0, message: 'Something went wrong.',
-                ...(process.env.NODE_ENV === development) && { message: err.message },
-                ...(process.env.NODE_ENV === development) && { stack: err.stack }
+                success: 0, message: 'Something went wrong',
+                ...(process.env.NODE_ENV === development && err.message) && { message: err.message },
+                ...(process.env.NODE_ENV === development && err.stack) && { stack: err.stack }
             }
         );
     }
@@ -56,12 +56,10 @@ const handleError = (err, res) => {
     if (err.statusCode == 400 || err.statusCode == 409 || err.statusCode == 401 || err.statusCode == 404) {
         console.log("in Central handler Known APP ERROR =>", err.name, err.message)
     } else {
-        console.log("in central err handler =>", err.stack)
+        console.log("in central err handler =>", err)
     }
     err instanceof AppError ? handleKnownExceptions(err, res) : handleUnknownExceptions(err, res);
 };
-
-
 
 const PromiseHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 

@@ -5,6 +5,8 @@ const AwsService = require('../services/awsS3-service');
 const HttpStatus = require('http-status-codes');
 const logger = require('../utils/logger')
 const ROLE = require('../utils/roles')
+const { PromiseHandler } = require('../utils/error_handler')
+
 const {
     verifyAccessToken,
     authorize
@@ -12,23 +14,17 @@ const {
 
 
 
-router.post('/uploadProfile', verifyAccessToken, authorize([ROLE.ADMIN, ROLE.DRIVER, ROLE.CUSTOMER]),
-    function (req, res, next) {
+router.post('/uploadProfile', verifyAccessToken, authorize([ROLE.ADMIN, ROLE.DRIVER, ROLE.CUSTOMER]), async function (req, res, next) {
+    req.subdir = 'profile/'; next();
+}, PromiseHandler(AwsService.uploadProfile))
 
-        req.subdir = 'profile/';
-        AwsService.uploadProfile(req, res, next).then((result) => {
-            res.status(HttpStatus.StatusCodes.OK).send(result);
-        }).catch(err => {
-            console.log(err)
-            logger.error(err)
-            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-        });
+// router.post('/uploadVehicleImage/:userVehicleId', verifyAccessToken, authorize([ROLE.ADMIN, ROLE.DRIVER, ROLE.CUSTOMER]), async function (req, res, next) {
+//     req.subdir = 'vehicle/'; next();
+// }, PromiseHandler(AwsService.uploadVehicleImage))
 
-    })
-//, verifyAccessToken, authorize([ROLE.ADMIN, ROLE.DRIVER])
+
 router.post('/uploadVehicleImage/:userVehicleId',
     function (req, res, next) {
-
         req.subdir = 'vehicles/';
         AwsService.uploadVehicleImage(req, res, next).then((result) => {
             res.status(HttpStatus.StatusCodes.OK).send(result);

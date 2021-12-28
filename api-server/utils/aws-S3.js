@@ -5,16 +5,21 @@ const S3 = require('aws-sdk/clients/s3')
 const { v4: uuidv4 } = require('uuid')
 const multerS3 = require('multer-s3')
 const multer = require('multer')
-const { AWS_Bucket_Name, AWS_Access_Key_ID, AWS_Secret_Access_ID, AWS_REGION } = process.env
+const { AWS_Bucket_Name, AWS_Access_Key_ID, AWS_Secret_Access, AWS_REGION } = process.env
 
 // initialize S3 object
 const s3 = new S3({
     accessKeyId: AWS_Access_Key_ID,
-    secretAccessKey: AWS_Secret_Access_ID,
+    secretAccessKey: AWS_Secret_Access,
     bucket: AWS_Bucket_Name,
     region: AWS_REGION
 });
-
+console.log({
+    accessKeyId: AWS_Access_Key_ID,
+    secretAccessKey: AWS_Secret_Access,
+    bucket: AWS_Bucket_Name,
+    region: AWS_REGION
+})
 //delete file with Key
 function deleteFile(key) {
     s3.deleteObject({ Bucket: AWS_Bucket_Name, Key: key }, (err, data) => {
@@ -65,6 +70,13 @@ const multerS3Config = multerS3({
     contentType: multerS3.AUTO_CONTENT_TYPE,
 });
 
+// const uploadFile = multer({
+//     storage: multerS3Config,
+//     fileFilter: fileFilter,
+//     limits: {
+//         fileSize: 1024 * 1024 * 5 // we are allowing only 5 MB files
+//     }
+// })
 const uploadFile = multer({
     storage: multerS3Config,
     fileFilter: fileFilter,
@@ -72,7 +84,6 @@ const uploadFile = multer({
         fileSize: 1024 * 1024 * 5 // we are allowing only 5 MB files
     }
 })
-
 // // old Code starts
 
 // // downloads a file from s3

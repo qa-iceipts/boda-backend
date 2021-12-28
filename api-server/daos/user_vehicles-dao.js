@@ -11,7 +11,7 @@
  */
 
 const logger = require('../utils/logger');
-const {user_vehicles,vehicles} = require('../models');
+const { user_vehicles, vehicles } = require('../models');
 /**
  * export module
  */
@@ -20,14 +20,14 @@ module.exports = {
         return new Promise(function (resolve, reject) {
             let reqObj = req.body
             console.log("addUserVehicles dao called");
-            user_vehicles.findOne({where: {UserId : reqObj.UserId}}).then((result)=>{
-                if(result){
+            user_vehicles.findOne({ where: { UserId: reqObj.UserId } }).then((result) => {
+                if (result) {
                     // console.log(result)
-                    let err ={
-                        message : "Sorry ! one User Can add only one vehicle !"
+                    let err = {
+                        message: "Sorry ! one User Can add only one vehicle !"
                     }
-                     return reject(err)
-                }else{
+                    return reject(err)
+                } else {
                     user_vehicles.create(reqObj).then(function (result) {
                         return resolve(result);
                     }).catch(function (err) {
@@ -35,8 +35,8 @@ module.exports = {
                         return reject(err);
                     });
                 }
-                })
-           
+            })
+
             console.log("add addUserVehicles dao returned");
 
         }, function (err) {
@@ -49,12 +49,12 @@ module.exports = {
         return new Promise(function (resolve, reject) {
             let reqObj = req.body
             console.log("updateUserVehicles dao called");
-            user_vehicles.update(reqObj,{where: {UserId : req.payload.id}}).then((result)=>{
-                        return resolve(result);
-                }).catch(err=>{
-                    return reject(err)
-                })
-           
+            user_vehicles.update(reqObj, { where: { UserId: req.payload.id } }).then((result) => {
+                return resolve(result);
+            }).catch(err => {
+                return reject(err)
+            })
+
             console.log("updateUserVehicles dao returned");
 
         }, function (err) {
@@ -68,22 +68,22 @@ module.exports = {
             console.log("getUserVehicles dao called");
             user_vehicles.findOne({
                 where: {
-                    UserId : UserId
+                    UserId: UserId
                 },
-                include : {
-                    model : vehicles,
-                    required : true
+                include: {
+                    model: vehicles,
+                    required: true
                 }
-            }).then((result)=>{
-                        if(result){
-                            return resolve(result);
-                        }else{
-                            return reject("No vehicles found !!")
-                        }
-                }).catch(err=>{
-                    return reject(err)
-                })
-           
+            }).then((result) => {
+                if (result) {
+                    return resolve(result);
+                } else {
+                    return reject("No vehicles found !!")
+                }
+            }).catch(err => {
+                return reject(err)
+            })
+
             console.log("getUserVehicles dao returned");
 
         }, function (err) {
@@ -92,27 +92,29 @@ module.exports = {
         });
     },
 
-    getVehicleById : function (vehicleId) {
+    getVehicleById: function (vehicleId) {
         return new Promise(function (resolve, reject) {
             console.log("getVehicleById dao called");
             user_vehicles.findOne({
                 where: {
-                    id : vehicleId
+                    id: vehicleId
                 },
-                include : {
-                    model : vehicles,
-                    required : true
+                include: {
+                    model: vehicles,
+                    required: true
                 }
-            }).then((result)=>{
-                        if(result){
-                            return resolve(result);
-                        }else{
-                            return reject("No vehicles found !!")
-                        }
-                }).catch(err=>{
-                    return reject(err)
-                })
-           
+            }).then((result) => {
+                console.log(result)
+                if (result) {
+                    return resolve(result);
+                } else {
+                    console.log("No vehicles found !!")
+                    return reject("No vehicles found !!")
+                }
+            }).catch(err => {
+                return reject(err)
+            })
+
             console.log("getUserVehicles dao returned");
 
         }, function (err) {
