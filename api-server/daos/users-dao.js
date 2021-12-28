@@ -440,7 +440,7 @@ module.exports = {
         // create reset token that expires after 24 hours
         let otp = Math.floor(100000 + Math.random() * 900000)
         user.resetToken = otp;
-        user.resetTokenExpires = new Date(Date.now() + 5 * 60 * 1000);
+        user.resetTokenExpires = new Date(Date.now() + 10 * 60 * 1000);
         await user.save();
         console.log(otp)
         await util.sendEmail({

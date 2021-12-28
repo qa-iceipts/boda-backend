@@ -1,4 +1,5 @@
 'use strict';
+const crypto = require("crypto");
 module.exports = {
 
     responseUtil: function (error, data, code) {
@@ -74,7 +75,8 @@ module.exports = {
         if (unit == "K") { dist = dist * 1.609344 }
         if (unit == "N") { dist = dist * 0.8684 }
         return dist
-    }
+    },
+  
 
 }
 

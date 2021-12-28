@@ -15,10 +15,10 @@ module.exports = {
     addDNSConnection: function (reqObj) {
         return new Promise(function (resolve, reject) {
             console.log(reqObj)
-            if (reqObj.rideId && reqObj.userId ) {
+            if (reqObj.rideId && reqObj.userId) {
                 dns_connections.findOrCreate({
                     //rideId: reqObj.rideId,
-                    where: { userId :reqObj.userId },
+                    where: { userId: reqObj.userId },
                     defaults: reqObj
                 }).then(([result, created]) => {
                     //   console.log("created",created)
@@ -52,47 +52,47 @@ module.exports = {
 
     getSocketId: function (user_id) {
         return new Promise(function (resolve, reject) {
-                dns_connections.findOne({
-                    //rideId: reqObj.rideId,
-                    where: { userId :user_id },
-                    attributes : ["socketId"],
-                    raw: true
-                }).then((result) => {
-                    if(result){
-                        return resolve(result);
-                    }else{
-                        return reject("no user found")
-                    }
-                       // console.log(result)
-                       
-            
+            dns_connections.findOne({
+                //rideId: reqObj.rideId,
+                where: { userId: user_id },
+                attributes: ["socketId"],
+                raw: true
+            }).then((result) => {
+                if (result) {
+                    return resolve(result);
+                } else {
+                    return reject("no user found")
+                }
+                // console.log(result)
 
-                }).catch(err => {
-                    console.log(err)
-                    logger.error(err)
-                    return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_DATABASE_ERROR));
-                })
-        
+
+
+            }).catch(err => {
+                console.log(err)
+                logger.error(err)
+                return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_DATABASE_ERROR));
+            })
+
 
         })
 
     },
     DeleteDNSConnection: function (socketId) {
         return new Promise(function (resolve, reject) {
-  
-                dns_connections.destroy({
-                    where: { socketId: socketId },
-                }).then((result) => {
-                   
-                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-    
 
-                }).catch(err => {
-                    console.log(err)
-                    logger.error(err)
-                    return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_DATABASE_ERROR));
-                })
-           
+            dns_connections.destroy({
+                where: { socketId: socketId },
+            }).then((result) => {
+
+                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+
+
+            }).catch(err => {
+                console.log(err)
+                logger.error(err)
+                return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_DATABASE_ERROR));
+            })
+
 
         })
 
@@ -100,11 +100,11 @@ module.exports = {
 
     getNearbyDrivers: function (reqObj) {
         return new Promise(function (resolve, reject) {
-            axios.post(process.env.LOCATION_SERVER+'/getNearbyDrivers', {
+            axios.post(process.env.LOCATION_SERVER + '/getNearbyDrivers', {
                 "user_id": reqObj.user_id,
                 "lat": reqObj.pick_lat,
                 "long": reqObj.pick_long,
-                "radius": 5,
+                "radius": reqObj.radius ? reqObj.radius : 5,
                 "vehicle_type": reqObj.vehicle_type
             })
                 .then(function (response) {
@@ -128,7 +128,7 @@ module.exports = {
                             })
                             driverIds.push(obj.user_id)
                         });
-                        rides.bulkCreate(array, { returning: true }).then((bulk) => {
+                        rides.bulkCreate(array).then((bulk) => {
                             // console.log(bulk)
                         }).catch(err => {
                             console.log(err)
@@ -161,7 +161,7 @@ module.exports = {
                                     response.data.rows[index].duration = element.elements[0].duration.text
                                 });
                             //   console.log(response.data,array)
-                            axios.post(process.env.API_SERVER+'/users/getDriverMetrics', {
+                            axios.post(process.env.API_SERVER + '/users/getDriverMetrics', {
                                 "driverIds": driverIds
                             }).then(metrics => {
 
@@ -175,14 +175,8 @@ module.exports = {
                                     }
                                     );
                                 }
-
                                 // console.log(merged);
-                                return resolve({
-                                    // result,
-                                    // distance_KM,
-                                    data: merged,
-                                    // response: response.data.rows
-                                });
+                                return resolve({ data: merged });
                             })
                                 .catch(function (error) {
                                     console.log(error);
@@ -193,7 +187,6 @@ module.exports = {
                                 console.log(error);
                                 return reject(error);
                             })
-
                         // ETA ENDS
                     }
                 })
@@ -214,7 +207,7 @@ module.exports = {
                 }
             }).then(result => {
                 // console.log(result)
-                if (result.length>0) {
+                if (result.length > 0) {
                     let driverIds = []
                     result.forEach(element => {
                         driverIds.push(element.dataValues.driverId)
@@ -233,21 +226,21 @@ module.exports = {
 
     getTokensByIds: function (Ids) {
         return new Promise(function (resolve, reject) {
-            
-            axios.post(process.env.API_SERVER+'/fcm/getTokensByIds', {
+
+            axios.post(process.env.API_SERVER + '/fcm/getTokensByIds', {
                 "Ids": Ids
             }).then(result => {
                 return resolve(result.data)
             }).catch(err => {
-                if(err.isAxiosError == true){
+                if (err.isAxiosError == true) {
                     console.log(err)
                     return reject(err.response.data)
                 }
-                else{
+                else {
                     console.log(err)
                     return reject(err.data)
                 }
-                
+
             })
         })
     },
@@ -280,11 +273,11 @@ module.exports = {
                         });
                         console.log(driverIds)
 
-                        axios.post(process.env.API_SERVER+`/users/getAllUsersByIds`, {
+                        axios.post(process.env.API_SERVER + `/users/getAllUsersByIds`, {
                             "Ids": driverIds
                         }).then(driversData => {
 
-                            axios.post(process.env.LOCATION_SERVER+`/getLocationByIds`, {
+                            axios.post(process.env.LOCATION_SERVER + `/getLocationByIds`, {
                                 "Ids": driverIds
                             }).then(driversLocationData => {
                                 // console.log(driversLocationData.data)
