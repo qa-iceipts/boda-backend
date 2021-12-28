@@ -11,7 +11,7 @@ const { AWS_Bucket_Name, AWS_Access_Key_ID, AWS_Secret_Access, AWS_REGION } = pr
 const s3 = new S3({
     accessKeyId: AWS_Access_Key_ID,
     secretAccessKey: AWS_Secret_Access,
-    bucket: AWS_Bucket_Name,
+    // Bucket: AWS_Bucket_Name,
     region: AWS_REGION
 });
 console.log({
@@ -46,6 +46,12 @@ const storage = multer.diskStorage({
 // file types check
 const fileFilter = (req, file, cb) => {
     console.log("filefilter", file)
+    console.log({
+        accessKeyId: AWS_Access_Key_ID,
+        secretAccessKey: AWS_Secret_Access,
+        bucket: AWS_Bucket_Name,
+        region: AWS_REGION
+    })
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/jpg') {
         cb(null, true)
     } else {

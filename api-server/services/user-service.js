@@ -42,16 +42,16 @@ module.exports = {
 
         let user = await usersDao.addUser(req.body)
         if (user) {
-            let roleName = await usersDao.getRoleName(user)
-            req.params = {
-                roleName: roleName
-            }
-            req.body = {
-                "username": user.dataValues.email,
-                "password": password
-            }
-            next()
-            // return res.status(HttpStatusCodes.OK).send(sendResponse("signup"))
+            // let roleName = await usersDao.getRoleName(user)
+            // req.params = {
+            //     roleName: roleName
+            // }
+            // req.body = {
+            //     "username": user.dataValues.email,
+            //     "password": password
+            // }
+            // next()
+            return res.status(HttpStatusCodes.OK).send(sendResponse("signup"))
             // let roleName = await usersDao.getRoleName(user)
             // if (!roleName) throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Role Undefined")
             // req.body = { username: user.phone, password: password }
