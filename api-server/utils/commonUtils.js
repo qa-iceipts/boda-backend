@@ -68,8 +68,8 @@ module.exports = {
         let message;
         await module.exports.sendEmail({
             to: user.email,
-            subject: 'FIFM Reset Password - OTP',
-            html: `<h2>FIFM RESET PASSWORD REQUEST</h2><h4>Please enter this OTP in the APP</h4>
+            subject: 'Boda App Reset Password - OTP',
+            html: `<h2>Boda App RESET PASSWORD REQUEST</h2><h4>Please enter this OTP in the APP</h4>
                    ${message}`
         });
     }

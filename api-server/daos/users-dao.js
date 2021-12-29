@@ -445,8 +445,8 @@ module.exports = {
         console.log(otp)
         await util.sendEmail({
             to: user.email,
-            subject: 'FIFM Reset Password - OTP',
-            html: `<h4>FIFM RESET PASSWORD REQUEST</h4><h4>Please enter this OTP in the APP</h4>
+            subject: 'Boda App Reset Password - OTP',
+            html: `<h4>Boda App RESET PASSWORD REQUEST</h4><h4>Please enter this OTP in the APP</h4>
                    <h3>${user.resetToken}</h3>`
         });
     },

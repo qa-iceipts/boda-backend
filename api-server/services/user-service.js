@@ -42,29 +42,17 @@ module.exports = {
 
         let user = await usersDao.addUser(req.body)
         if (user) {
-            // let roleName = await usersDao.getRoleName(user)
-            // req.params = {
-            //     roleName: roleName
-            // }
-            // req.body = {
-            //     "username": user.dataValues.email,
-            //     "password": password
-            // }
-            // next()
-            return res.status(HttpStatusCodes.OK).send(sendResponse("signup"))
-            // let roleName = await usersDao.getRoleName(user)
-            // if (!roleName) throw new AppError(HttpStatusCodes.UNAUTHORIZED, "Role Undefined")
-            // req.body = { username: user.phone, password: password }
-            // req.params = { roleName }
-            // await module.exports.login(req, userRoleName)
-            // next()
-            // res.status(HttpStatusCodes.OK).send(sendResponse(result))
-            // module.exports.login(req, result.roleType).then(loginres => {
-            //     return resolve(loginres);
-            // }).catch(err => {
-            //     logger.error('error in signup login funct Call', err);
-            //     return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            // })
+            let roleName = await usersDao.getRoleName(user)
+            req.params = {
+                roleName: roleName
+            }
+            req.body = {
+                "username": user.dataValues.email,
+                "password": password
+            }
+            next()
+            // return res.status(HttpStatusCodes.OK).send(sendResponse("signup"))
+            
         } else {
             throw new AppError((HttpStatusCodes.INTERNAL_SERVER_ERROR), "something went wrong")
         }

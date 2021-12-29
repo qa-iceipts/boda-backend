@@ -18,10 +18,10 @@ router.get('/', function (req, res) {
 });
 
 // Routes
-// router.post('/addUser', validate(superSchema.addUserSchema), PromiseHandler(userService.addUser),PromiseHandler(userService.login))
+router.post('/addUser', validate(superSchema.addUserSchema), PromiseHandler(userService.addUser),PromiseHandler(userService.login))
 
 // add User Route For app with otp verify
-router.post('/addUser', validate(superSchema.addUserSchema), PromiseHandler(userService.addUser))
+// router.post('/addUser', validate(superSchema.addUserSchema), PromiseHandler(userService.addUser))
 
 // login route with Otp //commented removed MW -- authMiddleware
 router.post('/login/:roleName', validate(superSchema.adminloginSchema), PromiseHandler(userService.login))
