@@ -12,7 +12,7 @@
 var moment = require('moment');
 const logger = require('../utils/logger');
 const {
-    rides, User, user_vehicles, sequelize
+    rides, users, user_vehicles, sequelize
 } = require('../models');
 const { getPagination, getPagingData } = require('../utils/pagination')
 const {
@@ -78,13 +78,13 @@ module.exports = {
                 },
                 include: [
                     {
-                        model: User,
+                        model: users,
                         as: 'driver',
                         required: true,
                         attributes: ["id", "name", "phone", "email", "profile_image"]
                     },
                     {
-                        model: User,
+                        model: users,
                         as: 'customer',
                         required: false,
                         attributes: ["id", "name", "phone", "email", "profile_image"]
@@ -125,11 +125,11 @@ module.exports = {
             rides.findAll({
                 where: {
                     customer_id: userid,
-                    state: ['BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED']
+                    state: ['BOOKED' ,'STARTED', 'CANCELLED','COMPLETED']
                 },
                 include: [
                     {
-                        model: User,
+                        model: users,
                         as: 'driver',
                         required: false,
                         attributes: ["id", "name", "phone", "email", "profile_image"]

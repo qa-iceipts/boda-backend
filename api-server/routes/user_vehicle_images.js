@@ -8,7 +8,8 @@ const ROLE = require("../utils/roles")
 const {
     verifyAccessToken,
     authorize
-} = require("../utils/verifytoken")
+} = require("../utils/verifytoken");
+const { sendResponse } = require('../utils/commonUtils');
 
 
 router.get('/:userVehicleId', verifyAccessToken, authorize([ROLE.DRIVER, ROLE.ADMIN]), (req, res) => {
@@ -29,22 +30,13 @@ router.delete('/:userVehicleImageId', async (req, res, next) => {
 
     try {
         let result = await userVehiclesImagesService.deleteUserVehicleImage(req.params.userVehicleImageId)
-        res.status(HttpStatus.StatusCodes.OK).send(result);
+        res.status(HttpStatus.StatusCodes.OK).send(sendResponse("success"));
     } catch (err) {
         next(err)
         // console.log("ERROR => ",err)
         // res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
     }
 });
-// userVehiclesImagesService.deleteUserVehicleImage(req.params.userVehicleImageId).then((result) => {
-//         res.send(result);
-//     }, (err) => {
-//         if (err.status === 1114) {
-//             res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err);
-//         } else {
-//             res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-//         }
 
-// }
 
 module.exports = router

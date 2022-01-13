@@ -3,16 +3,16 @@ const router = express.Router();
 const logger = require('../utils/logger')
 const HttpStatus = require('http-status-codes');
 const ridesService = require('../services/rides-service');
-const {validate,superSchema}  = require('../utils/validator')
+const { validate, superSchema } = require('../utils/validator')
 const {
     verifyAccessToken,
     verifyUser
 } = require("../utils/verifytoken")
-const PromiseHandler = fn => (req, res, next ) => Promise.resolve(fn(req,res,next)).catch(next);
+const PromiseHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 
 
-router.post('/', verifyAccessToken , (req, res, next) => {
+router.post('/', verifyAccessToken, (req, res, next) => {
 
     console.log("rides/ post Route Called")
 
@@ -34,7 +34,7 @@ router.post('/', verifyAccessToken , (req, res, next) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/update', verifyAccessToken , (req, res, next) => {
+router.post('/update', verifyAccessToken, (req, res, next) => {
 
     console.log("rides/update post Route Called")
 
@@ -57,7 +57,7 @@ router.post('/update', verifyAccessToken , (req, res, next) => {
 });
 
 
-router.post('/bookRide', verifyAccessToken , (req, res, next) => {
+router.post('/bookRide', verifyAccessToken, (req, res, next) => {
 
     console.log("/bookRide post Route Called")
     ridesService.bookRide(req).then((result) => {
@@ -78,7 +78,7 @@ router.post('/bookRide', verifyAccessToken , (req, res, next) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/cancelRide', verifyAccessToken , (req, res, next) => {
+router.post('/cancelRide', verifyAccessToken, (req, res, next) => {
 
     console.log("/cancelRide post Route Called")
     ridesService.cancelRide(req).then((result) => {
@@ -99,7 +99,7 @@ router.post('/cancelRide', verifyAccessToken , (req, res, next) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/startRide', verifyAccessToken , (req, res, next) => {
+router.post('/startRide', verifyAccessToken, (req, res, next) => {
 
     console.log("/startRide post Route Called")
     ridesService.startRide(req).then((result) => {
@@ -122,7 +122,7 @@ router.post('/startRide', verifyAccessToken , (req, res, next) => {
 
 
 
-router.post('/endRide', verifyAccessToken , (req, res, next) => {
+router.post('/endRide', verifyAccessToken, (req, res, next) => {
 
     console.log("/endRide post Route Called")
     ridesService.endRide(req).then((result) => {
@@ -143,7 +143,7 @@ router.post('/endRide', verifyAccessToken , (req, res, next) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.get('/:rideId', verifyAccessToken , (req, res, next) => {
+router.get('/:rideId', verifyAccessToken, (req, res, next) => {
 
     console.log("rides / get Route Called")
     rideId = req.params.rideId
@@ -165,9 +165,9 @@ router.get('/:rideId', verifyAccessToken , (req, res, next) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.get('/', verifyAccessToken , (req, res, next) => {
+router.get('/', verifyAccessToken, (req, res, next) => {
 
-    console.log("rides all / get Route Called",req.payload.id)
+    console.log("rides all / get Route Called", req.payload.id)
     ridesService.getRidesByUserId(req.payload.id).then((result) => {
         res.status(HttpStatus.StatusCodes.OK).send(result);
     }, (err) => {
@@ -190,6 +190,6 @@ router.get('/', verifyAccessToken , (req, res, next) => {
 
 // new apis
 
-router.get('/rideState/:userType/:userId', verifyAccessToken ,PromiseHandler(ridesService.getRideState))
+router.get('/rideState/:userType/:userId', verifyAccessToken, PromiseHandler(ridesService.getRideState))
 
 module.exports = router;

@@ -25,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       type:DataTypes.INTEGER
     },
     lat: DataTypes.STRING,
+    per_km: DataTypes.FLOAT,
     long: DataTypes.STRING,
     // time: DataTypes.DATE,
     online: DataTypes.BOOLEAN

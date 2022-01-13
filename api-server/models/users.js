@@ -4,7 +4,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class User extends Model {
+  class users extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -12,18 +12,19 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      // User.belongsTo(models.roles); 
-      User.belongsTo(models.roles, { foreignKey: 'roleType', targetKey: 'type' }); // Adds fk_role to User
-      User.hasMany(models.user_subscriptions);
-      // User.hasMany(models.rides);
-      User.hasMany(models.rides, { foreignKey: 'customer_id', as: 'customer' });
-      User.hasMany(models.rides, { foreignKey: 'driver_id', as: 'driver' });
-      // User.hasMany(models.rides, {foreignKey: 'driver_id'});
-      User.hasMany(models.fcm_keys);
-      User.hasMany(models.user_vehicles)
+      // users.belongsTo(models.roles); 
+      users.hasMany(models.refreshTokens, { onDelete: 'CASCADE' });
+      users.belongsTo(models.roles, { foreignKey: 'roleType', targetKey: 'type' }); // Adds fk_role to users
+      users.hasMany(models.user_subscriptions);
+      // users.hasMany(models.rides);
+      users.hasMany(models.rides, { foreignKey: 'customer_id', as: 'customer' });
+      users.hasMany(models.rides, { foreignKey: 'driver_id', as: 'driver' });
+      // users.hasMany(models.rides, {foreignKey: 'driver_id'});
+      users.hasMany(models.fcm_keys);
+      users.hasMany(models.user_vehicles)
     }
   };
-  User.init({
+  users.init({
     id: {
       type: DataTypes.UUID,
       primaryKey: true,
@@ -56,12 +57,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
-    verificationToken: { type: DataTypes.STRING },
-    verified: { type: DataTypes.DATE },
+    // verificationToken: { type: DataTypes.STRING },
+    // verified: { type: DataTypes.DATE },
     resetToken: { type: DataTypes.STRING },
     resetTokenExpires: { type: DataTypes.DATE },
-    passwordReset: { type: DataTypes.DATE },
-    
+    // passwordReset: { type: DataTypes.DATE },
+
 
   }, {
 
@@ -69,6 +70,9 @@ module.exports = (sequelize, DataTypes) => {
     defaultScope: {
       where: {
         isActive: true
+      },
+      attributes: {
+        exclude: ['resetToken', 'resetTokenExpires', 'password','createdAt','updatedAt']
       }
     },
     scopes: {
@@ -83,7 +87,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     sequelize,
-    modelName: 'User',
+    modelName: 'users',
   });
-  return User;
+  return users;
 };

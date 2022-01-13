@@ -10,33 +10,32 @@ const logger = require('../utils/logger');
 const users_vehicles_imagesDao = require('../daos/user_vehicles_images-dao');
 const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
+const { deleteFile } = require("../utils/aws-S3")
+
 /**
  * export module
  */
 
 module.exports = {
 
-    getAllUserVehiclesImages: function (userVehicleId) {
-        return new Promise(function (resolve, reject) {
-
-            users_vehicles_imagesDao.getAllUserVehiclesImageById(userVehicleId).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in getUserVehiclesImages', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            logger.error('error in add getUserVehiclesImages promise', err);
-            return reject(err);
-        });
-
+    getAllUserVehiclesImages: async function (userVehicleId) {
+        let result = await users_vehicles_imagesDao.getAllUserVehiclesImageById(userVehicleId)
+        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
     },
 
     deleteUserVehicleImage: async (userVehicleImageId) => {
         // return Promise.reject(util.responseUtil("err", null, responseConstant.RECORD_NOT_FOUND));
         console.log("deleteUserVehicleImage Service Called")
         let result = await users_vehicles_imagesDao.getVehicleImageById(userVehicleImageId)
-        console.log("deleteUserVehicleImage Service Returned",result)
-        return result
+
+        if (result.dataValues.image) {
+            let image_key = (result.dataValues.image.split(process.env.AWS_Cloudfront))[1];
+            console.log(image_key)
+            if (image_key) deleteFile(image_key)
+        }
+        result.destroy()
+        result.save()
+        console.log("deleteUserVehicleImage Service Returned")
+        return 1
     }
 }

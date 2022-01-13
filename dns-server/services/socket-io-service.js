@@ -8,7 +8,8 @@ const {
     dns_connections,
     rides
 } = require('../models');
-const { Op, or } = require("sequelize")
+const { Op, or } = require("sequelize");
+const { calculateDistance } = require('../utils/commonUtils');
 
 
 module.exports = {
@@ -100,6 +101,7 @@ module.exports = {
 
     getNearbyDrivers: function (reqObj) {
         return new Promise(function (resolve, reject) {
+            console.log("getNearbyDrivers called")
             axios.post(process.env.LOCATION_SERVER + '/getNearbyDrivers', {
                 "user_id": reqObj.user_id,
                 "lat": reqObj.pick_lat,
@@ -109,6 +111,10 @@ module.exports = {
             })
                 .then(function (response) {
                     // ETA CODE
+                    let distance = calculateDistance(reqObj.pick_lat,reqObj.pick_long,reqObj.drop_lat,reqObj.drop_long,'K')
+
+                    console.log(distance)
+                    console.log("DNS nearby driver get res::", response.data)
                     if (response.data.count > 0) {
                         let destinations = reqObj.pick_lat + ',' + reqObj.pick_long
                         let array = []
@@ -124,7 +130,7 @@ module.exports = {
                                 status: 0,
                                 price: 0,
                                 customerId: reqObj.user_id,
-                                range: 100
+                                range: distance * obj.per_km,
                             })
                             driverIds.push(obj.user_id)
                         });
@@ -156,13 +162,17 @@ module.exports = {
                             }
                         }).then(function (etaResult) {
                             if (etaResult.data)
-                                etaResult.data.rows.forEach((element, index) => {
-                                    response.data.rows[index].distance = element.elements[0].distance.text
-                                    response.data.rows[index].duration = element.elements[0].duration.text
-                                });
+                                console.log("etaresult data", etaResult.data)
+                            etaResult.data.rows.forEach((element, index) => {
+                                response.data.rows[index].address = etaResult.data.origin_addresses[index]
+                                response.data.rows[index].distance = element.elements[0].distance.text
+                                response.data.rows[index].duration = element.elements[0].duration.text
+                            });
                             //   console.log(response.data,array)
                             axios.post(process.env.API_SERVER + '/users/getDriverMetrics', {
-                                "driverIds": driverIds
+                                "driverIds": driverIds,
+                                "customer_id": reqObj.user_id
+
                             }).then(metrics => {
 
                                 console.log(metrics.data.data)
@@ -175,7 +185,7 @@ module.exports = {
                                     }
                                     );
                                 }
-                                // console.log(merged);
+                                console.log("merged::", merged);
                                 return resolve({ data: merged });
                             })
                                 .catch(function (error) {

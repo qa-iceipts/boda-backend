@@ -13,7 +13,7 @@ const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
 const logger = require('../utils/logger');
 const { user_vehicles_images } = require('../models');
-const {AppError} =  require('../utils/error_handler')
+const { AppError } = require('../utils/error_handler')
 /**
  * export module
  */
@@ -83,7 +83,7 @@ module.exports = {
 
     deleteVehicleImage: async function (vehicleImageId) {
         console.log("deleteVehicleImage dao called");
-        let result = await user_vehicles_images.findOne({ where: { id: vehicleImageId },raw:true })
+        let result = await user_vehicles_images.findOne({ where: { id: vehicleImageId }, raw: true })
         // console.log(result)
         if (!result) {
             throw new AppError(404, "Not Found");
@@ -96,7 +96,7 @@ module.exports = {
 
     getVehicleImageById: async function (vehicleImageId) {
         console.log("getVehicleImageById dao called");
-        let result = await user_vehicles_images.findOne({ where: { id: vehicleImageId },raw:true })
+        let result = await user_vehicles_images.findOne({ where: { id: vehicleImageId } })
         // console.log(result)
         if (!result) {
             throw new AppError(404, "Not Found");
@@ -104,7 +104,7 @@ module.exports = {
         // let imageKey = result.image.split(process.env.AWS_Cloudfront)[1];
         // console.log("image Key => ", imageKey)
         console.log("getVehicleImageById dao returned");
-        return util.responseUtil(null, result, responseConstant.SUCCESS)
+        return result
     },
 
 

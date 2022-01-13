@@ -13,9 +13,7 @@ const {
     authorize
 } = require("../utils/verifytoken")
 
-const {
-    User
-} = require('../models');
+const { users } = require('../models');
 
 
 router.post('/signup', (req, res) => {
@@ -30,7 +28,7 @@ router.post('/signup', (req, res) => {
                 error: err
             });
         } else {
-            User.findOrCreate({
+            users.findOrCreate({
                 where: { email: userObj.email },
                 defaults: {
                     name: userObj.name,
@@ -63,21 +61,12 @@ router.post('/signup', (req, res) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-router.post('/login', validate(superSchema.adminloginSchema), (req, res,next) => {
+router.post('/login', validate(superSchema.adminloginSchema), (req, res, next) => {
     req.params = {
-        roleName : ROLE.ADMIN
+        roleName: ROLE.ADMIN
     }
     next()
 }, PromiseHandler(login))
-
-//     login(req,ROLE.ADMIN).then(result=>{
-//         res.send(result);
-//     }).catch(err=>{
-//         res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
-//     })
-// }, (err) => {
-//     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-// });
 
 router.get('/dashboard', verifyAccessToken, authorize([ROLE.ADMIN]), (req, res, next) => {
 
@@ -99,30 +88,5 @@ router.get('/dashboard', verifyAccessToken, authorize([ROLE.ADMIN]), (req, res, 
     logger.error("router error", err);
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
-
-// router.get('/subscriptions', verifyAccessToken, (req, res) => {
-
-//     verifyUser(req,'admin').then(() => {
-
-//         subscriptionsService.getSubscriptions(req).then((result) => {
-//             res.status(HttpStatus.StatusCodes.OK).send(result);
-//         }).catch(err => {
-//             if (err.status = 1114) {
-//                 res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err);
-//             } else {
-//                 res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-//             }
-//         });
-
-//     }).catch(err => {
-//         res.status(HttpStatus.StatusCodes.UNAUTHORIZED).send(err);
-//     })
-// }, (err) => {
-//     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-// });
-
-
-
-
 
 module.exports = router;

@@ -7,10 +7,8 @@ const {
    getResponse,
    getSocketId
 } = require('../services/socket-io-service')
-
 const logger = require('../utils/logger');
 const { sendNotifications } = require('../services/notifications-service')
-
 const { addChat, getChats } = require('../services/chats')
 
 exports = module.exports = function (io) {
@@ -18,14 +16,14 @@ exports = module.exports = function (io) {
    // when client connection with new connection 
    io.on('connection', function (socket) {
 
-      console.log('A new user connected =>', socket.id);
+      console.log(
+         'A new user connected =>', socket.id,
+         "rideId => " + socket.handshake.query.rideId,
+         "userId => " + socket.handshake.query.userId,
+         "user_type => " + socket.handshake.query.user_type
+      );
 
       socket.join(socket.handshake.query.userId);
-
-      console.log("rideId => " + socket.handshake.query.rideId,
-         "userId => " + socket.handshake.query.userId,
-         "user_type => " + socket.handshake.query.user_type);
-
       // connection Object
       connObj = {
          rideId: socket.handshake.query.rideId,
@@ -33,11 +31,9 @@ exports = module.exports = function (io) {
          userId: socket.handshake.query.userId,
          user_type: socket.handshake.query.user_type,
       }
-
       socket.userObj = connObj
       // connectedUsers[connObj.userId] = socket;
       addDNSConnection(connObj).then(() => {
-
          socket.emit("onconnect",
             {
                msg: "welcome User",
@@ -51,9 +47,9 @@ exports = module.exports = function (io) {
                socket.emit('nearbyDriversList', { result: result });
 
                socket.on('getOffers', function (data) {
-                  console.log("getOffers called", data);
+                  console.log("getOffers event called", data);
                   fetchDrivers(data).then(([result, driverIds]) => {
-                     //  console.log(driverIds)
+                     console.log(driverIds)
                      getTokensByIds(driverIds).then((fcmtokens) => {
 
                         console.log(fcmtokens.data)

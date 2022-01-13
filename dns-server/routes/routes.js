@@ -51,7 +51,6 @@ router.post("/getMsgs", (req, res) => {
     res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
 });
 
-
 router.post("/getPickupRequests", (req, res) => {
     console.log("getPickupRequests called")
 

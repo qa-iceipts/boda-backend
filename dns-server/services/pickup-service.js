@@ -6,7 +6,8 @@ const util = require('../utils/commonUtils')
 var responseConstant = require("../constants/responseConstants");
 const {
     dns_connections,
-    rides
+    rides,
+    sequelize
 } = require('../models');
 const { Op } = require("sequelize")
 const { sendNotifications } = require('../services/notifications-service')
@@ -16,11 +17,18 @@ const {
 module.exports = {
     getPickupRequests: function (reqObj) {
         return new Promise(function (resolve, reject) {
+            console.log("reqObj", reqObj)
             rides.findAll({
                 where: {
                     status: 0,
-                    price: 0,
-                    driverId: reqObj.driverId
+                    //price: 0,
+                    driverId: reqObj.driverId,
+                    createdAt: {
+                        [Op.gte]: sequelize.literal("DATE_SUB(NOW(), INTERVAL 30 MINUTE)"),
+                    }
+                },
+                attributes: {
+                    exclude: ['createdAt', 'updatedAt']
                 },
                 raw: true,
                 limit: 20,
@@ -29,7 +37,7 @@ module.exports = {
                 ],
             }).then(result => {
                 if (result.length > 0) {
-                    console.log("result ==> ", result)
+                    console.log("rides result ==> ", result)
                     let origins = reqObj.lat + ',' + reqObj.long
                     let destinations = ''
                     let customerIds = []
@@ -54,34 +62,28 @@ module.exports = {
 
                         if (etaResult.data) {
                             console.log(etaResult.data)
-
-                            etaResult.data.rows.forEach((element, index) => {
-                                // console.log(element)
-                                result[index].distance = element.elements[0].distance.text
-                                result[index].duration = element.elements[0].duration.text
-                                result[index].origin_address = etaResult.data.origin_addresses
-
-                            });
-
                             // console.log(result)
-
+                            // throw err
                             axios.post(process.env.API_SERVER + `/users/getAllUsersByIds`, {
                                 "Ids": customerIds
                             }).then(customerData => {
-                                if (customerData.data && customerData.data.data) {
-                                    console.log(customerData.data.data)
-                                    let merged = []
-                                    for (let i = 0; i < customerData.data.data.length; i++) {
-                                        merged.push({
-                                            profile_image: customerData.data.data[i].profile_image,
-                                            ...(result.find((itmInner) => itmInner.customerId === customerData.data.data[i].id)),
-                                        }
-                                        );
-                                    }
-                                    console.log("merged =>  ", merged)
-                                    return resolve(util.responseUtil(null, merged, responseConstant.SUCCESS));
-                                    // return resolve(merged)
 
+                                if (customerData.data && customerData.data.data) {
+                                    // console.log(customerData.data.data)
+                                    etaResult.data.rows[0].elements.forEach((element, index) => {
+                                        // console.log(element)
+                                        let customer = (customerData.data.data.find((itmInner) => itmInner.id === result[index].customerId))
+                                        result[index].distance = element.distance.text
+                                        result[index].duration = element.duration.text
+                                        result[index].origin_address = etaResult.data.destination_addresses[index]
+                                        result[index].profile_image = customer.profile_image
+                                        result[index].email = customer.email
+                                        result[index].name = customer.name
+                                        result[index].phone = customer.phone
+
+                                    });
+
+                                    return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
                                 } else {
                                     return reject("users not found !!")
                                 }
@@ -121,17 +123,17 @@ module.exports = {
             let reqObj = req.body
             // console.log(Object.keys(req.io.sockets.sockets))
 
-                rides.findOne({
-                    raw: true,
-                    where: {
-                        id: reqObj.id,
-                        driverId: reqObj.driverId,
-                        rideId: reqObj.rideId,
-                        customerId: reqObj.customerId
-                        // status: [0, 1],
-                        // rideId: reqObj.rideId
-                    }
-                })
+            rides.findOne({
+                raw: true,
+                where: {
+                    id: reqObj.id,
+                    driverId: reqObj.driverId,
+                    rideId: reqObj.rideId,
+                    customerId: reqObj.customerId
+                    // status: [0, 1],
+                    // rideId: reqObj.rideId
+                }
+            })
                 .then((rideData) => {
                     if (rideData) {
                         // return rideData

@@ -14,19 +14,21 @@ const logger = require('../utils/logger');
 const { AppError } = require('../utils/error_handler');
 const db = require('../models');
 const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
-const { getPagination, getPagingData } = require('../utils/pagination')
-const {
-    Op
-} = require("sequelize");
+
+const { getPagingData } = require('../utils/pagination')
+const { Op } = require("sequelize");
+const createError = require('http-errors')
+
 /**
  * export module
  */
 module.exports = {
 
     addUser: async function (reqObj) {
-        logger.debug("Add user dao called =>", reqObj);
-        let result = await db.User.unscoped().findAll({
+
+        logger.info("Add user dao called")
+        logger.debug(reqObj);
+        let result = await db.users.unscoped().findAll({
             where: {
                 [Op.or]: {
                     email: reqObj.email,
@@ -36,9 +38,9 @@ module.exports = {
             raw: true
         })
         if (result.length > 0) {
-            throw new AppError(HttpStatusCodes.CONFLICT, "Email or Mobile Already Registered");
+            throw new createError.Conflict("Email or Mobile Already Registered");
         }
-        let user = await db.User.create(reqObj)
+        let user = await db.users.create(reqObj)
         logger.debug("add user dao returned");
         return user
     },
@@ -47,396 +49,185 @@ module.exports = {
         return (await user.getRole({ attributes: ['roleName'], raw: true }))['roleName'].toLowerCase()
     },
 
-    // addUser: function (req) {
-    //     return new Promise(function (resolve, reject) {
-    //         let reqObj = req.body
-    //         logger.debug("Add user dao called");
-    //         db.User.findAll({
-    //             where: {
-    //                 email: reqObj.email
-    //             }
-    //         }).then(function (result) {
-    //             if (result.length > 0) {
-    //                 return reject("Email Already Registered");
-
-    //             } else {
-    //                 db.User.findAll({
-    //                     where: {
-    //                         phone: reqObj.phone
-    //                     }
-    //                 }).then(function (result) {
-    //                     // console.log("res::", result.length)
-    //                     if (result.length > 0) {
-    //                         return reject("Mobile Already Registered");
-    //                     } else {
-    //                         db.User.create(reqObj).then(res => {
-    //                             return resolve(res.dataValues);
-    //                         }).catch(err => {
-    //                             return reject(err);
-    //                         })
-    //                     }
-
-    //                 }).catch(function (err) {
-    //                     logger.error('error in add user', err);
-    //                     return reject(err);
-    //                 });
-    //             }
-
-    //         }).catch(function (err) {
-    //             logger.error('error in add user', err);
-    //             return reject(err);
-    //         });
-    //         logger.debug("add user dao returned");
-
-    //     }, function (err) {
-    //         logger.error('error in add user promise', err);
-    //         return reject(err);
-    //     });
-    // },
-
-    checkUserExists: function (req, res) {
-        return new Promise(function (resolve, reject) {
-            console.log("reqObj ::", req.body)
-            let phone = req.body.phone
-
-            // let email = !req.body.email?"":req.body.email
-            let whereObj
-            if (req.body.email) {
-                // for signup whereObj
-                whereObj = {
-                    [Op.or]: [{
-                        phone: phone
-                    },
-                    {
-                        email: req.body.email
-                    }
-                    ]
-                }
+    checkUserExists: async function (reqObj) {
+        let { email, phone } = reqObj
+        console.log("reqObj ::", reqObj)
+        // for login
+        let whereObj = {
+            phone: phone
+        }
+        if (email) {
+            // for signup whereObj
+            whereObj = {
+                [Op.or]: [{ phone: phone }, { email: req.body.email }]
             }
-            // for login whereObj
-            else {
-                whereObj = {
-                    phone: phone
-                }
-            }
-
-            db.User.unscoped().findOne({
-                where: whereObj,
-
-            }).then(user => {
-                // for signup part
-                // console.log(user)
-                if (req.body.email) {
-                    if (user) {
-
-                        return reject(util.responseUtil({
-                            message: "User Already exists with phone or email, please try login!",
-                            role: user.roleType
-                        }, null, responseConstant.USER_ALREADY_EXIST));
-
-                    } else {
-                        return resolve("User not exists, you can signup!!")
-                    }
-                }
-                // for login part
-                else {
-                    if (user) {
-                        return resolve({ message: "User Found with phone!", role: user.roleType });
-
-                    } else {
-                        return reject(util.responseUtil("User not found, please signup first !!", null, responseConstant.USER_NOT_FOUND));
-                    }
-                }
-
-
-            }).catch(err => {
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            });
-
-        });
+        }
+        let user = await db.users.unscoped().findOne({ where: whereObj })
+        // for signup part
+        // console.log(user)
+        if (user) {
+            if (phone) return "User found! You can login"
+            else return "signup first"
+        }
+        else {
+            if (email) return "User Already exists with phone or email, please login!"
+            else return "User not exists, you can signup!!"
+        }
     },
 
-    updateUser: function (req) {
-        return new Promise(function (resolve, reject) {
-            let reqObj = req.body
-            logger.debug("update user dao called", req.payload);
-            let email = req.payload.email
-            let phone = req.payload.phone
-            db.User.findOne({
-                where: {
-                    email: email,
-                    phone: phone
-                }
-            }).then(function (result) {
-                // console.log("res::", result)
-                if (result) {
+    getUserByUsername: async function (username) {
 
-                    db.User.update(reqObj,
-                        {
-                            where: {
-                                id: result.dataValues.id
-                            }
-                        }).then(res => {
-                            console.log(res)
-                            return resolve(res.dataValues);
-                        }).catch(err => {
-                            return reject(err);
-                        })
-
-                } else {
-                    return reject("User Not Found");
-                }
-
-            }).catch(function (err) {
-                logger.error('error in Update user', err);
-                return reject(err);
-            });
-            logger.debug("Update user dao returned");
-
-        }, function (err) {
-            logger.error('error in Update user promise', err);
-            return reject(err);
+        let user = await db.users.unscoped().findOne({
+            where: {
+                [Op.or]: [
+                    { phone: username },
+                    { email: username }
+                ]
+            },
         });
+        if (!user) throw new createError.NotFound("User Not Found")
+        return user
     },
 
-    getUser: function (req) {
-        return new Promise(function (resolve, reject) {
-            logger.debug("getUser dao called", req.payload);
-            let email = req.payload.email
-            let phone = req.payload.phone
-            let id = req.payload.id
-            db.User.findOne({
-                where: {
-                    email: email,
-                    phone: phone,
-                    id: id
-                },
-                include: {
+    getUserWithId: async function (userId) {
+        let user = await db.users.findByPk(userId)
+        if (!user) throw new createError.NotFound("User Not Found")
+        return user
+    },
+
+    // throw off
+    getUser: async function (req) {
+
+        logger.debug("getUser dao called", req.user);
+        let email = req.user.email
+        let phone = req.user.phone
+        let id = req.user.id
+        let result = db.users.findOne({
+            where: {
+                email: email,
+                phone: phone,
+                id: id
+            },
+            include: {
+                model: db.roles,
+                attributes: ['roleName'],
+                required: true
+            }
+        })
+        // console.log("res::", result)
+        if (!result)
+            throw new createError.NotFound("User Not Found")
+        return result;
+
+    },
+
+    getUserImageById: async function (id) {
+        logger.debug("getUserImageById dao called");
+        let user = await db.users.findOne({
+            where: {
+                id: id
+            },
+            attributes: ["profile_image"],
+            raw: true
+        })
+        if (!user) {
+            throw new createError.NotFound()
+        }
+        return user
+    },
+
+    getUserById: async function (id) {
+
+        logger.debug("getUser dao called");
+        let user = await db.users.findOne({
+            where: {
+                id: id
+            },
+            attributes: {
+                include: [[db.Sequelize.fn("COUNT", db.Sequelize.col("driver.id")), "totalRides"]],
+
+            },
+            include: [
+                {
                     model: db.roles,
                     attributes: ['roleName'],
                     required: true
-                }
-            }).then(function (result) {
-                // console.log("res::", result)
-                if (result) {
-                    return resolve(result.dataValues);
-                } else {
-                    return reject("User Not Found");
-                }
-
-            }).catch(function (err) {
-                logger.error('error in getUser user', err);
-                return reject(err);
-            });
-            logger.debug("getUser user dao returned");
-
-        }, function (err) {
-            logger.error('error in getUser user promise', err);
-            return reject(err);
-        });
-    },
-
-    getUserImageById: function (id) {
-        return new Promise(function (resolve, reject) {
-            logger.debug("getUserImageById dao called");
-            db.User.findOne({
-                where: {
-                    id: id
                 },
-                attributes: ["profile_image"],
-                raw: true
-            }).then(function (result) {
-                // console.log("res::", result)
-                if (result) {
-                    return resolve(result.profile_image);
-                } else {
-                    return reject("User Not Found");
-                }
-
-            }).catch(function (err) {
-                logger.error('error in getUserImageById user', err);
-                return reject(err);
-            });
-            logger.debug("getUserImageById user dao returned");
-
-        }, function (err) {
-            logger.error('error in getUserImageById user promise', err);
-            return reject(err);
-        });
-    },
-
-    getUserById: function (id) {
-        return new Promise(function (resolve, reject) {
-            logger.debug("getUser dao called");
-            db.User.findOne({
-                where: {
-                    id: id
+                {
+                    model: db.user_vehicles,
+                    required: false
                 },
-                attributes: {
-                    include: [[db.Sequelize.fn("COUNT", db.Sequelize.col("driver.id")), "totalRides"]],
-
-                },
-                include: [
-                    {
-                        model: db.roles,
-                        attributes: ['roleName'],
-                        required: true
-                    },
-                    {
-                        model: db.user_vehicles,
-                        required: false
-                    },
-                    {
-                        model: db.rides,
-                        as: 'driver',
-                        attributes: [],
-                        where: {
-                            state: ['COMPLETED']
-                            // is_booked:1 
-                        },
-                        required: false
-                    },
-
-                ]
-            }).then(function (result) {
-                //  console.log("res::", result.dataValues)
-                if (result.dataValues.id) {
-                    return resolve(result.dataValues);
-                } else {
-                    return reject("User Not Found");
-                }
-
-            }).catch(function (err) {
-                logger.error('error in getUser user', err);
-                return reject(err);
-            });
-            logger.debug("getUser user dao returned");
-
-        }, function (err) {
-            logger.error('error in getUser user promise', err);
-            return reject(err);
-        });
-    },
-
-    getAllUsers: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("getAllUsers dao called");
-            const { page, size, name } = req.query;
-            // console.log(page,size)
-            var condition = name ? { name: { [Op.like]: `%${name}%` } } : null;
-            const { limit, offset } = getPagination(page, size);
-            // console.log(limit,offset)
-            let userType = req.params.userType
-            userType = userType.toString().toLowerCase()
-            // console.log(userType)
-            let roleName
-            if (userType == 'driver') {
-                roleName = {
-                    roleName: 'driver'
-                }
-
-            } else if (userType == 'customer') {
-                roleName = {
-                    roleName: 'customer'
-                }
-            }
-            // console.log(roleName)
-
-            db.User.unscoped().findAndCountAll({
-                include: [{
-                    model: db.roles,
+                {
+                    model: db.rides,
+                    as: 'driver',
                     attributes: [],
-                    where: roleName,
-                    required: true
-                }, {
-                    model: db.user_subscriptions,
-                    attributes: ['is_active', 'start', 'end'],
                     where: {
-                        start: {
-                            [Op.lte]: new Date(),
-                        },
-                        end: {
-                            [Op.gte]: new Date()
-                        },
-                        is_active: true
+                        state: ['COMPLETED']
+                        // is_booked:1 
                     },
                     required: false
-                }],
-                attributes: {
-                    exclude: ['password'],
-                    include: [
-                        [db.sequelize.literal('role.roleName'), 'roleName'],
-                        // [db.sequelize.literal('user_subscriptions'), 'is_active']
-                    ]
                 },
 
-                offset: offset,
-                limit: limit
-            }).then((result) => {
-                if (result) {
-                    const response = getPagingData(result, page, limit);
-                    return resolve(response);
-                } else {
-                    return reject("No getAllUsers found !");
-                }
-            }).catch(err => {
-                return reject(err);
-            })
-
-            console.log("getAllUsers dao returned");
-
-        }, function (err) {
-            logger.error('error in getAllUsers promise', err);
-            return reject(err);
-        });
-    },
-
-    getAllUsersByIds: function (Ids) {
-        return new Promise(function (resolve, reject) {
-            console.log("getAllUsersByIds Dao Called ::")
-            db.User.findAll({
-                where: { id: Ids },
-                attributes: { exclude: ['password'] },
-
-            }).then(function (result) {
-                //   console.log(result[0].dataValues)
-                if (result.length > 0) {
-                    return resolve(result);
-                } else {
-                    return reject("No users found")
-                }
-            }).catch(function (err) {
-                console.log(err)
-                logger.error('error in getAllUsersByIds', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            console.log(err)
-            logger.error('error in add getAllUsersByIds promise', err);
-            return reject(err);
-        });
-    },
-
-    disableUser: async function (userId) {
-        let user = await db.User.unscoped().findOne({ where: { id: userId } })
-        if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "Not Found")
-        user.isActive = !user.isActive
-        user.save()
-        // console.log(user)
-        return {
-            id: user.id,
-            name: user.name,
-            isActive: user.isActive
+            ]
+        })
+        if (!user) {
+            throw new createError.NotFound()
         }
+        return user
+    },
+
+    getAllUsers: async function ({ roleName, limit, offset }) {
+        console.log("getAllUsers dao called");
+
+        let result = await db.users.unscoped().findAndCountAll({
+            include: [{
+                model: db.roles,
+                attributes: [],
+                where: roleName,
+                required: true
+            }, {
+                model: db.user_subscriptions,
+                attributes: ['is_active', 'start', 'end'],
+                where: {
+                    start: {
+                        [Op.lte]: new Date(),
+                    },
+                    end: {
+                        [Op.gte]: new Date()
+                    },
+                    is_active: true
+                },
+                required: false
+            }],
+            attributes: {
+                include: [
+                    [db.sequelize.literal('role.roleName'), 'roleName'],
+                    // [db.sequelize.literal('user_subscriptions'), 'is_active']
+                ]
+            },
+            offset: offset,
+            limit: limit
+        })
+
+        if (!result) throw new createError.NotFound("No getAllUsers found !")
+        return getPagingData(result, page, limit);
+    },
+
+    getAllUsersByIds: async function (userIds) {
+        console.log("getAllUsersByIds Dao Called ::")
+        let result = await db.users.findAll({
+            where: { id: userIds },
+            attributes: { exclude: ['password'] },
+        })
+        if (result.length <= 0) throw new createError.NotFound()
+        return (result);
     },
 
     forgotPassword: async function ({ email }) {
 
-        const user = await db.User.unscoped().findOne({ where: { email } });
-
+        const user = await db.users.unscoped().findOne({ where: { email } });
         // always return ok response to prevent email enumeration
-        if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "Not Found");
-
+        if (!user) throw new createError.NotFound(" User Not Found");
         // create reset token that expires after 24 hours
         let otp = Math.floor(100000 + Math.random() * 900000)
         user.resetToken = otp;
@@ -451,10 +242,9 @@ module.exports = {
         });
     },
 
-
     verifyOTP: async function ({ email, otp }) {
 
-        const user = await db.User.unscoped().findOne({ where: { email }, attributes: ['resetToken', 'resetTokenExpires', 'id'] });
+        const user = await db.users.unscoped().findOne({ where: { email }, attributes: ['resetToken', 'resetTokenExpires', 'id'] });
 
         if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "Not Found");
 

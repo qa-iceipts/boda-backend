@@ -36,8 +36,8 @@ const handleUnknownExceptions = (err, res) => {
         return res.status(409).json(
             {
                 success: 0, error: 'Foreign Key Violation',
-                ...(process.env.NODE_ENV === development  && err.message) && { message: err.message },
-                ...(process.env.NODE_ENV === development  && err.stack) && { stack: err.stack }
+                ...(process.env.NODE_ENV === development && err.message) && { message: err.message },
+                ...(process.env.NODE_ENV === development && err.stack) && { stack: err.stack }
             }
         );
     } else {

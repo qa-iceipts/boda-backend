@@ -53,6 +53,13 @@ module.exports = {
         };
     },
 
+    // sendResponse: function (res, data, message, status) {
+    //     status = status ? status : 200
+    //     res.status(status).send({
+    //         success: true, message: message ? message : '', data: typeof (data) != 'object' ? { data } : data
+    //     })
+    // },
+
     randomTokenString: function () {
         return crypto.randomBytes(40).toString('hex');
     },
@@ -72,6 +79,29 @@ module.exports = {
             html: `<h2>Boda App RESET PASSWORD REQUEST</h2><h4>Please enter this OTP in the APP</h4>
                    ${message}`
         });
+    },
+
+    getBasicDetails: function (user) {
+        let { id, name,
+            phone, email,
+            address, country,
+            state, city,
+            station, profile_image,
+            about_me, license,
+            payment_mode, ratings,
+            isActive } = user
+
+        return {
+            id, name,
+            phone, email,
+            address, country,
+            state, city,
+            station, profile_image,
+            about_me, license,
+            payment_mode, ratings,
+            isActive
+        }
+
     }
 }
 
