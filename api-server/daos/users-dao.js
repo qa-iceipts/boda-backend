@@ -15,7 +15,7 @@ const { AppError } = require('../utils/error_handler');
 const db = require('../models');
 const util = require('../utils/commonUtils')
 
-const { getPagingData } = require('../utils/pagination')
+const { getPagingData, getPagination } = require('../utils/pagination')
 const { Op } = require("sequelize");
 const createError = require('http-errors')
 
@@ -59,19 +59,19 @@ module.exports = {
         if (email) {
             // for signup whereObj
             whereObj = {
-                [Op.or]: [{ phone: phone }, { email: req.body.email }]
+                [Op.or]: [{ phone: phone }, { email:email }]
             }
         }
         let user = await db.users.unscoped().findOne({ where: whereObj })
         // for signup part
         // console.log(user)
-        if (user) {
-            if (phone) return "User found! You can login"
-            else return "signup first"
+        if (email) {
+            if (user) throw new createError.Conflict("User Already Exists")
+            else return "User not exists, you can signup!!"
         }
         else {
-            if (email) return "User Already exists with phone or email, please login!"
-            else return "User not exists, you can signup!!"
+            if (user) return "User exists, you can login!!"
+            else throw new createError.Conflict("User not exists,signup first!!")
         }
     },
 
@@ -176,9 +176,9 @@ module.exports = {
         return user
     },
 
-    getAllUsers: async function ({ roleName, limit, offset }) {
+    getAllUsers: async function ({ roleName, page, size }) {
         console.log("getAllUsers dao called");
-
+        const { limit, offset } = getPagination(page, size);
         let result = await db.users.unscoped().findAndCountAll({
             include: [{
                 model: db.roles,
@@ -208,7 +208,6 @@ module.exports = {
             offset: offset,
             limit: limit
         })
-
         if (!result) throw new createError.NotFound("No getAllUsers found !")
         return getPagingData(result, page, limit);
     },

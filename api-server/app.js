@@ -51,7 +51,9 @@ const PORT = process.env.PORT || 8080;
 app.use('/api', require("./routes/routes"))
 
 app.use((req, res, next) => {
-	res.status(404).send(`Requested URL ${req.get('host')}${req.path} not found!`);
+	res.status(404).send({
+		msg : `Requested URL ${req.get('host')}${req.path} not found!`
+	});
 })
 
 app.use((err, req, res, next) => {

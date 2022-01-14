@@ -5,22 +5,20 @@
  *  @author Deepesh Kushwaha
  *  @version 1.0.0
  */
-const ROLE = require('../utils/roles');
+const role = require('../utils/roles');
 const logger = require('../utils/logger');
 const usersDao = require('../daos/users-dao');
 const db = require('../models')
 const util = require('../utils/commonUtils')
 const bcrypt = require('bcrypt');
 var responseConstant = require("../constants/responseConstants");
+const { sendResponse, getBasicDetails } = require('../utils/commonUtils');
+const createError = require('http-errors');
 const {
-    inValidateOneUser,
     signAccessToken,
     generateRefreshToken,
     getRefreshToken
 } = require('../utils/verifytoken');
-const { sendResponse, getBasicDetails } = require('../utils/commonUtils');
-const createError = require('http-errors');
-const { getPagination, getPagingData } = require('../utils/pagination');
 
 /**
  * export module
@@ -54,13 +52,13 @@ module.exports = {
 
         console.log("login service called=>", req.body, "rolename=>", roleName)
 
-        if (!Object.values(ROLE).includes(roleName))
+        if (!Object.values(role).includes(roleName))
             throw new createError.Forbidden("User role is not Valid " + roleName)
 
         let user = await usersDao.getUserByUsername(username)
-
         let DbRoleName = await usersDao.getRoleName(user)
         let matched = await bcrypt.compare(password, user.password)
+
         if (!matched) throw new createError.Unauthorized("Invalid Password")
 
         if (DbRoleName != roleName)
@@ -81,8 +79,8 @@ module.exports = {
     },
 
     refreshToken: async function (req, res, next) {
-        let {  userId } = req.body
-        let token =  req.body.refreshToken
+        let { userId } = req.body
+        let token = req.body.refreshToken
         console.log("refresh Token called =>", token)
 
         const refreshToken = await getRefreshToken(token);
@@ -100,7 +98,6 @@ module.exports = {
         // generate new jwt
         const jwtToken = signAccessToken(account);
         res.sendResponse({
-            // ...basicDetails(account),
             jwtToken,
             refreshToken: newRefreshToken.token
         });
@@ -117,6 +114,7 @@ module.exports = {
         res.sendResponse(getBasicDetails(user))
     },
 
+    //throw off
     getUser: async function (req, res, next) {
         let result = await usersDao.getUser(req)
         res.sendResponse(result)
@@ -129,51 +127,38 @@ module.exports = {
     },
 
     getAllUsers: async function (req, res) {
-
-        const { page, size, name } = req.query;
-        const { limit, offset } = getPagination(page, size);
+        const { page, size } = req.query;
         let userType = req.params.userType
         userType = userType.toString().toLowerCase()
         let roleName = userType === 'driver' ? 'driver' : 'customer'
 
-        let users = await usersDao.getAllUsers({ roleName, limit, offset })
+        let users = await usersDao.getAllUsers({ roleName, page, size })
         res.sendResponse(users)
 
     },
 
     getAllUsersByIds: async function (req, res) {
-
         let result = await usersDao.getAllUsersByIds(req.body.Ids)
         res.sendResponse(result)
     },
 
-    getUserImageById: function (req, res) {
-        return new Promise(function (resolve, reject) {
-            usersDao.getUserImageById(req.body.Id).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in getUserImageById service', err);
-                return reject(err);
-            });
-        }, function (err) {
-            logger.error('error in getUserImageById promise', err);
-            return reject(err);
-        });
+    getUserImageById: async function (req, res) {
+        let result = usersDao.getUserImageById(req.body.Id)
+        res.sendResponse(result)
     },
 
     checkUserExists: async function (req, res) {
-        let { email, phone } = req.body
         console.log("reqObj ::", req.body)
+        let { email, phone } = req.body
         let result = await usersDao.checkUserExists({ email, phone })
-        res.send(sendResponse(result))
-
+        res.sendResponse(result)
     },
 
     logout: async function (req, res) {
         let reqObj = req.body
         console.log("reqObj in Logout Service :: ", reqObj)
         let refresh_token = reqObj.refreshToken
-        await inValidateOneUser(refresh_token)
+        // await inValidateOneUser(refresh_token)
         res.sendResponse("Successfully Logged Out")
     },
 

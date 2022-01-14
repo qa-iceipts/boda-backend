@@ -20,7 +20,7 @@ function authorize(roles = []) {
         PromiseHandler(async (req, res, next) => {
 
             console.log("authorize fn payload => ", req.user)
-            const user = await getUserWithId(66666)
+            const user = await getUserWithId(req.user.id)
             // console.log(user)
             if ((roles.length && !roles.includes(user.dataValues.role))) {
                 // if user role not authorized

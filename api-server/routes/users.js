@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger')
-const ROLE = require('../utils/roles')
+const role = require('../utils/roles')
 const { PromiseHandler } = require('../utils/errorHandler')
 const userService = require('../services/user-service');
-const { validate, superSchema } = require('../utils/validator')
 const { authMiddleware } = require("../utils/firebase/firebase_middleware");
 const authorize = require("../middleware/authorize")
-
 
 // Routes
 router.get('/', function (req, res) {
@@ -15,9 +13,9 @@ router.get('/', function (req, res) {
     res.send('Welcome to Users');
 });
 
-router.post('/addUser', validate(superSchema.addUserSchema), PromiseHandler(userService.addUser), PromiseHandler(userService.login))
+router.post('/addUser', PromiseHandler(userService.addUser), PromiseHandler(userService.login))
 
-router.post('/login/:roleName', validate(superSchema.adminloginSchema), PromiseHandler(userService.login))
+router.post('/login/:roleName', PromiseHandler(userService.login))
 
 router.get('/getUser', authorize(), PromiseHandler(userService.getUser))
 
@@ -29,7 +27,7 @@ router.post('/getAllUsersByIds/', PromiseHandler(userService.getAllUsersByIds))
 
 router.put('/updateUser/:userId', authorize(), PromiseHandler(userService.updateUser))
 
-router.post('/logout', validate(superSchema.logoutSchema), authorize(), PromiseHandler(userService.logout))
+router.post('/logout', authorize(), PromiseHandler(userService.logout))
 
 router.post('/refreshToken', PromiseHandler(userService.refreshToken));
 
@@ -40,27 +38,22 @@ router.post('/verifyOTP', PromiseHandler(userService.verifyOTP));
 router.post('/changePassword', PromiseHandler(userService.changePassword));
 
 // disable User with userId
-router.put('/disableUser/:userId', authorize(ROLE.ADMIN), PromiseHandler(userService.disableUser))
-
+router.put('/disableUser/:userId', authorize(role.ADMIN), PromiseHandler(userService.disableUser))
 
 router.post('/checkUserExists', PromiseHandler(userService.checkUserExists))
 
 router.post('/getDriverMetrics', PromiseHandler(userService.getDriverMetrics))
 
 
-const cron = require('node-cron');
+// const cron = require('node-cron');
 
-const { DestroyCronJob } = require("../utils/verifytoken")
+// const { DestroyCronJob } = require("../utils/verifytoken")
 
-cron.schedule('0 8 * * 1', () => {
-    // Runs 8 AM on every Monday
-    console.log('running a task every monday 8 AM');
-    DestroyCronJob().then(result => {
-        console.log("result CRON JOB ::", result)
-    }).catch(err => {
-        console.log(err)
-    })
-});
-
+// cron.schedule('0 8 * * 1', async () => {
+//     // Runs 8 AM on every Monday
+//     console.log('running a task every monday 8 AM');
+//     let result = await DestroyCronJob()
+//     console.log("result CRON JOB ::", result)
+// });
 
 module.exports = router;
