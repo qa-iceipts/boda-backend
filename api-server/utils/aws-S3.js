@@ -46,7 +46,7 @@ function deleteFile(key) {
 // this is just to test locally if multer is working fine.
 const storage = multer.diskStorage({
     destination: (req, res, cb) => {
-        cb(null, './logs')
+        cb(null, './')
     },
     filename: (req, file, cb) => {
         cb(null, new Date().toISOString() + '-' + file.originalname)
@@ -87,15 +87,8 @@ const multerS3Config = multerS3({
     contentType: multerS3.AUTO_CONTENT_TYPE,
 });
 
-// const uploadFile = multer({
-//     storage: multerS3Config,
-//     fileFilter: fileFilter,
-//     limits: {
-//         fileSize: 1024 * 1024 * 5 // we are allowing only 5 MB files
-//     }
-// })
 const uploadFile = multer({
-    storage: multerS3Config,
+    storage: multer.buffer,
     fileFilter: fileFilter,
     limits: {
         fileSize: 1024 * 1024 * 5 // we are allowing only 5 MB files

@@ -7,9 +7,8 @@
  */
 
 const logger = require('../utils/logger');
-const util = require('../utils/commonUtils')
+const commonUtils = require('../utils/commonUtils')
 const responseConstant = require("../constants/responseConstants");
-const { updateUser, getUserImageById } = require('../daos/users-dao');
 const { addUserVehiclesImage, checkUploadLimit } = require('../daos/user_vehicles_images-dao');
 const { uploadFile, getFileStream, deleteFile } = require("../utils/aws-S3")
 const { getVehicleById } = require('../daos/user_vehicles-dao')
@@ -17,8 +16,7 @@ const { getVehicleById } = require('../daos/user_vehicles-dao')
 const uploadProfile = uploadFile.single('profile');
 const upload = uploadFile.single('file');
 const uploadVehicleImage = uploadFile.single('vehicle');
-const { AppError } = require('../utils/error_handler')
-const HttpStatusCodes = require('http-status-codes').StatusCodes;
+const createHttpError = require('http-errors');
 /**
  * export module
  */
@@ -26,99 +24,69 @@ const HttpStatusCodes = require('http-status-codes').StatusCodes;
 module.exports = {
     // upload profile pic
     uploadProfile: async function (req, res, next) {
-        uploadProfile(req, res, async function (err) {
-            console.log("req.file", req.file)
+        res.send(req.file)
+        // (req, res, async function (err) {
+        //     console.log("req.file", req.file)
 
-            if (req.file_error) {
-                console.log("req.file_error",req.file_error)
-                next(new AppError(HttpStatusCodes.UNPROCESSABLE_ENTITY, req.file_error))
-            }
-            else if (err) {
-                console.log(err)
-                next(new AppError(HttpStatusCodes.INTERNAL_SERVER_ERROR, err))
-            }
-            else if (req.file && req.file.key) {
+        //     if (req.file_error) {
+        //         console.log("req.file_error", req.file_error)
+        //         next(new createHttpError.UnprocessableEntity(req.file_error))
+        //     }
+        //     else if (err) {
+        //         console.log(err)
+        //         next(new createHttpError.InternalServerError(err))
+        //     }
+        //     else if (req.file && req.file.key) {
 
-                console.log("req.file.key :: ", req.file.key)
-                // update user database with new profile image
-                req.body.profile_image = process.env.AWS_Cloudfront + req.file.key
-                let profile_image = await getUserImageById(req.payload.id)
-                console.log("profile_image=>", profile_image)
+        //         console.log("req.file.key :: ", req.file.key)
+        //         let user = await getUserWithId(req.user.id)
+        //         console.log("profile_image=>", user.profile_image)
+        //         if (user.profile_image) {
+        //             let profile_image_key = (user.profile_image.split(process.env.AWS_Cloudfront))[1];
+        //             console.log(profile_image_key)
+        //             if (profile_image_key) deleteFile(profile_image_key)
+        //         }
+        //         user.profile_image = process.env.AWS_Cloudfront + req.file.key
+        //         await user.save()
+        //         res.sendResponse({ file: user.profile_image });
+        //     }
 
-                if (profile_image) {
-                    let profile_image_key = (profile_image.split(process.env.AWS_Cloudfront))[1];
-                    console.log(profile_image_key)
-                    if (profile_image_key) {
-                        deleteFile(profile_image_key)
-                    }
-                }
-                await updateUser(req)
-                res.send(util.responseUtil(null, { file: req.body.profile_image }, responseConstant.SUCCESS));
-            }
-
-            else {
-                console.log("err")
-                next(new AppError(HttpStatusCodes.INTERNAL_SERVER_ERROR, "key error while uploading"))
-            }
-        })
+        //     else {
+        //         console.log("err")
+        //         next(new createHttpError.InternalServerError("key error while uploading"))
+        //     }
+        // })
     },
 
-    uploadVehicleImage: function (req, res, next) {
-        return new Promise(function (resolve, reject) {
-            let userVehicleId = req.params.userVehicleId
+    uploadVehicleImage: async function (req, res, next) {
 
-            getVehicleById(userVehicleId).then(function () {
-                checkUploadLimit(userVehicleId).then(function (count) {
+        let userVehicleId = req.params.userVehicleId
 
-                    uploadVehicleImage(req, res, function (err) {
-                        console.log(req.file)
-                        if (req.file_error) {
-                            console.log(req.file_error)
-                            return reject(util.responseUtil(req.file_error, null, responseConstant.UNPROCESSABLE_ENTITY));
-                        }
-                        else if (err) {
-                            console.log(err)
-                            return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                            // your error handling goes here
-                        } else if (req.file.key) {
+        await getVehicleById(userVehicleId)
+        let count = await checkUploadLimit(userVehicleId)
 
-                            console.log("req.file.key :: ", req.file.key)
-
-                            // update user database with new profile image
-                            req.body = {
-                                image: process.env.AWS_Cloudfront + req.file.key,
-                                userVehicleId: userVehicleId
-                            }
-                            addUserVehiclesImage(req).then(function (result) {
-                                console.log(req.file)
-                                return resolve(util.responseUtil(null, { file: req.body.image }, responseConstant.SUCCESS));
-                            }).catch(function (err) {
-                                console.log(err)
-                                logger.error('error in addUserVehiclesImage', err);
-                                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                            });
-
-
-                        }
-                        else {
-                            console.log(err)
-                            return reject(util.responseUtil("key error while uploading", null, responseConstant.RUN_TIME_ERROR));
-                        }
-                    });
-                }).catch(function (err) {
-                    // console.log(err)
-                    return reject(util.responseUtil(err, null, responseConstant.DUPLICATION_ERROR));
-                });
-            }).catch(function (err) {
-                console.log(err)
-                return reject(util.responseUtil("Vehicle Not found first add vehicle", null, responseConstant.RECORD_NOT_FOUND));
-            });
-
-        }, function (err) {
-            console.log(err)
-            logger.error('error in uploadProfile promise', err);
-            return reject(err);
+        uploadVehicleImage(req, res,async function (err) {
+            console.log(req.file)
+            if (req.file_error || err)
+                next(new createHttpError.UnprocessableEntity("Invalid File error"))
+            else if (req.file.key) {
+                console.log("req.file.key :: ", req.file.key)
+                // update user database with new  image
+                reqObj = {
+                    image: process.env.AWS_Cloudfront + req.file.key,
+                    userVehicleId: userVehicleId
+                }
+                let result = await addUserVehiclesImage(reqObj)
+                res.sendResponse({ file: result.image });
+            }
+            else {
+                next(new createHttpError.InternalServerError(err))
+            }
         });
+
+
+
+
     },
 
     upload: function (req, res, next) {
@@ -127,11 +95,11 @@ module.exports = {
                 console.log(req.file)
                 if (req.file_error) {
                     console.log(req.file_error)
-                    return reject(util.responseUtil(req.file_error, null, responseConstant.UNPROCESSABLE_ENTITY));
+                    return reject(commonUtils.responseUtil(req.file_error, null, responseConstant.UNPROCESSABLE_ENTITY));
                 }
                 else if (err) {
                     console.log(err)
-                    return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
+                    return reject(commonUtils.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
                     // your error handling goes here
                 } else if (req.file.key) {
 
@@ -140,7 +108,7 @@ module.exports = {
                     let image = process.env.AWS_Cloudfront + req.file.key
 
                     console.log(req.file)
-                    return resolve(util.responseUtil(null, { file: image }, responseConstant.SUCCESS));
+                    return resolve(commonUtils.responseUtil(null, { file: image }, responseConstant.SUCCESS));
                 }
 
             })

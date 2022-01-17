@@ -14,53 +14,28 @@ const logger = require('../utils/logger');
 const {
     subscriptions
 } = require('../models');
-const {getPagination,getPagingData} = require('../utils/pagination')
+const { getPagination, getPagingData } = require('../utils/pagination')
+const createHttpError = require('http-errors')
 /**
  * export module
  */
 module.exports = {
-    getSubscriptions: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("getSubscriptions dao called");
-
-            if(req.query.type && req.query.type == 'all'){
-                subscriptions.findAndCountAll().then((result) => {
-                    if (result) {
-                        return resolve(result);
-                    } else {
-                        return reject("No Vehicles Found ");
-                    }
-                }).catch(err => {
-                    return reject(err);
-                })
-            }
-            else{
-
-            const { page, size, name } = req.query;
-            // console.log(page,size)
-            var condition = name ? { name: { [Op.like]: `%${name}%` } } : null;
-            const { limit, offset } = getPagination(page, size);
-            // console.log(limit,offset)
-            subscriptions.findAndCountAll({
-                offset: offset,
-                limit: limit
-            }).then((result) => {
-                if (result) {
-                    const response = getPagingData(result, page, limit);
-                    return resolve(response);
-                } else {
-                    return reject("No subscriptions found !");
-                }
-            }).catch(err => {
-                return reject(err);
-            })
-        }
-            console.log("getSubscriptions dao returned");
-
-        }, function (err) {
-            logger.error('error in getSubscriptions promise', err);
-            return reject(err);
-        });
+    getAllSubscriptions: async function () {
+        let result = await subscriptions.findAndCountAll()
+        if (!result) throw new createHttpError.NotFound()
+        return result
     },
     
+    getAllSubscriptionsPage : async function ({ page, size, name}) {
+        let condition = name ? { name: { [Op.like]: `%${name}%` } } : null;
+        let { limit, offset } = getPagination(page, size);
+        // console.log(limit,offset)
+        let result = await subscriptions.findAndCountAll({
+            offset: offset,
+            limit: limit
+        })
+        if (!result) throw new createHttpError.NotFound("No subscriptions found !")
+        const response = getPagingData(result, page, limit);
+        return response
+    },
 }

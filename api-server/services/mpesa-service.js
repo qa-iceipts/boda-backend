@@ -19,6 +19,7 @@ const {
     subscriptions,
     db
 } = require('../models');
+const createHttpError = require('http-errors');
 
 /**
  * export module
@@ -48,7 +49,7 @@ module.exports = {
                                     CustomerMessage: result.message.CustomerMessage,
                                     amount: subData.dataValues.rate,
                                     currency: subData.dataValues.currency,
-                                    UserId: req.payload.id,
+                                    UserId: req.user.id,
                                     status: false,
                                     subscriptionType: subData.dataValues.type,
                                     paymentMode: 1
@@ -57,11 +58,11 @@ module.exports = {
                                 transactions.create(insertObj).then(() => {
 
                                     let obj = {
-                                        MerchantRequestID: result.message.MerchantRequestID,            
-                                        CheckoutRequestID: result.message.CheckoutRequestID,        
+                                        MerchantRequestID: result.message.MerchantRequestID,
+                                        CheckoutRequestID: result.message.CheckoutRequestID,
                                     }
                                     console.log(obj)
-                                    module.exports.mpesaCallback(obj).then(result3=> {
+                                    module.exports.mpesaCallback(obj).then(result3 => {
                                         return resolve(result);
                                     }).catch(err => {
                                         return reject(err)
@@ -98,7 +99,7 @@ module.exports = {
         });
 
     },
-    
+
 
     mpesaCallback: function (obj) {
         return new Promise(function (resolve, reject) {
@@ -107,43 +108,44 @@ module.exports = {
                 where: obj,
                 include: {
                     model: subscriptions,
-                    attributes:['duration'],
+                    attributes: ['duration'],
                     required: true
-                }}).then((result) => {
-                    if(result && result.dataValues.status == false){
-                        console.log(result.dataValues)
-                        let duration = result.dataValues.subscription.dataValues.duration
-                        let startDate = new Date();
-                        let endDate = new Date(startDate)
-                        let userSubObj = {
-                            start: startDate,
-                            end: endDate.setDate(endDate.getDate() + duration),
-                            is_active: true,
-                            UserId: result.dataValues.UserId,
-                            subscriptionType: result.dataValues.subscriptionType
+                }
+            }).then((result) => {
+                if (result && result.dataValues.status == false) {
+                    console.log(result.dataValues)
+                    let duration = result.dataValues.subscription.dataValues.duration
+                    let startDate = new Date();
+                    let endDate = new Date(startDate)
+                    let userSubObj = {
+                        start: startDate,
+                        end: endDate.setDate(endDate.getDate() + duration),
+                        is_active: true,
+                        UserId: result.dataValues.UserId,
+                        subscriptionType: result.dataValues.subscriptionType
+                    }
+
+                    user_subscriptions.create(userSubObj).then((USresult) => {
+
+                        let updateObj = {
+                            userSubscriptionId: USresult.dataValues.id,
+                            status: true
                         }
-                       
-                        user_subscriptions.create(userSubObj).then((USresult) => {
-                           
-                            let updateObj = {
-                                userSubscriptionId: USresult.dataValues.id,
-                                status : true
-                            }
-                            console.log(updateObj)
-                            transactions.update(updateObj,{where : { id : result.dataValues.id}}).then(()=>{
-                                return resolve(USresult);
-                            }).catch(err => {
-                                logger.error('error in mpesaCallback transactions update', err);
-                                return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
-                            })
+                        console.log(updateObj)
+                        transactions.update(updateObj, { where: { id: result.dataValues.id } }).then(() => {
+                            return resolve(USresult);
                         }).catch(err => {
-                            logger.error('error in mpesaCallback', err);
+                            logger.error('error in mpesaCallback transactions update', err);
                             return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
                         })
-                    }else{
-                        return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
-                    }
-               
+                    }).catch(err => {
+                        logger.error('error in mpesaCallback', err);
+                        return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
+                    })
+                } else {
+                    return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
+                }
+
 
             }).catch(function (err) {
                 logger.error('error in mpesaCallback', err);
@@ -158,39 +160,19 @@ module.exports = {
 
     ,
 
-    getUserSubscriptions: function (userId) {
-        return new Promise(function (resolve, reject) {
-            // console.log("Insert Obj in mpesaCallback Service ::", req.body)
-            user_subscriptions.findAll({
-                where: {
-                    is_active:true,
-                    UserId : userId
-                },
-                include: {
-                    model: subscriptions,
-                    required: true
-                }}).then((result) => {
-                    // console.log(result)
-                    if(result.length > 0){
-                       
-                     return resolve(util.responseUtil(null, result, responseConstant.SUCCESS))
-                      
-                    }else{
-                        return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
-                    }
-               
-
-            }).catch(function (err) {
-                logger.error('error in mpesaCallback', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            logger.error('error in add mpesaCallback promise', err);
-            return reject(err);
-        });
-
+    getUserSubscriptions: async function (req, res, next) {
+        let userId = req.user.id
+        let result = await user_subscriptions.findAll({
+            where: {
+                is_active: true,
+                UserId: userId
+            },
+            include: {
+                model: subscriptions,
+                required: true
+            }
+        })
+        if (result.length <= 0) throw new createHttpError.NotFound()
+        res.sendResponse(result)
     }
-
-   
-
 }

@@ -4,6 +4,7 @@ var crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const env = process.env.NODE_ENV || 'development';
 const config = require('../config/config')[env];
+const bcrypt = require('bcrypt');
 /**
  * export module
  */
@@ -45,6 +46,19 @@ module.exports = {
             }
         }
         return response;
+    },
+
+    getHash: async function (password) {
+        return await bcrypt.hash(password, 10)
+    },
+
+    comparePassword: async function (password1, password2) {
+        return await bcrypt.compare(password1, password2)
+    },
+
+    
+    getHash: async function (password) {
+        return await bcrypt.hash(password, 10)
     },
 
     sendResponse: function (data, status) {

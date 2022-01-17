@@ -8,28 +8,20 @@
 
 const logger = require('../utils/logger');
 const subscriptionsDao = require('../daos/subscriptions-dao');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
+const createHttpError = require('http-errors');
 /**
  * export module
  */
 
 module.exports = {
 
-    getSubscriptions: function (req) {
-        return new Promise(function (resolve, reject) {
-            subscriptionsDao.getSubscriptions(req).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            logger.error('error in add getSubscriptions promise', err);
-            return reject(err);
-        });
-
+    getSubscriptions: async function (req, res, next) {
+        let result
+        if (req.query.type && req.query.type === 'all') {
+            result = await subscriptionsDao.getAllSubscriptions()
+        } else {
+            result = await subscriptionsDao.getAllSubscriptionsPage(req.query)
+        }
+        res.sendResponse(result)
     }
-
-    
-
 }

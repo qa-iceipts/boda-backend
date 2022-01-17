@@ -5,477 +5,221 @@
  *  @author Deepesh Kushwaha
  *  @version 1.0.0
  */
-
-const logger = require('../utils/logger');
 const ridesDao = require('../daos/rides-dao');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
 const { getTokensByIds } = require("../services/fcm-service")
 const { sendNotifications } = require('../services/notifications-service')
-const {AppError} =  require('../utils/error_handler')
+const createHttpError = require('http-errors');
 /**
  * export module
  */
 
 module.exports = {
 
-    addRide: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("addRide Service Called ::")
-            let reqObj = req.body
-            console.log("reqObj::", reqObj)
-            ridesDao.addRide(reqObj).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                console.log(err)
-                logger.error('error in addRide', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            console.log(err)
-            logger.error('error in add addRide promise', err);
-            return reject(err);
-        });
+    addRide: async function (req, res, next) {
+        let result = await ridesDao.addRide(req.body)
+        res.sendResponse(result)
+    },
+
+    updateRide: async function (req,res,next) {
+        let reqObj = req.body
+        let ride = ridesDao.getRideByPk(reqObj.id)
+        ride.set(reqObj)
+        await ride.save()
+        res.sendResponse(ride)
+    },
+
+    getRideUsers: async function (req, res, next) {
+
+        console.log("bookRide Service Called ::")
+        let reqObj = req.body
+        let { driver_id, customer_id } = req.body
+        console.log("reqObj::", reqObj)
+        let [driver_fcmtokens, customer_fcmtokens] = await Promise.all([
+            getTokensByIds(driver_id),
+            getTokensByIds(customer_id)
+        ])
+        console.log("driver_fcmtokens.data:: ", driver_fcmtokens.data)
+        console.log("customer_fcmtokens.data:: ", customer_fcmtokens.data)
+
+        if (driver_fcmtokens.data.length <= 0 && customer_fcmtokens.data.length <= 0)
+            throw new createHttpError.NotFound("fcm tokens not found")
+        req.data = {
+            driver_fcmtokens: driver_fcmtokens.data,
+            customer_fcmtokens: customer_fcmtokens.data
+        } //array
+        next()
 
     },
 
-    updateRide: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("updateRide Service Called ::")
-            let reqObj = req.body
-            console.log("reqObj::", reqObj)
-            ridesDao.updateRide(reqObj).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                console.log(err)
-                logger.error('error in updateRide', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            console.log(err)
-            logger.error('error in add updateRide promise', err);
-            return reject(err);
-        });
-
-    },
-    bookRide: function (req) {
-        return new Promise(function (resolve, reject) {
-
-            console.log("bookRide Service Called ::")
-            let reqObj = req.body
-            console.log("reqObj::", reqObj)
-
-            getTokensByIds(req.body.driver_id).then(driver_fcmtokens => {
-                getTokensByIds(req.body.customer_id).then(customer_fcmtokens => {
-
-                    console.log("driver_fcmtokens.data:: ", driver_fcmtokens.data)
-                    console.log("customer_fcmtokens.data:: ", customer_fcmtokens.data)
-
-                    if (driver_fcmtokens.data.length > 0 && customer_fcmtokens.data.length > 0) {
-
-                        let notificationdata = {
-                            data: JSON.stringify({
-                                rideId: req.body.id,
-                                state: req.state
-                            })
-                        }
-
-                        let driverMsg = {
-                            notification: {
-                                title: "Ride Booked By Customer",
-                                body: "Customer is waiting at pickup location"
-                            },
-                            android: {
-                                notification: {
-                                    clickAction: 'rideclick'
-                                }
-                            },
-                            data: notificationdata ? notificationdata : "",
-                            tokens: driver_fcmtokens.data,
-                        };
-
-                        let customerMsg = {
-                            notification: {
-                                title: "Ride Booking Successfull",
-                                body: "Driver is arriving soon at pickup location"
-                            },
-                            android: {
-                                notification: {
-                                    clickAction: 'rideclick'
-                                }
-                            },
-                            data: notificationdata ? notificationdata : "",
-                            tokens: customer_fcmtokens.data,
-                        };
-
-                        sendNotifications(driverMsg).then((result) => {
-                            console.log("Notifications sent")
-                            if (customer_fcmtokens.data) {
-                                sendNotifications(customerMsg).then((result) => {
-                                    console.log("Notifications sent")
-
-                                    ridesDao.updateRide(reqObj, {
-                                        where: {
-                                            id: req.body.id
-                                        }
-                                    }).then(function (result) {
-                                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                                    }).catch(function (err) {
-                                        console.log(err)
-                                        logger.error('error in bookRide', err);
-                                        return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                                    });
-
-
-                                }).catch(err => {
-                                    console.log(err)
-                                    return reject(err)
-                                });
-                            }
-                        }).catch(err => {
-                            console.log(err)
-                            return reject(err)
-                        });
-                    } else {
-                        return reject("notifications tokens not found for users")
-                    }
-                }).catch(err => {
-                    console.log(err)
-                    return reject(err)
-                })
-            }).catch(err => {
-                console.log(err)
-                return reject(err)
+    bookRide: async function (req, res, next) {
+        console.log("req.data", req.data)
+        let { driver_fcmtokens, customer_fcmtokens } = req.data
+        let notificationdata = {
+            data: JSON.stringify({
+                rideId: req.body.id,
+                state: req.state
             })
-        }, function (err) {
-            console.log(err)
-            logger.error('error in add bookRide promise', err);
-            return reject(err);
-        });
+        }
+        let driverMsg = {
+            notification: {
+                title: "Ride Booked By Customer",
+                body: "Customer is waiting at pickup location"
+            },
+            android: {
+                notification: {
+                    clickAction: 'rideclick'
+                }
+            },
+            data: notificationdata ? notificationdata : "",
+            tokens: driver_fcmtokens,
+        };
+        let customerMsg = driverMsg
+        customerMsg.notification = {
+            title: "Ride Booking Successfull",
+            body: "Driver is arriving soon at pickup location"
+        }
+        customerMsg.tokens = customer_fcmtokens
 
+        await Promise.all([
+            sendNotifications(driverMsg),
+            sendNotifications(customerMsg)
+        ])
+        let result = await ridesDao.updateRide(reqObj)
+        res.sendResponse(result)
     },
-    getRide: function (rideId) {
-        return new Promise(function (resolve, reject) {
-            console.log("getRide Service Called ::", rideId)
-            ridesDao.getRide(rideId).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                console.log(err)
-                logger.error('error in getRide', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            console.log(err)
-            logger.error('error in add getRide promise', err);
-            return reject(err);
-        });
 
-    },
+    startRide: async function (req) {
+        console.log("req.data", req.data)
+        let { driver_fcmtokens, customer_fcmtokens } = req.data
 
-    getRidesByUserId: function (userid) {
-        return new Promise(function (resolve, reject) {
-            console.log("getRidesByUserId Service Called ::", userid)
-            ridesDao.getRidesByUserId(userid).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                console.log(err)
-                logger.error('error in getRidesByUserId', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            console.log(err)
-            logger.error('error in add getRidesByUserId promise', err);
-            return reject(err);
-        });
-
-    },
-    startRide: function (req) {
-        return new Promise(function (resolve, reject) {
-
-            console.log("startRide Service Called ::")
-            let reqObj = req.body
-            console.log("reqObj::", reqObj)
-
-            getTokensByIds(req.body.driver_id).then(driver_fcmtokens => {
-                getTokensByIds(req.body.customer_id).then(customer_fcmtokens => {
-
-                    console.log("driver_fcmtokens.data:: ", driver_fcmtokens.data)
-                    console.log("customer_fcmtokens.data:: ", customer_fcmtokens.data)
-
-                    if (driver_fcmtokens.data.length > 0 && customer_fcmtokens.data.length > 0) {
-
-                        let notificationdata = {
-                            data: JSON.stringify({
-                                rideId: req.body.id,
-                                state: req.state
-                            })
-                        }
-
-                        let driverMsg = {
-                            notification: {
-                                title: "Ride Started",
-                                body: "Reach Drop point to end ride"
-                            },
-                            android: {
-                                notification: {
-                                    clickAction: 'startRide'
-                                }
-                            },
-                            data: notificationdata ? notificationdata : "",
-                            tokens: driver_fcmtokens.data,
-                        };
-
-                        let customerMsg = {
-                            notification: {
-                                title: "Ride Started by driver",
-                                body: "You will reach your destination soon!"
-                            },
-                            android: {
-                                notification: {
-                                    clickAction: 'startRide'
-                                }
-                            },
-                            data: notificationdata ? notificationdata : "",
-                            tokens: customer_fcmtokens.data,
-                        };
-
-                        sendNotifications(driverMsg).then(() => {
-                            console.log("Notifications sent")
-                            if (customer_fcmtokens.data) {
-                                sendNotifications(customerMsg).then(() => {
-                                    console.log("Notifications sent")
-
-                                    ridesDao.updateRide(reqObj, {
-                                        where: {
-                                            id: req.body.id
-                                        }
-                                    }).then(function (result) {
-                                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                                    }).catch(function (err) {
-                                        console.log(err)
-                                        logger.error('error in startRide', err);
-                                        return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                                    });
-
-
-                                }).catch(err => {
-                                    console.log(err)
-                                    return reject(err)
-                                });
-                            }
-                        }).catch(err => {
-                            console.log(err)
-                            return reject(err)
-                        });
-                    } else {
-                        return reject("notifications tokens not found for users")
-                    }
-                }).catch(err => {
-                    console.log(err)
-                    return reject(err)
-                })
-            }).catch(err => {
-                console.log(err)
-                return reject(err)
+        let notificationdata = {
+            data: JSON.stringify({
+                rideId: req.body.id,
+                state: req.state
             })
-        }, function (err) {
-            console.log(err)
-            logger.error('error in add startRide promise', err);
-            return reject(err);
-        });
+        }
 
+        let driverMsg = {
+            notification: {
+                title: "Ride Started",
+                body: "Reach Drop point to end ride"
+            },
+            android: {
+                notification: {
+                    clickAction: 'startRide'
+                }
+            },
+            data: notificationdata ? notificationdata : "",
+            tokens: driver_fcmtokens,
+        };
+        let customerMsg = driverMsg
+        customerMsg.notification = {
+            title: "Ride Started by driver",
+            body: "You will reach your destination soon!"
+        }
+        customerMsg.tokens = customer_fcmtokens
+        await Promise.all([
+            sendNotifications(driverMsg),
+            sendNotifications(customerMsg)
+        ])
+        let result = await ridesDao.updateRide(reqObj)
+        res.sendResponse(result)
     },
 
-    endRide: function (req) {
-        return new Promise(function (resolve, reject) {
+    endRide: async function (req) {
 
-            console.log("endRide Service Called ::")
-            let reqObj = req.body
-            console.log("reqObj::", reqObj)
+        console.log("req.data", req.data)
+        let { driver_fcmtokens, customer_fcmtokens } = req.data
 
-            getTokensByIds(req.body.driver_id).then(driver_fcmtokens => {
-                getTokensByIds(req.body.customer_id).then(customer_fcmtokens => {
-
-                    console.log("driver_fcmtokens.data:: ", driver_fcmtokens.data)
-                    console.log("customer_fcmtokens.data:: ", customer_fcmtokens.data)
-
-                    if (driver_fcmtokens.data.length > 0 && customer_fcmtokens.data.length > 0) {
-
-                        let notificationdata = {
-                            data: JSON.stringify({
-                                rideId: req.body.id,
-                                state: req.state
-                            })
-                        }
-
-                        let driverMsg = {
-                            notification: {
-                                title: "Ride Ended",
-                                body: "Ride is ended successfully"
-                            },
-                            android: {
-                                notification: {
-                                    clickAction: 'endRide'
-                                }
-                            },
-                            data: notificationdata ? notificationdata : "",
-                            tokens: driver_fcmtokens.data,
-                        };
-
-                        let customerMsg = {
-                            notification: {
-                                title: "Ride Ended Successfully",
-                                body: "Thank you, have a nice day!"
-                            },
-                            android: {
-                                notification: {
-                                    clickAction: 'endRide'
-                                }
-                            },
-                            data: notificationdata ? notificationdata : "",
-                            tokens: customer_fcmtokens.data,
-                        };
-
-                        sendNotifications(driverMsg).then(() => {
-                            console.log("Notifications sent")
-                            if (customer_fcmtokens.data) {
-                                sendNotifications(customerMsg).then(() => {
-                                    console.log("Notifications sent")
-
-                                    ridesDao.updateRide(reqObj, {
-                                        where: {
-                                            id: req.body.id
-                                        }
-                                    }).then(function (result) {
-                                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                                    }).catch(function (err) {
-                                        console.log(err)
-                                        logger.error('error in endRide', err);
-                                        return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                                    });
-
-
-                                }).catch(err => {
-                                    console.log(err)
-                                    return reject(err)
-                                });
-                            }
-                        }).catch(err => {
-                            console.log(err)
-                            return reject(err)
-                        });
-                    } else {
-                        return reject("notifications tokens not found for users")
-                    }
-                }).catch(err => {
-                    console.log(err)
-                    return reject(err)
-                })
-            }).catch(err => {
-                console.log(err)
-                return reject(err)
+        let notificationdata = {
+            data: JSON.stringify({
+                rideId: req.body.id,
+                state: req.state
             })
-        }, function (err) {
-            console.log(err)
-            logger.error('error in add endRide promise', err);
-            return reject(err);
-        });
+        }
 
+        let driverMsg = {
+            notification: {
+                title: "Ride Ended",
+                body: "Ride is ended successfully"
+            },
+            android: {
+                notification: {
+                    clickAction: 'endRide'
+                }
+            },
+            data: notificationdata ? notificationdata : "",
+            tokens: driver_fcmtokens,
+        };
+        let customerMsg = driverMsg
+        customerMsg.notification = {
+            title: "Ride Ended Successfully",
+            body: "Thank you, have a nice day!"
+        }
+        customerMsg.tokens = customer_fcmtokens
+        await Promise.all([
+            sendNotifications(driverMsg),
+            sendNotifications(customerMsg)
+        ])
+        let result = await ridesDao.updateRide(reqObj)
+        res.sendResponse(result)
     },
-    cancelRide: function (req) {
-        return new Promise(function (resolve, reject) {
 
-            console.log("cancelRide Service Called ::")
-            let reqObj = req.body
-            console.log("reqObj::", reqObj)
+    cancelRide: async function (req, res, next) {
+        console.log("req.data", req.data)
+        let { driver_fcmtokens, customer_fcmtokens } = req.data
 
-            getTokensByIds(req.body.driver_id).then(driver_fcmtokens => {
-                getTokensByIds(req.body.customer_id).then(customer_fcmtokens => {
-
-                    console.log("driver_fcmtokens.data:: ", driver_fcmtokens.data)
-                    console.log("customer_fcmtokens.data:: ", customer_fcmtokens.data)
-
-                    if (driver_fcmtokens.data.length > 0 && customer_fcmtokens.data.length > 0) {
-
-                        let notificationdata = {
-                            data: JSON.stringify({
-                                rideId: req.body.id,
-                                state: req.state
-                            })
-                        }
-                        let driverMsg = {
-                            notification: {
-                                title: "Ride is Cancelled",
-                                body: "Customer cancelled the ride"
-                            },
-                            android: {
-                                notification: {
-                                    clickAction: 'cancelRide'
-                                }
-                            },
-                            data: notificationdata ? notificationdata : "",
-                            tokens: driver_fcmtokens.data,
-                        };
-                        let customerMsg = {
-                            notification: {
-                                title: "Ride is Cancelled",
-                                body: "Customer cancelled the ride"
-                            },
-                            android: {
-                                notification: {
-                                    clickAction: 'cancelRide'
-                                }
-                            },
-                            data: notificationdata ? notificationdata : "",
-                            tokens: customer_fcmtokens.data,
-                        };
-
-                        sendNotifications(driverMsg).then((result) => {
-                            console.log("Notifications sent")
-                            if (customer_fcmtokens.data) {
-                                sendNotifications(customerMsg).then((result) => {
-                                    console.log("Notifications sent")
-
-                                    ridesDao.updateRide(reqObj).then(function (result) {
-                                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                                    }).catch(function (err) {
-                                        console.log(err)
-                                        logger.error('error in bookRide', err);
-                                        return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                                    });
-
-                                }).catch(err => {
-                                    console.log(err)
-                                    return reject(err)
-                                });
-                            }
-                        }).catch(err => {
-                            console.log(err)
-                            return reject(err)
-                        });
-                    } else {
-                        return reject("notifications tokens not found for users")
-                    }
-                }).catch(err => {
-                    console.log(err)
-                    return reject(err)
-                })
-            }).catch(err => {
-                console.log(err)
-                return reject(err)
+        let notificationdata = {
+            data: JSON.stringify({
+                rideId: req.body.id,
+                state: req.state
             })
-        }, function (err) {
-            console.log(err)
-            logger.error('error in add bookRide promise', err);
-            return reject(err);
-        });
+        }
 
+        let driverMsg = {
+            notification: {
+                title: "Ride is Cancelled",
+                body: "Customer cancelled the ride"
+            },
+            android: {
+                notification: {
+                    clickAction: 'cancelRide'
+                }
+            },
+            data: notificationdata ? notificationdata : "",
+            tokens: driver_fcmtokens,
+        };
+
+        let customerMsg = driverMsg
+        customerMsg.notification = {
+            title: "Ride is Cancelled",
+            body: "Book a new ride to start again"
+        }
+        customerMsg.tokens = customer_fcmtokens
+
+        await Promise.all([
+            sendNotifications(driverMsg),
+            sendNotifications(customerMsg)
+        ])
+        let result = await ridesDao.updateRide(reqObj)
+        res.sendResponse(result)
+    },
+
+    getRide: async function (req, res, next) {
+        let { rideId } = req.params
+        let result = await ridesDao.getRide(rideId)
+        res.sendResponse(result)
+    },
+
+    getRidesByUserId: async function (req, res, next) {
+        let result = ridesDao.getRidesByUserId(req.user.id)
+        res.sendResponse(result)
     },
 
     getRideState: async function (req, res, next) {
-        console.log("getRideState Service Called ::")
-        let result = await ridesDao.getRideState(req.params.userId,req.params.userType)
-        return res.send(util.responseUtil(null, result, responseConstant.SUCCESS));
+        let { userId, userType } = req.params
+        let result = await ridesDao.getRideState(userId, userType)
+        res.sendResponse(result)
     },
 
 

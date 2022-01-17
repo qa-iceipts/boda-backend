@@ -5,18 +5,12 @@ const AwsService = require('../services/awsS3-service');
 const HttpStatus = require('http-status-codes');
 const logger = require('../utils/logger')
 const ROLE = require('../utils/roles')
-const { PromiseHandler } = require('../utils/error_handler')
+const { PromiseHandler } = require('../utils/errorHandler');
+const { uploadFile } = require('../utils/aws-S3');
 
-const {
-    verifyAccessToken,
-    authorize
-} = require("../utils/verifytoken")
-
-
-
-router.post('/uploadProfile', verifyAccessToken, authorize([ROLE.ADMIN, ROLE.DRIVER, ROLE.CUSTOMER]), async function (req, res, next) {
+router.post('/uploadProfile', async function (req, res, next) {
     req.subdir = 'profile/'; next();
-}, PromiseHandler(AwsService.uploadProfile))
+},uploadFile.single('profile'), PromiseHandler(AwsService.uploadProfile))
 
 // router.post('/uploadVehicleImage/:userVehicleId', verifyAccessToken, authorize([ROLE.ADMIN, ROLE.DRIVER, ROLE.CUSTOMER]), async function (req, res, next) {
 //     req.subdir = 'vehicle/'; next();

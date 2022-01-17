@@ -11,7 +11,7 @@ const db = require('../models')
 const jwt = require('jsonwebtoken');
 const { getUser } = require('../daos/users-dao')
 const crypto = require("crypto");
-const createError = require('http-errors');
+const createHttpError = require('http-errors');
 /**
  * export module
  */
@@ -277,7 +277,7 @@ module.exports = {
     getRefreshToken: async function (token) {
         const refreshToken = await db.refreshTokens.findOne({ where: { token } });
         // console.log("DBrefreshToken",refreshToken.dataValues)
-        if (!refreshToken || !refreshToken.isActive) throw new createError.Forbidden('Invalid Refresh token');
+        if (!refreshToken || !refreshToken.isActive) throw new createHttpError.Forbidden('Invalid Refresh token');
         return refreshToken;
     },
     

@@ -1,7 +1,7 @@
 const jwt = require('express-jwt'); 
-const createError = require('http-errors');
+const createHttpError = require('http-errors');
 const { PromiseHandler } = require('../utils/errorHandler');
-const { getUserWithId } = require('../daos/users-dao');
+const { getUserWithId,getRoleName } = require('../daos/users-dao');
 
 module.exports = authorize;
 
@@ -20,13 +20,13 @@ function authorize(roles = []) {
         PromiseHandler(async (req, res, next) => {
 
             console.log("authorize fn payload => ", req.user)
-            const user = await getUserWithId(req.user.id)
-            // console.log(user)
-            if ((roles.length && !roles.includes(user.dataValues.role))) {
+            let user = await getUserWithId(req.user.id)
+            let roleName = await getRoleName(user)
+            if ((roles.length && !roles.includes(roleName))) {
                 // if user role not authorized
-                throw new createError.Unauthorized('Unauthorized Role')
+                throw new createHttpError.Unauthorized('Unauthorized Role')
             }
-            console.log("roles", roles, "===", user.dataValues.role)
+            console.log("roles", roles, "===", roleName)
             // authentication and authorization successful
             req.user.phone = user.dataValues.phone;
             req.user.roleType = user.dataValues.roleType;

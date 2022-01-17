@@ -9,20 +9,48 @@
 /**
  *  import project modules
  */
-const HttpStatusCodes = require('http-status-codes').StatusCodes;
 const logger = require('../utils/logger');
-const { AppError } = require('../utils/error_handler');
 const db = require('../models');
 const util = require('../utils/commonUtils')
 
 const { getPagingData, getPagination } = require('../utils/pagination')
 const { Op } = require("sequelize");
-const createError = require('http-errors')
+const createHttpError = require('http-errors')
 
 /**
  * export module
  */
 module.exports = {
+
+    getUserByUsername: async function (username) {
+
+        let user = await db.users.unscoped().findOne({
+            where: {
+                [Op.or]: [
+                    { phone: username },
+                    { email: username }
+                ]
+            },
+        });
+        if (!user) throw new createHttpError.NotFound("User Not Found")
+        return user
+    },
+
+    getUserWithId: async function (userId) {
+        let user = await db.users.findByPk(userId)
+        if (!user) throw new createHttpError.NotFound("User Not Found")
+        return user
+    },
+
+    getUserUnscoped: async function (userId) {
+        let user = await db.users.unscoped().findByPk(userId)
+        if (!user) throw new createHttpError.NotFound("User Not Found")
+        return user
+    },
+
+    getRoleName: async function (user) {
+        return (await user.getRole({ attributes: ['roleName'], raw: true }))['roleName'].toLowerCase()
+    },
 
     addUser: async function (reqObj) {
 
@@ -38,15 +66,11 @@ module.exports = {
             raw: true
         })
         if (result.length > 0) {
-            throw new createError.Conflict("Email or Mobile Already Registered");
+            throw new createHttpError.Conflict("Email or Mobile Already Registered");
         }
         let user = await db.users.create(reqObj)
         logger.debug("add user dao returned");
         return user
-    },
-
-    getRoleName: async function (user) {
-        return (await user.getRole({ attributes: ['roleName'], raw: true }))['roleName'].toLowerCase()
     },
 
     checkUserExists: async function (reqObj) {
@@ -59,41 +83,22 @@ module.exports = {
         if (email) {
             // for signup whereObj
             whereObj = {
-                [Op.or]: [{ phone: phone }, { email:email }]
+                [Op.or]: [{ phone: phone }, { email: email }]
             }
         }
         let user = await db.users.unscoped().findOne({ where: whereObj })
         // for signup part
         // console.log(user)
         if (email) {
-            if (user) throw new createError.Conflict("User Already Exists")
+            if (user) throw new createHttpError.Conflict("User Already Exists")
             else return "User not exists, you can signup!!"
         }
         else {
             if (user) return "User exists, you can login!!"
-            else throw new createError.Conflict("User not exists,signup first!!")
+            else throw new createHttpError.Conflict("User not exists,signup first!!")
         }
     },
 
-    getUserByUsername: async function (username) {
-
-        let user = await db.users.unscoped().findOne({
-            where: {
-                [Op.or]: [
-                    { phone: username },
-                    { email: username }
-                ]
-            },
-        });
-        if (!user) throw new createError.NotFound("User Not Found")
-        return user
-    },
-
-    getUserWithId: async function (userId) {
-        let user = await db.users.findByPk(userId)
-        if (!user) throw new createError.NotFound("User Not Found")
-        return user
-    },
 
     // throw off
     getUser: async function (req) {
@@ -116,7 +121,7 @@ module.exports = {
         })
         // console.log("res::", result)
         if (!result)
-            throw new createError.NotFound("User Not Found")
+            throw new createHttpError.NotFound("User Not Found")
         return result;
 
     },
@@ -131,7 +136,7 @@ module.exports = {
             raw: true
         })
         if (!user) {
-            throw new createError.NotFound()
+            throw new createHttpError.NotFound()
         }
         return user
     },
@@ -171,19 +176,21 @@ module.exports = {
             ]
         })
         if (!user) {
-            throw new createError.NotFound()
+            throw new createHttpError.NotFound()
         }
         return user
     },
 
     getAllUsers: async function ({ roleName, page, size }) {
-        console.log("getAllUsers dao called");
+        console.log("getAllUsers dao called", roleName);
         const { limit, offset } = getPagination(page, size);
         let result = await db.users.unscoped().findAndCountAll({
             include: [{
                 model: db.roles,
                 attributes: [],
-                where: roleName,
+                where: {
+                    roleName: roleName
+                },
                 required: true
             }, {
                 model: db.user_subscriptions,
@@ -208,7 +215,7 @@ module.exports = {
             offset: offset,
             limit: limit
         })
-        if (!result) throw new createError.NotFound("No getAllUsers found !")
+        if (!result) throw new createHttpError.NotFound("No getAllUsers found !")
         return getPagingData(result, page, limit);
     },
 
@@ -218,7 +225,7 @@ module.exports = {
             where: { id: userIds },
             attributes: { exclude: ['password'] },
         })
-        if (result.length <= 0) throw new createError.NotFound()
+        if (result.length <= 0) throw new createHttpError.NotFound()
         return (result);
     },
 
@@ -226,7 +233,7 @@ module.exports = {
 
         const user = await db.users.unscoped().findOne({ where: { email } });
         // always return ok response to prevent email enumeration
-        if (!user) throw new createError.NotFound(" User Not Found");
+        if (!user) throw new createHttpError.NotFound(" User Not Found");
         // create reset token that expires after 24 hours
         let otp = Math.floor(100000 + Math.random() * 900000)
         user.resetToken = otp;
@@ -245,17 +252,17 @@ module.exports = {
 
         const user = await db.users.unscoped().findOne({ where: { email }, attributes: ['resetToken', 'resetTokenExpires', 'id'] });
 
-        if (!user) throw new AppError(HttpStatusCodes.NOT_FOUND, "Not Found");
+        if (!user) throw new createHttpError.NotFound()
 
         if (user.resetToken === otp) {
             if (user.resetTokenExpires > Date.now()) {
                 return user
             }
             else {
-                throw new AppError(HttpStatusCodes.NOT_ACCEPTABLE, "OTP EXPIRED");
+                throw new createHttpError.NotAcceptable("OTP EXPIRED");
             }
         } else {
-            throw new AppError(HttpStatusCodes.BAD_REQUEST, "Wrong OTP");
+            throw new createHttpError.BadRequest("Wrong OTP");
         }
 
     },

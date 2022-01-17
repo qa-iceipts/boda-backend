@@ -1,5 +1,5 @@
 require('dotenv').config();
-const createError = require('http-errors')
+const createHttpError = require('http-errors')
 const development = "development"
 
 class AppError extends Error {
@@ -63,7 +63,7 @@ const handleError = (err, res) => {
         console.log("in central err handler ERROR(SAFE) =>", err.message)
     else
     console.log("in central err handler ERROR(PRIORITY) =>", err)
-    err instanceof AppError || createError.isHttpError(err) ?
+    err instanceof AppError || createHttpError.isHttpError(err) ?
         handleKnownExceptions(err, res) : handleUnknownExceptions(err, res);
 };
 

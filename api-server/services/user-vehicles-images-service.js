@@ -18,16 +18,14 @@ const { deleteFile } = require("../utils/aws-S3")
 
 module.exports = {
 
-    getAllUserVehiclesImages: async function (userVehicleId) {
+    getAllUserVehiclesImages: async function (req,res,next) {
+        let {userVehicleId} = req.params
         let result = await users_vehicles_imagesDao.getAllUserVehiclesImageById(userVehicleId)
-        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
+        res.sendResponse(result)
     },
 
-    deleteUserVehicleImage: async (userVehicleImageId) => {
-        // return Promise.reject(util.responseUtil("err", null, responseConstant.RECORD_NOT_FOUND));
-        console.log("deleteUserVehicleImage Service Called")
-        let result = await users_vehicles_imagesDao.getVehicleImageById(userVehicleImageId)
-
+    deleteUserVehicleImage: async (req,res,next) => {
+        let result = await users_vehicles_imagesDao.getVehicleImageById(req.params.userVehicleImageId)
         if (result.dataValues.image) {
             let image_key = (result.dataValues.image.split(process.env.AWS_Cloudfront))[1];
             console.log(image_key)

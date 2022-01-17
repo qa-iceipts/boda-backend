@@ -9,16 +9,15 @@ const role = require('../utils/roles');
 const logger = require('../utils/logger');
 const usersDao = require('../daos/users-dao');
 const db = require('../models')
-const util = require('../utils/commonUtils')
 const bcrypt = require('bcrypt');
-var responseConstant = require("../constants/responseConstants");
-const { sendResponse, getBasicDetails } = require('../utils/commonUtils');
-const createError = require('http-errors');
+const { getBasicDetails, getHash } = require('../utils/commonUtils');
+const createHttpError = require('http-errors');
 const {
     signAccessToken,
     generateRefreshToken,
     getRefreshToken
 } = require('../utils/verifytoken');
+const commonUtils = require('../utils/commonUtils');
 
 /**
  * export module
@@ -29,7 +28,7 @@ module.exports = {
     addUser: async function (req, res, next) {
         // console.log("Insert Obj in addUser Service ::", req.body)
         let { password } = req.body
-        let hash = await bcrypt.hash(password, 10)
+        let hash = await commonUtils.getHash(password)
         req.body.password = hash
 
         let user = await usersDao.addUser(req.body)
@@ -53,16 +52,16 @@ module.exports = {
         console.log("login service called=>", req.body, "rolename=>", roleName)
 
         if (!Object.values(role).includes(roleName))
-            throw new createError.Forbidden("User role is not Valid " + roleName)
+            throw new createHttpError.Forbidden("User role is not Valid " + roleName)
 
         let user = await usersDao.getUserByUsername(username)
         let DbRoleName = await usersDao.getRoleName(user)
-        let matched = await bcrypt.compare(password, user.password)
+        let matched = await commonUtils.comparePassword(password, user.password)
 
-        if (!matched) throw new createError.Unauthorized("Invalid Password")
+        if (!matched) throw new createHttpError.Unauthorized("Invalid Password")
 
         if (DbRoleName != roleName)
-            throw new createError.Forbidden("Unathorized! User role is " + DbRoleName)
+            throw new createHttpError.Forbidden("Unathorized! User role is " + DbRoleName)
 
         console.log(roleName, "===", DbRoleName)
 
@@ -86,7 +85,7 @@ module.exports = {
         const refreshToken = await getRefreshToken(token);
         const account = await refreshToken.getUser();
 
-        if (account.id != userId) throw new createError.Unauthorized("user verification failed for token")
+        if (account.id != userId) throw new createHttpError.Unauthorized("user verification failed for token")
         // replace old refresh token with a new one and save
         const newRefreshToken = generateRefreshToken(account, req.ip);
         refreshToken.revoked = Date.now();
@@ -136,12 +135,13 @@ module.exports = {
         res.sendResponse(users)
 
     },
-
+    //dns server dependency
     getAllUsersByIds: async function (req, res) {
         let result = await usersDao.getAllUsersByIds(req.body.Ids)
         res.sendResponse(result)
     },
 
+    //profile image
     getUserImageById: async function (req, res) {
         let result = usersDao.getUserImageById(req.body.Id)
         res.sendResponse(result)
@@ -161,7 +161,7 @@ module.exports = {
         // await inValidateOneUser(refresh_token)
         res.sendResponse("Successfully Logged Out")
     },
-
+    
     //lookAtThis
     getDriverMetrics: async function ({ driverIds, customer_id }) {
 
@@ -194,11 +194,11 @@ module.exports = {
         //   }
         // }
         console.log(result)
-        return (util.responseUtil(null, result, responseConstant.SUCCESS));
+        res.sendResponse(result);
     },
 
     disableUser: async function (req, res, next) {
-        let user = await usersDao.getUserWithId(req.params.userId)
+        let user = await usersDao.getUserUnscoped(req.params.userId)
         user.isActive = !user.isActive
         user.save()
         res.sendResponse({
@@ -221,7 +221,7 @@ module.exports = {
     changePassword: async function (req, res, next) {
 
         let user = await usersDao.verifyOTP(req.body)
-        req.body.password = await bcrypt.hash(req.body.password, 10)
+        req.body.password = await getHash(req.body.password,)
         user.password = req.body.password
         user.resetToken = null
         user.resetTokenExpires = null

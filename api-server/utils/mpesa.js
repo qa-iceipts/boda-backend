@@ -7,9 +7,6 @@
  */
 
 const logger = require('../utils/logger');
-const db = require('../models')
-var http = require("http");
-var responseConstant = require("../constants/responseConstants");
 const axios = require('axios').default
 const TimeStamp = require('time-stamp');
 /**

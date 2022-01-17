@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const logger = require('../utils/logger')
 const role = require('../utils/roles')
 const { PromiseHandler } = require('../utils/errorHandler')
 const userService = require('../services/user-service');
