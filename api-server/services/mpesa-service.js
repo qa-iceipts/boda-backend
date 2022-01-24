@@ -13,12 +13,7 @@ const {
     getOAuthToken,
     lipaNaMpesaOnline,
 } = require('../utils/mpesa')
-const {
-    transactions,
-    user_subscriptions,
-    subscriptions,
-    db
-} = require('../models');
+const db = require('../models');
 const createHttpError = require('http-errors');
 
 /**
@@ -27,145 +22,88 @@ const createHttpError = require('http-errors');
 
 module.exports = {
 
-    mpesaSubscribe: function (req, res) {
-        return new Promise(function (resolve, reject) {
-            console.log("Insert Obj in mpesaSubscribe Service ::", req.body)
-            let subscriptionType = req.body.subscriptionType
-            subscriptions.findOne({
-                where: {
-                    Type: subscriptionType
-                }
-            }).then((subData) => {
-                if (subData) {
-                    getOAuthToken(req, res, () => {
-                        console.log(req.token)
-                        lipaNaMpesaOnline(req).then((result) => {
-                            console.log(result)
-                            if (result.success == true) {
-                                let insertObj = {
-                                    MerchantRequestID: result.message.MerchantRequestID,
-                                    CheckoutRequestID: result.message.CheckoutRequestID,
-                                    ResponseDescription: result.message.ResponseDescription,
-                                    CustomerMessage: result.message.CustomerMessage,
-                                    amount: subData.dataValues.rate,
-                                    currency: subData.dataValues.currency,
-                                    UserId: req.user.id,
-                                    status: false,
-                                    subscriptionType: subData.dataValues.type,
-                                    paymentMode: 1
-                                }
-                                console.log("insertObj ::", insertObj)
-                                transactions.create(insertObj).then(() => {
+    mpesaSubscribe: async function (req, res) {
 
-                                    let obj = {
-                                        MerchantRequestID: result.message.MerchantRequestID,
-                                        CheckoutRequestID: result.message.CheckoutRequestID,
-                                    }
-                                    console.log(obj)
-                                    module.exports.mpesaCallback(obj).then(result3 => {
-                                        return resolve(result);
-                                    }).catch(err => {
-                                        return reject(err)
-                                    })
+        console.log("Insert Obj in mpesaSubscribe Service ::", req.body)
+        let subscriptionType = req.body.subscriptionType
+        let subData = await db.subscriptions.findOne({
+            where: {
+                Type: subscriptionType
+            }
+        })
+        if (!subData) throw new createHttpError.NotFound()
+        console.log(req.token)
+        let result = await lipaNaMpesaOnline(req)
+        console.log(result)
+        if (!result.success) throw new createHttpError.InternalServerError()
 
+        let insertObj = {
+            MerchantRequestID: result.message.MerchantRequestID,
+            CheckoutRequestID: result.message.CheckoutRequestID,
+            ResponseDescription: result.message.ResponseDescription,
+            CustomerMessage: result.message.CustomerMessage,
+            amount: subData.dataValues.rate,
+            currency: subData.dataValues.currency,
+            userId: req.user.id,
+            status: false,
+            subscriptionType: subData.dataValues.type,
+            paymentMode: 1
+        }
+        console.log("insertObj ::", insertObj)
+        await db.transactions.create(insertObj)
 
-                                    // return resolve(result);
-                                }).catch(function (err) {
-                                    logger.error('error in mpesaSubscribe', err);
-                                    return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
-                                });
-
-                            } else {
-                                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                            }
-                        }).catch(err => {
-                            logger.error('error in mpesaSubscribe1', err);
-                            return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                        })
-                    })
-
-                } else {
-                    return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
-                }
-            }).catch(err => {
-                logger.error('error in mpesaSubscribe subscriptions findOne', err);
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            })
-
-
-        }, function (err) {
-            logger.error('error in add mpesaSubscribe promise', err);
-            return reject(err);
-        });
-
+        let obj = {
+            MerchantRequestID: result.message.MerchantRequestID,
+            CheckoutRequestID: result.message.CheckoutRequestID,
+            status: false
+        }
+        console.log(obj)
+        result = await module.exports.mpesaCallback(obj)
+        res.sendResponse(result)
     },
 
 
-    mpesaCallback: function (obj) {
-        return new Promise(function (resolve, reject) {
-            // console.log("Insert Obj in mpesaCallback Service ::", req.body)
-            transactions.findOne({
-                where: obj,
-                include: {
-                    model: subscriptions,
-                    attributes: ['duration'],
-                    required: true
-                }
-            }).then((result) => {
-                if (result && result.dataValues.status == false) {
-                    console.log(result.dataValues)
-                    let duration = result.dataValues.subscription.dataValues.duration
-                    let startDate = new Date();
-                    let endDate = new Date(startDate)
-                    let userSubObj = {
-                        start: startDate,
-                        end: endDate.setDate(endDate.getDate() + duration),
-                        is_active: true,
-                        UserId: result.dataValues.UserId,
-                        subscriptionType: result.dataValues.subscriptionType
-                    }
+    mpesaCallback: async function (obj) {
+        let result = await transactions.findOne({
+            where: obj,
+            include: {
+                model: subscriptions,
+                attributes: ['duration'],
+                required: true,
+            }
+        })
+        if (!result) throw new createHttpError.NotFound()
 
-                    user_subscriptions.create(userSubObj).then((USresult) => {
+        console.log(result.dataValues)
 
-                        let updateObj = {
-                            userSubscriptionId: USresult.dataValues.id,
-                            status: true
-                        }
-                        console.log(updateObj)
-                        transactions.update(updateObj, { where: { id: result.dataValues.id } }).then(() => {
-                            return resolve(USresult);
-                        }).catch(err => {
-                            logger.error('error in mpesaCallback transactions update', err);
-                            return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
-                        })
-                    }).catch(err => {
-                        logger.error('error in mpesaCallback', err);
-                        return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
-                    })
-                } else {
-                    return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
-                }
+        let duration = result.dataValues.subscription.dataValues.duration
+        let startDate = new Date();
+        let endDate = new Date(startDate)
+        let userSubObj = {
+            start: startDate,
+            end: endDate.setDate(endDate.getDate() + duration),
+            is_active: true,
+            userId: result.dataValues.userId,
+            subscriptionType: result.dataValues.subscriptionType
+        }
 
+        let USresult = await user_subscriptions.create(userSubObj)
+        let updateObj = {
+            userSubscriptionId: USresult.dataValues.id,
+            status: true
+        }
+        console.log(updateObj)
+        await transactions.update(updateObj, { where: { id: result.dataValues.id } })
+        return USresult
 
-            }).catch(function (err) {
-                logger.error('error in mpesaCallback', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            logger.error('error in add mpesaCallback promise', err);
-            return reject(err);
-        });
-
-    }
-
-    ,
+    },
 
     getUserSubscriptions: async function (req, res, next) {
         let userId = req.user.id
         let result = await user_subscriptions.findAll({
             where: {
                 is_active: true,
-                UserId: userId
+                userId: userId
             },
             include: {
                 model: subscriptions,

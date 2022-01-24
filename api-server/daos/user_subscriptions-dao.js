@@ -43,7 +43,7 @@ module.exports = {
     },
 
     unsubscribeUser: async function (userId) {
-        let result = await user_subscriptions.update({ is_active: false }, { where: { UserId: userId } })
+        let result = await user_subscriptions.update({ is_active: false }, { where: { userId: userId } })
         return result
     },
 

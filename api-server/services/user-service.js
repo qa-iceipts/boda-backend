@@ -78,8 +78,10 @@ module.exports = {
     },
 
     refreshToken: async function (req, res, next) {
+        //throw new createHttpError.Unauthorized("Custom error")
         let { userId } = req.body
         let token = req.body.refreshToken
+        if (!token) throw new createHttpError.BadRequest("Refresh Token missing")
         console.log("refresh Token called =>", token)
 
         const refreshToken = await getRefreshToken(token);
@@ -95,9 +97,9 @@ module.exports = {
         await newRefreshToken.save();
 
         // generate new jwt
-        const jwtToken = signAccessToken(account);
+        const accessToken = signAccessToken(account);
         res.sendResponse({
-            jwtToken,
+            accessToken,
             refreshToken: newRefreshToken.token
         });
 

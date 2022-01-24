@@ -17,6 +17,7 @@ const handleKnownExceptions = (err, res) => {
 
 // function to handle unknown errors in App
 const handleUnknownExceptions = (err, res) => {
+    console.error(err, "{level:priority,error:err.name}")
     err.expose = false
     switch (err.name) {
         case 'UnauthorizedError':
@@ -24,8 +25,9 @@ const handleUnknownExceptions = (err, res) => {
             err.message = "Unauthorized"
             err.expose = true
             res.sendError(err)
-            break;   
-                 
+            break;
+
+
         case 'SequelizeForeignKeyConstraintError':
         case 'SequelizeUniqueConstraintError':
             err.statusCode = "409"
@@ -33,8 +35,9 @@ const handleUnknownExceptions = (err, res) => {
             res.sendError(err)
             break;
 
+
         default:
-            console.error(err, "{level:priority,error:" + err.name + "}")
+            console.error(err);
             err.statusCode = "500"
             err.message = "Internal Server Error"
             res.sendError(err)

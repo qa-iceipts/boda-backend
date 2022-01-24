@@ -25,7 +25,7 @@ module.exports = {
         let reqObj = req.body
         console.log("reqObj::", reqObj)
         let [result, created] = await fcm_keys.findOrCreate({
-            where: { device_id: reqObj.device_id, UserId: reqObj.UserId },
+            where: { device_id: reqObj.device_id, userId: reqObj.userId },
             defaults: reqObj,
             raw: true
         }).
@@ -41,7 +41,7 @@ module.exports = {
         let { Ids } = req.body
         console.log("getTokensByIds Service Called ::")
         let result = await fcm_keys.findAll({
-            where: { UserId: Ids },
+            where: { userId: Ids },
             attributes: ['fcm_key'],
         })
         if (result.length <= 0) throw new createHttpError.NotFound()

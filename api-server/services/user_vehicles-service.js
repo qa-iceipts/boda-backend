@@ -17,7 +17,7 @@ module.exports = {
     addUserVehicles: async function (req, res, next) {
         let reqObj = req.body
         if (req.user.id != reqObj.userId) {
-            throw new createHttpError.Forbidden("Session UserId mismatch")
+            throw new createHttpError.Forbidden("Session userId mismatch")
         }
         let result = await users_vehiclesDao.addUserVehicles(reqObj)
         res.sendResponse(result)

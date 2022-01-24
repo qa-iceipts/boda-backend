@@ -19,21 +19,21 @@ const createHttpError = require('http-errors')
  */
 module.exports = {
     addUserVehicles: async function (reqObj) {
-        let count = await user_vehicles.count({ where: { UserId: reqObj.UserId } })
+        let count = await user_vehicles.count({ where: { userId: reqObj.userId } })
         if (count) throw new createHttpError.NotAcceptable("Sorry ! one User Can add only one vehicle !")
         let result = user_vehicles.create(reqObj)
         return result
     },
 
     updateUserVehicles: async function (reqObj) {
-        let result = await user_vehicles.update(reqObj, { where: { UserId: req.user.id } })
+        let result = await user_vehicles.update(reqObj, { where: { userId: req.user.id } })
         return result
     },
 
-    getUserVehicles: async function (UserId) {
+    getUserVehicles: async function (userId) {
         let result = await user_vehicles.findOne({
             where: {
-                UserId: UserId
+                userId: userId
             },
             include: {
                 model: vehicles,

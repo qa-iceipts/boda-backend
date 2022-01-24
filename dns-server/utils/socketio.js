@@ -7,7 +7,6 @@ const {
    getResponse,
    getSocketId
 } = require('../services/socket-io-service')
-const logger = require('../utils/logger');
 const { sendNotifications } = require('../services/notifications-service')
 const { addChat, getChats } = require('../services/chats')
 

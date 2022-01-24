@@ -16,6 +16,7 @@ const createHttpError = require('http-errors');
 module.exports = {
 
     getSubscriptions: async function (req, res, next) {
+        throw new createHttpError.Unauthorized("Custom error")
         let result
         if (req.query.type && req.query.type === 'all') {
             result = await subscriptionsDao.getAllSubscriptions()

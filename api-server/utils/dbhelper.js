@@ -1,21 +1,3 @@
-// const mysql = require('mysql2/promise');
-// var config = require('.././config/config');
-// config = config[config.activeEnv];
-
-// module.exports = {
-//     dbhelper: async function () {
-//         await mysql.createConnection({
-//             user: config.username,
-//             password: config.password,
-//             host: config.host,
-
-//         })
-//         await connection.query(`CREATE DATABASE IF NOT EXISTS ${config.database};`)
-//         resolve("done")
-//         console.log("db checked or created")
-//     }
-// }
-
 require('dotenv').config();
 const env = process.env.NODE_ENV || 'development';
 const config = require('../config/config')[env];
@@ -42,6 +24,5 @@ module.exports = (async function initialize() {
     // sync all models with database
     await db.sequelize.sync();
     console.log(" => Database Synced Successfully !!")
-    db.hy = "hyy"
     return db
 })()
