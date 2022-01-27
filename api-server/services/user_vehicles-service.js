@@ -23,12 +23,13 @@ module.exports = {
         res.sendResponse(result)
     },
 
-    getUserVehicles:async function (req,res,next) {
-        let result = await users_vehiclesDao.getUserVehicles(req.payload.id)
+    getUserVehicles: async function (req, res, next) {
+        let { userId } = req.params
+        let result = await users_vehiclesDao.getUserVehicles(userId)
         res.sendResponse(result)
     },
 
-    updateUserVehicles:async function (req) {
+    updateUserVehicles: async function (req) {
         let result = await users_vehiclesDao.updateUserVehicles(req.payload.id)
         res.sendResponse(result)
     },

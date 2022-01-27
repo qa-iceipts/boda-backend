@@ -6,10 +6,7 @@
  *  @version 1.0.0
  */
 
-const logger = require('../utils/logger');
 const users_vehicles_imagesDao = require('../daos/user_vehicles_images-dao');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
 const { deleteFile } = require("../utils/aws-S3")
 
 /**

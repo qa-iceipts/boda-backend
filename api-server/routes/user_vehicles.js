@@ -7,7 +7,7 @@ const { PromiseHandler } = require('../utils/errorHandler');
 
 router.post('/addVehicle', authorize(role.DRIVER), PromiseHandler(userVehiclesService.addUserVehicles))
 
-router.get('/', authorize(role.DRIVER), PromiseHandler(userVehiclesService.getUserVehicles))
+router.get('/:userId', authorize(role.DRIVER), PromiseHandler(userVehiclesService.getUserVehicles))
 
 router.post('/update', authorize(role.DRIVER), PromiseHandler(userVehiclesService.updateUserVehicles))
 

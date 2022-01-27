@@ -7,7 +7,7 @@ module.exports = {
 
     updateLocation: async function (req, res, next) {
         let reqObj = req.body
-        let [result, created] = await userLocationService.locationFindOrCreateByUserId(reqObj)
+        let [result, created] = await userLocationService.findOrCreateByUserId(reqObj)
         if (!created) {
             result.set(reqObj)
             result.save()

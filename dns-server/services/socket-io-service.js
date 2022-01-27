@@ -11,7 +11,7 @@ const createHttpError = require('http-errors')
 module.exports = {
     addDNSConnection: async function (reqObj) {
         console.log(reqObj)
-        if (!reqObj.rideId || reqObj.userId) {
+        if (!reqObj.rideId || !reqObj.userId) {
             throw new createHttpError.BadRequest("INVALID REQUEST")
         }
         let [result, created] = await dns_connections.findOrCreate({
@@ -42,15 +42,15 @@ module.exports = {
 
     },
     DeleteDNSConnection: async function (socketId) {
-        await dns_connections.destroy({
+        return await dns_connections.destroy({
             where: { socketId: socketId },
         })
-        return result
+       
     },
 
     getNearbyDrivers: async function (reqObj) {
         console.log("getNearbyDrivers called")
-        let response = axios.post(process.env.LOCATION_SERVER + '/getNearbyDrivers', {
+        let response = await axios.post(process.env.LOCATION_SERVER + '/getNearbyDrivers', {
             "user_id": reqObj.user_id,
             "lat": reqObj.pick_lat,
             "long": reqObj.pick_long,
@@ -63,7 +63,7 @@ module.exports = {
 
         console.log(distance)
         console.log("DNS nearby driver get res::", response.data)
-        if (response.data.count <= 0) throw new createHttpError.InternalServerError()
+        if (!response.data.success) throw new createHttpError.InternalServerError()
 
         let destinations = reqObj.pick_lat + ',' + reqObj.pick_long
         let array = []

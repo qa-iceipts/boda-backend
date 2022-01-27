@@ -6,9 +6,6 @@
  *  @version 1.0.0
  */
 
-const logger = require('../utils/logger');
-const commonUtils = require('../utils/commonUtils')
-const responseConstant = require("../constants/responseConstants");
 const { addUserVehiclesImage, checkUploadLimit } = require('../daos/user_vehicles_images-dao');
 const { uploadFile, getFileStream, deleteFile } = require("../utils/aws-S3")
 const { getVehicleById } = require('../daos/user_vehicles-dao')
@@ -65,7 +62,7 @@ module.exports = {
         await getVehicleById(userVehicleId)
         let count = await checkUploadLimit(userVehicleId)
 
-        uploadVehicleImage(req, res,async function (err) {
+        uploadVehicleImage(req, res, async function (err) {
             console.log(req.file)
             if (req.file_error || err)
                 next(new createHttpError.UnprocessableEntity("Invalid File error"))
@@ -89,34 +86,25 @@ module.exports = {
 
     },
 
-    upload: function (req, res, next) {
-        return new Promise(function (resolve, reject) {
-            upload(req, res, function (err) {
+    upload: async function (req, res, next) {
+        upload(req, res, async function (err) {
+            console.log(req.file)
+            if (req.file_error) {
+                next(new createHttpError.UnprocessableEntity("Invalid File error"))
+            }
+            else if (err) {
+                console.log(err)
+                next(new createHttpError.InternalServerError(err))
+                // your error handling goes here
+            } else if (req.file.key) {
+                console.log("req.file.key :: ", req.file.key)
+                let image = process.env.AWS_Cloudfront + req.file.key
                 console.log(req.file)
-                if (req.file_error) {
-                    console.log(req.file_error)
-                    return reject(commonUtils.responseUtil(req.file_error, null, responseConstant.UNPROCESSABLE_ENTITY));
-                }
-                else if (err) {
-                    console.log(err)
-                    return reject(commonUtils.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                    // your error handling goes here
-                } else if (req.file.key) {
+                res.sendResponse({ file: image });
+            }
 
-                    console.log("req.file.key :: ", req.file.key)
+        })
 
-                    let image = process.env.AWS_Cloudfront + req.file.key
-
-                    console.log(req.file)
-                    return resolve(commonUtils.responseUtil(null, { file: image }, responseConstant.SUCCESS));
-                }
-
-            })
-        }, function (err) {
-            console.log(err)
-            logger.error('error in uploadProfile promise', err);
-            return reject(err);
-        });
     }
 
 }

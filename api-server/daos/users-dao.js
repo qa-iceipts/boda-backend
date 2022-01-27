@@ -53,9 +53,6 @@ module.exports = {
     },
 
     addUser: async function (reqObj) {
-
-        logger.info("Add user dao called")
-        logger.debug(reqObj);
         let result = await db.users.unscoped().findAll({
             where: {
                 [Op.or]: {
@@ -69,7 +66,6 @@ module.exports = {
             throw new createHttpError.Conflict("Email or Mobile Already Registered");
         }
         let user = await db.users.create(reqObj)
-        logger.debug("add user dao returned");
         return user
     },
 
@@ -99,49 +95,7 @@ module.exports = {
         }
     },
 
-
-    // throw off
-    getUser: async function (req) {
-
-        logger.debug("getUser dao called", req.user);
-        let email = req.user.email
-        let phone = req.user.phone
-        let id = req.user.id
-        let result = db.users.findOne({
-            where: {
-                email: email,
-                phone: phone,
-                id: id
-            },
-            include: {
-                model: db.roles,
-                attributes: ['roleName'],
-                required: true
-            }
-        })
-        // console.log("res::", result)
-        if (!result)
-            throw new createHttpError.NotFound("User Not Found")
-        return result;
-
-    },
-
-    getUserImageById: async function (id) {
-        logger.debug("getUserImageById dao called");
-        let user = await db.users.findOne({
-            where: {
-                id: id
-            },
-            attributes: ["profile_image"],
-            raw: true
-        })
-        if (!user) {
-            throw new createHttpError.NotFound()
-        }
-        return user
-    },
-
-    getUserById: async function (id) {
+    getDriverProfile: async function (id) {
 
         logger.debug("getUser dao called");
         let user = await db.users.findOne({
@@ -175,7 +129,7 @@ module.exports = {
 
             ]
         })
-        if (!user) {
+        if (!user.id) {
             throw new createHttpError.NotFound()
         }
         return user
@@ -266,8 +220,6 @@ module.exports = {
         }
 
     },
-
-
 
 
 }

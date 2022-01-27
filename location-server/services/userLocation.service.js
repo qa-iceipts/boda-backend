@@ -1,11 +1,12 @@
 'use strict';
 const { user_location } = require('../models');
-const { Op } = require("sequelize")
+const { Op } = require("sequelize");
+const createHttpError = require('http-errors');
 
 // export module
 module.exports = {
 
-    FindOrCreateByUserId: async function (reqObj) {
+    findOrCreateByUserId: async function (reqObj) {
         return await user_location.findOrCreate({
             where: { user_id: reqObj.user_id },
             defaults: reqObj
@@ -13,7 +14,7 @@ module.exports = {
     },
 
     getByUserId: async function (user_id) {
-        let result = user_location.findOne({
+        let result = await user_location.findOne({
             where: { user_id: user_id },
             attributes: {
                 exclude: ['createdAt', 'updatedAt']
@@ -55,7 +56,7 @@ module.exports = {
         let nearbyUsers = await user_location.findAndCountAll({
             where: whereObj, attributes: { exclude: ['createdAt', 'updatedAt'] }
         })
-        if (nearbyUsers.count <= 0) throw new createHttpError("No Nearby Drivers Found")
+        if (nearbyUsers.count <= 0) throw new createHttpError.NotFound("No Nearby Drivers Found")
         return nearbyUsers
     },
 

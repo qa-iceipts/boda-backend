@@ -12,7 +12,7 @@ const { getTokensByIds } = require('../services/socket-io-service')
 
 module.exports = {
 
-    getPickupRequests:async function (req, res, next) {
+    getPickupRequests: async function (req, res, next) {
         let reqObj = req.body
         let result = await rides.findAll({
             where: {

@@ -6,10 +6,8 @@
  *  @version 1.0.0
  */
 const role = require('../utils/roles');
-const logger = require('../utils/logger');
 const usersDao = require('../daos/users-dao');
 const db = require('../models')
-const bcrypt = require('bcrypt');
 const { getBasicDetails, getHash } = require('../utils/commonUtils');
 const createHttpError = require('http-errors');
 const {
@@ -105,10 +103,11 @@ module.exports = {
 
     },
 
-    updateUser: async function (req, res, next) {
+    updateUser: async function (req, res) {
         console.log("Insert Obj in updateUser Service ::", req.body)
         let reqObj = req.body
         let { userId } = req.params
+        if (req.user.id != userId) throw new createHttpError.Forbidden("Session Mismatch")
         let user = await usersDao.getUserWithId(userId)
         user.set(reqObj)
         await user.save()
@@ -123,8 +122,10 @@ module.exports = {
 
     getUserById: async function (req, res) {
         console.log("getUserById called")
-        let user = await usersDao.getUserById(req.params.id)
-        res.sendResponse(user)
+        let { id } = req.params
+        if (req.user.id != id) throw new createHttpError.Forbidden("Session Mismatch")
+        let user = await usersDao.getUserWithId(id)
+        res.sendResponse(getBasicDetails(user))
     },
 
     getAllUsers: async function (req, res) {
@@ -137,6 +138,7 @@ module.exports = {
         res.sendResponse(users)
 
     },
+
     //dns server dependency
     getAllUsersByIds: async function (req, res) {
         let result = await usersDao.getAllUsersByIds(req.body.Ids)
@@ -160,13 +162,13 @@ module.exports = {
         let reqObj = req.body
         console.log("reqObj in Logout Service :: ", reqObj)
         let refresh_token = reqObj.refreshToken
-        // await inValidateOneUser(refresh_token)
-        res.sendResponse("Successfully Logged Out")
+        res.sendResponse({
+            msg: "Successfully Logged Out"
+        })
     },
-    
+
     //lookAtThis
     getDriverMetrics: async function ({ driverIds, customer_id }) {
-
         console.log("getDriverMetrics Service ", driverIds, customer_id)
         let result = await db.users.findAll({
             where: {

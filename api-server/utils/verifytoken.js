@@ -28,7 +28,7 @@ module.exports = {
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: '10s',
+                expiresIn: '30d',
                 audience: user.name
             }
         )
@@ -45,7 +45,7 @@ module.exports = {
             },
             process.env.JWT_SECRET,
             {
-                expiresIn: '10s',
+                expiresIn: '1y',
                 audience: user.name
             }
         )
@@ -276,12 +276,11 @@ module.exports = {
 
     getRefreshToken: async function (token) {
         const refreshToken = await db.refreshTokens.findOne({ where: { token } });
-        console.log("DBrefreshToken",refreshToken.dataValues)
         if (!refreshToken || !refreshToken.isActive) throw new createHttpError.Forbidden('Invalid Refresh token');
+        console.log("DBrefreshToken",refreshToken.dataValues)
         return refreshToken;
     },
     
-
     // new authorize user
     authorize: (roles = []) => {
         return (req, res, next) => {

@@ -17,6 +17,7 @@ app.use(morgan('tiny'));
 // }));
 // CORS 
 const cors = require("cors");
+const { handleError } = require('./utils/errorHandler.js');
 app.use(cors());
 
 // parse requests of content-type - application/json
@@ -40,14 +41,15 @@ app.response.sendResponse = function (data, message, statusCode) {
 	})
 };
 
+const responseEnv = ["development","test"]
 app.response.sendError = function (err) {
 	const { statusCode, message, stack, expose } = err;
-	return this.status(statusCode).json({
+	return this.status(statusCode).send({
 		success: false,
 		status: statusCode,
 		expose: expose,
 		error_message: message,
-		...(process.env.NODE_ENV === development) && { error_stack: stack }
+		...(responseEnv.includes(process.env.NODE_ENV)) && { error_stack: stack }
 	});
 };
 

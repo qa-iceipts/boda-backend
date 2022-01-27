@@ -6,13 +6,9 @@
  *  @version 1.0.0
  */
 
-const logger = require('../utils/logger');
-// const fcmDao = require('../daos/fcm-dao');
 const {
     fcm_keys
 } = require('../models');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
 const createHttpError = require('http-errors');
 /**
  * export module
@@ -20,7 +16,7 @@ const createHttpError = require('http-errors');
 
 module.exports = {
 
-    addFcmKey: async function (req) {
+    addFcmKey: async function (req, res) {
         console.log("addFcmKey Service Called ::")
         let reqObj = req.body
         console.log("reqObj::", reqObj)
@@ -28,11 +24,13 @@ module.exports = {
             where: { device_id: reqObj.device_id, userId: reqObj.userId },
             defaults: reqObj,
             raw: true
-        }).
-            console.log(created)
+        })
+        console.log(created)
         if (!created)
             await fcm_keys.update(reqObj, { where: { id: result.id } })
-        res.sendResponse("success")
+        res.sendResponse({
+            msg:"success"
+        })
 
 
 

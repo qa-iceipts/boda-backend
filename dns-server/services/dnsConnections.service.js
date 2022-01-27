@@ -6,7 +6,7 @@ const createHttpError = require('http-errors')
 module.exports = {
     addDNSConnection: async function (reqObj) {
         console.log(reqObj)
-        if (!reqObj.rideId || reqObj.userId) {
+        if (!reqObj.rideId || !reqObj.userId) {
             throw new createHttpError.BadRequest("INVALID REQUEST")
         }
         let [result, created] = await dns_connections.findOrCreate({

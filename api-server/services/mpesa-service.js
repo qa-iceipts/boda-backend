@@ -6,14 +6,10 @@
  *  @version 1.0.0
  */
 
-const logger = require('../utils/logger');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
 const {
-    getOAuthToken,
     lipaNaMpesaOnline,
 } = require('../utils/mpesa')
-const db = require('../models');
+const db = require('../models')
 const createHttpError = require('http-errors');
 
 /**
@@ -62,7 +58,6 @@ module.exports = {
         res.sendResponse(result)
     },
 
-
     mpesaCallback: async function (obj) {
         let result = await transactions.findOne({
             where: obj,
@@ -87,7 +82,7 @@ module.exports = {
             subscriptionType: result.dataValues.subscriptionType
         }
 
-        let USresult = await user_subscriptions.create(userSubObj)
+        let USresult = await db.user_subscriptions.create(userSubObj)
         let updateObj = {
             userSubscriptionId: USresult.dataValues.id,
             status: true
@@ -97,20 +92,4 @@ module.exports = {
         return USresult
 
     },
-
-    getUserSubscriptions: async function (req, res, next) {
-        let userId = req.user.id
-        let result = await user_subscriptions.findAll({
-            where: {
-                is_active: true,
-                userId: userId
-            },
-            include: {
-                model: subscriptions,
-                required: true
-            }
-        })
-        if (result.length <= 0) throw new createHttpError.NotFound()
-        res.sendResponse(result)
-    }
 }

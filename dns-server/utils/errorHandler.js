@@ -11,13 +11,13 @@ class AppError extends Error {
 
 // function for handling already known errors - user defined
 const handleKnownExceptions = (err, res) => {
-    console.error(err, "{level:safe,error:err.name}")
+    console.error("{level:safe,error:err.name}", err)
     res.sendError(err)
 };
 
 // function to handle unknown errors in App
 const handleUnknownExceptions = (err, res) => {
-    console.error(err, "{level:priority,error:err.name}")
+    console.error("{level:priority,error:err.name}", err)
     err.expose = false
     switch (err.name) {
         case 'UnauthorizedError':

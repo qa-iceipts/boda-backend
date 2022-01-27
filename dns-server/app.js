@@ -7,11 +7,13 @@ const path = require('path'); // path
 const cors = require("cors"); //cors
 app.use(cors());
 const server = require('http').createServer(app);  //{path: '/test'}
+
 const io = require('socket.io')(server, {
 	cors: { origin: "*" }
-});
+}).listen(server);
 
-require('./utils/socketio')(io)
+// require('./utils/socketio')(io)
+require('./controllers/socketio.controller')(io)
 
 app.use((req, res, next) => {
 	req.io = io
@@ -19,6 +21,7 @@ app.use((req, res, next) => {
 })
 
 const morgan = require('morgan');   // morgan & winston combined logger setup
+const { handleError } = require('./utils/errorHandler');
 // const winston = require('./utils/logger')
 app.use(morgan('tiny'));
 // app.use(morgan('combined', {
@@ -41,6 +44,7 @@ app.response.sendResponse = function (data, message, statusCode) {
 	})
 };
 
+const responseEnv = ["development", "test"]
 app.response.sendError = function (err) {
 	const { statusCode, message, stack, expose } = err;
 	return this.status(statusCode).send({
@@ -48,7 +52,7 @@ app.response.sendError = function (err) {
 		status: statusCode,
 		expose: expose,
 		error_message: message,
-		...(process.env.NODE_ENV === development) && { error_stack: stack }
+		...(responseEnv.includes(process.env.NODE_ENV)) && { error_stack: stack }
 	});
 };
 
@@ -71,7 +75,7 @@ async function start() {
 		console.log("=> dbhelper file executed")
 		const port = process.env.PORT || 4000
 		// const port = process.env.NODE_ENV === 'production' ? (process.env.PORT || 80) : 4000;
-		app.listen(port, () => console.log(' Server listening on port ' + port));
+		server.listen(port, () => console.log(' Server listening on port ' + port));
 
 	} catch (error) {
 		console.log(error)

@@ -16,13 +16,7 @@ router.post('/addUser', PromiseHandler(userService.addUser), PromiseHandler(user
 
 router.post('/login/:roleName', PromiseHandler(userService.login))
 
-router.get('/getUser', authorize(), PromiseHandler(userService.getUser))
-
 router.get('/getUser/:id', authorize(), PromiseHandler(userService.getUserById))
-
-router.get('/getAllUsers/:userType', authorize(), PromiseHandler(userService.getAllUsers))
-
-router.post('/getAllUsersByIds/', PromiseHandler(userService.getAllUsersByIds))
 
 router.put('/updateUser/:userId', authorize(), PromiseHandler(userService.updateUser))
 
@@ -36,12 +30,17 @@ router.post('/verifyOTP', PromiseHandler(userService.verifyOTP));
 
 router.post('/changePassword', PromiseHandler(userService.changePassword));
 
+//Admin
 // disable User with userId
 router.put('/disableUser/:userId', authorize(role.ADMIN), PromiseHandler(userService.disableUser))
 
-router.post('/checkUserExists', PromiseHandler(userService.checkUserExists))
+// router.post('/checkUserExists', PromiseHandler(userService.checkUserExists))
 
 router.post('/getDriverMetrics', PromiseHandler(userService.getDriverMetrics))
+
+router.get('/getAllUsers/:userType', authorize(), PromiseHandler(userService.getAllUsers))
+
+router.post('/getAllUsersByIds/', PromiseHandler(userService.getAllUsersByIds))
 
 
 // const cron = require('node-cron');
