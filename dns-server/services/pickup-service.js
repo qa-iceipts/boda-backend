@@ -32,7 +32,8 @@ module.exports = {
                 ['createdAt', 'DESC'],
             ],
         })
-        if (result.length <= 0) throw new createHttpError.NotFound()
+        if (result.length <= 0) return res.sendResponse({})
+        //  throw new createHttpError.NotFound()
 
         console.log("rides result ==> ", result)
         let origins = reqObj.lat + ',' + reqObj.long

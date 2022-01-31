@@ -38,6 +38,8 @@ module.exports = {
             }
         })
         // if (result.length <= 0) throw new createHttpError.NotFound()
-        res.sendResponse(result)
+        res.sendResponse({
+            subscriptions: result
+        })
     }
 }

@@ -29,7 +29,9 @@ module.exports = {
         if (type && type == 'all') {
             let result = await vehicles.findAll()
             if (result.length <= 0) throw new createHttpError.NotFound("No Vehicles Found")
-            return result
+            return {
+                vehicles : result
+            }
         }
         else {
             let condition = name ? { name: { [Op.like]: `%${name}%` } } : null;

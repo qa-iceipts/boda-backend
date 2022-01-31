@@ -20,7 +20,8 @@ module.exports = {
                 exclude: ['createdAt', 'updatedAt']
             }
         })
-        if (!result) throw new createHttpError.NotFound("User Not Found")
+        if (!result) return {}
+        // throw new createHttpError.NotFound("User Not Found")
         return result
     },
 
@@ -56,7 +57,8 @@ module.exports = {
         let nearbyUsers = await user_location.findAndCountAll({
             where: whereObj, attributes: { exclude: ['createdAt', 'updatedAt'] }
         })
-        if (nearbyUsers.count <= 0) throw new createHttpError.NotFound("No Nearby Drivers Found")
+        if (nearbyUsers.count <= 0) return {}
+        // throw new createHttpError.NotFound("No Nearby Drivers Found")
         return nearbyUsers
     },
 

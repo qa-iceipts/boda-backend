@@ -40,7 +40,8 @@ module.exports = {
                 required: true
             }
         })
-        if (!result) throw new createHttpError.NotFound("No vehicles found !!")
+        // if (!result) throw new createHttpError.NotFound("No vehicles found !!")
+        if(!result) return {}
         return result
 
     },

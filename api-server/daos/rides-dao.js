@@ -150,7 +150,8 @@ module.exports = {
         }
         let result = await rides.findOne({ where: whereObj, include: { model: user_vehicles } })
         if (!result) {
-            throw new createHttpError.NotFound()
+            return {}
+            // throw new createHttpError.NotFound()
         }
         return result
     },

@@ -36,22 +36,25 @@ module.exports = {
 
         let nearbyUsers = await userLocationService.getNearbyDrivers({ minLoc, maxLoc, vehicle_type, user_id })
 
-        //vehicle count
-        nearbyUsers.VehicleCount = nearbyUsers.rows.reduce(function (obj, v) {
-            // increment or set the property
-            // `(obj[v.status] || 0)` returns the property value if defined
-            // or 0 ( since `undefined` is a falsy value
-            obj[v.dataValues.vehicle_type] = (obj[v.dataValues.vehicle_type] || 0) + 1;
-            obj[1] = (obj[1] || 0);
-            obj[2] = (obj[2] || 0);
-            obj[3] = (obj[3] || 0);
-            obj[4] = (obj[4] || 0);
-            // return the updated object
-            return obj;
-            // set the initial value as an object
-        }, {})
+        if (Object.getOwnPropertyNames(nearbyUsers).length > 0) {
+            //vehicle count
+            nearbyUsers.VehicleCount = nearbyUsers.rows.reduce(function (obj, v) {
+                // increment or set the property
+                // `(obj[v.status] || 0)` returns the property value if defined
+                // or 0 ( since `undefined` is a falsy value
+                obj[v.dataValues.vehicle_type] = (obj[v.dataValues.vehicle_type] || 0) + 1;
+                obj[1] = (obj[1] || 0);
+                obj[2] = (obj[2] || 0);
+                obj[3] = (obj[3] || 0);
+                obj[4] = (obj[4] || 0);
+                // return the updated object
+                return obj;
+                // set the initial value as an object
+            }, {})
 
-        console.log(nearbyUsers.VehicleCount)
+            console.log(nearbyUsers.VehicleCount)
+        }
+
         res.sendResponse(nearbyUsers)
     },
 
