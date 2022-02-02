@@ -45,7 +45,7 @@ module.exports = {
         return await dns_connections.destroy({
             where: { socketId: socketId },
         })
-       
+
     },
 
     getNearbyDrivers: async function (reqObj) {
@@ -61,10 +61,13 @@ module.exports = {
         // ETA CODE
         let distance = calculateDistance(reqObj.pick_lat, reqObj.pick_long, reqObj.drop_lat, reqObj.drop_long, 'K')
 
-        console.log(distance)
-        console.log("DNS nearby driver get res::", response.data)
-        if (!response.data.success) throw new createHttpError.InternalServerError()
+        console.log("distance => ", distance)
 
+        console.log("Location server nearby driver get response ::", response.data)
+
+        if (!response.data.success) throw new createHttpError.InternalServerError()
+        if (Object.keys(response.data.data).length === 0) throw new createHttpError.NotFound("Nearby Drivers Not Found")
+        response.data = response.data.data
         let destinations = reqObj.pick_lat + ',' + reqObj.pick_long
         let array = []
         let driverIds = []
@@ -95,7 +98,7 @@ module.exports = {
 
         let url = `https://maps.googleapis.com/maps/api/distancematrix/json?destinations=${destinations}&origins=${origins}&key=${process.env.MAPS_API_KEY}`
 
-        console.log(url)
+        console.log("distance matrix URL", url)
 
         let etaResult = await axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
             params: {
@@ -104,8 +107,10 @@ module.exports = {
                 key: process.env.MAPS_API_KEY
             }
         })
-        if (etaResult.data)
-            console.log("etaresult data", etaResult.data)
+
+        if (!etaResult.data) throw new createHttpError.InternalServerError("Google distance Error")
+
+        console.log("etaresult data", etaResult.data)
 
         etaResult.data.rows.forEach((element, index) => {
             response.data.rows[index].address = etaResult.data.origin_addresses[index]
@@ -119,7 +124,8 @@ module.exports = {
 
         })
 
-        console.log(metrics.data.data)
+        console.log("Response of /users/getDriverMetrics => ", metrics.data.data)
+        if(metrics.data.data.length === 0) throw new createHttpError.NotFound("no drivers found or eta")
         let merged = [];
 
         for (let i = 0; i < metrics.data.data.length; i++) {
@@ -138,14 +144,16 @@ module.exports = {
             where: {
                 rideId: req.rideId,
                 status: 0
-            }
+            },
+            attributes : ['driverId']
         })
         if (result.length <= 0) throw new createHttpError.NotFound("No drivers found")
         let driverIds = []
         result.forEach(element => {
-            driverIds.push(element.dataValues.driverId)
+            driverIds.push(element.driverId)
         });
-        return [result, driverIds]
+        return driverIds
+        // return [result, driverIds]
     },
 
     getTokensByIds: async function (Ids) {

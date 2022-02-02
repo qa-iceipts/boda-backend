@@ -42,11 +42,11 @@ module.exports = {
             where: { userId: Ids },
             attributes: ['fcm_key'],
         })
-        if (result.length <= 0) throw new createHttpError.NotFound()
+        if (result.length <= 0) throw new createHttpError.NotFound("fcm tokens not found")
         let fcmtokens = []
         result.forEach(element => {
-            fcmtokens.push(element.dataValues.fcm_key)
+            fcmtokens.push(element.fcm_key)
         });
-        res.sendResponse(result)
+        res.sendResponse(fcmtokens)
     }
 }

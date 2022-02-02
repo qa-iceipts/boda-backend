@@ -168,36 +168,11 @@ module.exports = {
     },
 
     //lookAtThis
-    getDriverMetrics: async function ({ driverIds, customer_id }) {
-        console.log("getDriverMetrics Service ", driverIds, customer_id)
-        let result = await db.users.findAll({
-            where: {
-                id: driverIds,
-                roleType: 2,
-                isActive: true
-            },
-            attributes: ['id', 'name', 'phone', 'email', 'profile_image',
-                [db.sequelize.fn("COUNT", db.sequelize.col("driver.id")), "pastExperience"]
-            ],
-            include: {
-                model: db.rides,
-                as: 'driver',
-                where: {
-                    customer_id: customer_id
-                },
-                attributes: [],
-                required: false,
-                // group : ['driver_id']
-            },
-            group: ['driver_id']
-        })
-        // const model = db.users
-        // for (let assoc of Object.keys(model.associations)) {
-        //   for (let accessor of Object.keys(model.associations[assoc].accessors)) {
-        //     console.log(model.name + '.' + model.associations[assoc].accessors[accessor]+'()');
-        //   }
-        // }
-        console.log(result)
+    getDriverMetrics: async (req, res, next) => {
+        let { driverIds, customer_id } = req.body
+        console.log("getDriverMetrics Service ", driverIds, customer_id);
+        let result = await usersDao.getDriverMetrics({ driverIds, customer_id })
+        console.log(result);
         res.sendResponse(result);
     },
 

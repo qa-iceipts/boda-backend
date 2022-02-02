@@ -80,11 +80,10 @@ module.exports = {
         return result
     },
 
-    quotePrice: async function (req) {
+    quotePrice: async function (req,res,next) {
 
         let reqObj = req.body
         // console.log(Object.keys(req.io.sockets.sockets))
-
         let rideData = await rides.findOne({
             raw: true,
             where: {

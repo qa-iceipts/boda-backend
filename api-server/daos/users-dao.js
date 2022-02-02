@@ -222,4 +222,31 @@ module.exports = {
     },
 
 
+    getDriverMetrics: async function ({ driverIds, customer_id }) {
+        console.log("getDriverMetrics Service ", driverIds, customer_id)
+        let result = await db.users.findAll({
+            where: {
+                id: driverIds,
+                roleType: 2,
+                isActive: true
+            },
+            attributes: ['id', 'name', 'phone', 'email', 'profile_image',
+                [db.sequelize.fn("COUNT", db.sequelize.col("driver.id")), "pastExperience"]
+            ],
+            include: {
+                model: db.rides,
+                as: 'driver',
+                where: {
+                    customer_id: customer_id
+                },
+                attributes: [],
+                required: false,
+                // group : ['driver_id']
+            },
+            group: ['driver_id']
+        })
+        return result
+    },
+
+
 }
