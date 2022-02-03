@@ -57,7 +57,8 @@ module.exports = {
         let nearbyUsers = await user_location.findAndCountAll({
             where: whereObj, attributes: { exclude: ['createdAt', 'updatedAt'] }
         })
-        if (nearbyUsers.count <= 0) return {}
+        console.log(nearbyUsers)
+        // if (nearbyUsers.count <= 0) return {}
         // throw new createHttpError.NotFound("No Nearby Drivers Found")
         return nearbyUsers
     },

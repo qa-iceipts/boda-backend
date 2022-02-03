@@ -2,15 +2,17 @@
 require('dotenv').config();// dotenv
 const express = require("express"); // express intitialization & socketIO
 const app = express();
+const server = require('http').createServer(app); 
+const io = require('socket.io')(server);
 
 const path = require('path'); // path 
 const cors = require("cors"); //cors
 app.use(cors());
-const server = require('http').createServer(app);  //{path: '/test'}
+ //{path: '/test'}
 
-const io = require('socket.io')(server, {
-	cors: { origin: "*" }
-}).listen(server);
+// const io = require('socket.io')(server, {
+// 	cors: { origin: "*" }
+// }).listen(server);
 
 // require('./utils/socketio')(io)
 require('./controllers/socketio.controller')(io)
@@ -82,4 +84,4 @@ async function start() {
 	}
 }
 start()
-module.exports = io
+// module.exports = io

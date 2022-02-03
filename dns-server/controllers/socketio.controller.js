@@ -1,3 +1,7 @@
+'use-strict'
+const { sendNotifications } = require('../services/notifications-service')
+const { addChat, getChats } = require('../services/chats')
+const createHttpError = require('http-errors')
 const {
    DeleteDNSConnection,
    addDNSConnection,
@@ -7,8 +11,6 @@ const {
    getResponse,
    getSocketId
 } = require('../services/socket-io-service')
-const { sendNotifications } = require('../services/notifications-service')
-const { addChat, getChats } = require('../services/chats')
 
 exports = module.exports = function (io) {
 
@@ -35,7 +37,7 @@ exports = module.exports = function (io) {
 
       try {
          await addDNSConnection(connObj)
-         
+
          socket.emit("onconnect", { message: "welcome User", socketId: socket.id });
 
          //Whenever someone disconnects this piece of code executed
@@ -45,84 +47,11 @@ exports = module.exports = function (io) {
 
          socket.on('getOffers', data => getOffers(data, socket));
 
+         socket.on('onchat', data => onChat(data, socket, io));
+
       } catch (err) {
          handleError(err, socket)
       }
-
-      socket.on("onchat", (data) => {
-         console.log(data)
-         let insertObj = {
-            msg: data.content,
-            driverId: socket.userObj.user_type == 3 ? data.to : socket.userObj.userId,
-            customer_id: socket.userObj.user_type == 3 ? socket.userObj.userId : data.to,
-            rideId: data.rideid,
-            user_type: socket.userObj.user_type
-         }
-         console.log("insertObj::", insertObj)
-         // if(socket.userObj.user_type == 2 ){
-         //    // he his Driver
-         //    customer_id: data.to
-         //    driverId: socket.userObj.userId
-         // }
-         addChat(insertObj).then(() => {
-            console.log("socket.userObj ::", socket.userObj)
-            getTokensByIds(data.to).then((fcmtokens) => {
-               console.log("fcm tokens", fcmtokens.data)
-               io.to(data.to).emit("privateMsg", {
-                  content: data.content,
-                  name: data.name,
-                  from: socket.id,
-                  sender: socket.userObj.userId,
-                  rideId: data.rideid
-               });
-               if (fcmtokens.data && fcmtokens.data.length > 0) {
-
-                  let message = {
-
-                     notification: {
-                        title: "New Message",
-                        body: data.content
-                     },
-                     android: {
-                        notification: {
-                           clickAction: 'chat_notification'
-                        }
-                     },
-                     data: {
-                        data: JSON.stringify({
-                           sender: socket.userObj.userId,
-                           rideId: data.rideid
-                        })
-                     },
-                     // data: {
-                     //    sender : socket.userObj.userId,
-                     //    rideId : data.rideid
-                     // },
-                     tokens: fcmtokens.data,
-                  };
-                  console.log("chat msg notification", message)
-                  sendNotifications(message).then((result) => {
-                  }).catch(err => {
-                     console.log(err)
-                     socket.emit('error', { data: "error" });
-                  })
-               } else {
-                  socket.emit('error', { data: "no fcm tokens found", });
-               }
-
-            }).catch(err => {
-               console.log(err)
-               socket.emit('error', { data: "error", err: err });
-            })
-
-         }).catch(err => {
-            console.log(err)
-            socket.emit('error', { data: "error", err: err });
-         })
-
-
-      });
-
    })
 
 }
@@ -161,7 +90,6 @@ function handleError(err, socket) {
    }
 }
 
-
 async function getOffers(data, socket) {
    try {
       console.log("getOffers event called", data);
@@ -189,8 +117,63 @@ async function getOffers(data, socket) {
       await sendNotifications(message)
 
       console.log("Notifications sent")
-      
+
       // setTimeout(emitData, 60000);
+   } catch (err) {
+      handleError(err, socket)
+   }
+
+}
+
+async function onChat(data, socket, io) {
+   try {
+      console.log(data)
+      let insertObj = {
+         msg: data.content,
+         driverId: socket.userObj.user_type == 3 ? data.to : socket.userObj.userId,
+         customer_id: socket.userObj.user_type == 3 ? socket.userObj.userId : data.to,
+         rideId: data.rideid,
+         user_type: socket.userObj.user_type
+      }
+      console.log("insertObj::", insertObj)
+
+      await addChat(insertObj)
+      console.log("socket.userObj ::", socket.userObj)
+      let fcmtokens = await getTokensByIds(data.to)
+      console.log("fcm tokens", fcmtokens.data)
+
+      io.to(data.to).emit("privateMsg", {
+         content: data.content,
+         name: data.name,
+         from: socket.id,
+         sender: socket.userObj.userId,
+         rideId: data.rideid
+      });
+
+      if (!fcmtokens.data && fcmtokens.data.length <= 0)
+         throw new createHttpError.NotAcceptable("fcm tokens not found")
+
+      let message = {
+         notification: {
+            title: "New Message",
+            body: data.content
+         },
+         android: {
+            notification: {
+               clickAction: 'chat_notification'
+            }
+         },
+         data: {
+            data: JSON.stringify({
+               sender: socket.userObj.userId,
+               rideId: data.rideid
+            })
+         },
+         tokens: fcmtokens.data,
+      };
+      console.log("chat msg notification", message)
+      await sendNotifications(message)
+
    } catch (err) {
       handleError(err, socket)
    }

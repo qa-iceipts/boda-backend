@@ -77,7 +77,7 @@ module.exports = {
             result[index].phone = customer.phone
 
         });
-        return result
+        res.sendResponse(result) 
     },
 
     quotePrice: async function (req,res,next) {

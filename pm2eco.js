@@ -111,11 +111,11 @@ module.exports = {
 
     deploy: {
         production: {
-            key: "boda-private-key.pem",
+            key: "BodasshKey",
             user: 'ubuntu',
             host: ["13.245.32.170"],
             ref: 'origin/development',
-            repo: 'git clone https://__deepesh__146:S85ZW8b0xscyScHQpX4XAF12@bitbucket.org/BodaDrop/boda-drop-api.git',
+            repo: 'https://__deepesh__146:S85ZW8b0xscyScHQpX4XAF12@bitbucket.org/BodaDrop/boda-drop-api.git',
             path: 'app',
             'pre-deploy-local': '',
             'post-deploy': 'npm install && pm2 reload ../../ecosystem.config.js --env production',
