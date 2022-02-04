@@ -77,7 +77,9 @@ module.exports = {
             result[index].phone = customer.phone
 
         });
-        res.sendResponse(result) 
+        res.sendResponse({
+            data : result
+        }) 
     },
 
     quotePrice: async function (req,res,next) {
@@ -112,11 +114,11 @@ module.exports = {
         if (!driverUser.data.data || driverLocation.data.length <= 0)
             throw new createHttpError.NotFound("Users not found of quote price")
 
-        // console.log("driverUser data =>", driverUser.data.data)
-        // console.log("driverLocation data =>", driverLocation.data)
+        console.log("driverUser data =>", driverUser.data.data)
+        console.log("driverLocation data =>", driverLocation.data)
         // map eta
         let destinations = rideData.pick_lat + ',' + rideData.pick_long
-        let origins = driverLocation.data[0].lat + ',' + driverLocation.data[0].long
+        let origins = driverLocation.data.data[0].lat + ',' + driverLocation.data.data[0].long
         console.log("destinations:: ", destinations, "origins :: ", origins)
 
         let etaResult = await axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
@@ -130,7 +132,7 @@ module.exports = {
         if (!etaResult.data) throw new createHttpError.InternalServerError("ETA RESULT ERROR")
         //  console.log("etaResult.data =>",etaResult.data.rows[0].elements[0].distance.text)
         var mergedData = {
-            driverLocation: driverLocation.data[0],
+            driverLocation: driverLocation.data.data[0],
             driverUser: driverUser.data.data[0],
             distance: etaResult.data.rows[0].elements[0].distance.text,
             duration: etaResult.data.rows[0].elements[0].duration.text
@@ -189,7 +191,9 @@ module.exports = {
 
         await Promise.all([sendQuoteEvent, notify])
 
-        res.sendResponse(`${notifyResponse.successCount} messages were sent successfully`)
+        res.sendResponse({
+            message : "success"
+        })
 
     }
 }

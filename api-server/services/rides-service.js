@@ -6,7 +6,7 @@
  *  @version 1.0.0
  */
 const ridesDao = require('../daos/rides-dao');
-const { getTokensByIds } = require("../services/fcm-service")
+const { getTokensByIds, getAllTokensByIds } = require("../services/fcm-service")
 const { sendNotifications } = require('../services/notifications-service')
 const createHttpError = require('http-errors');
 /**
@@ -20,7 +20,7 @@ module.exports = {
         res.sendResponse(result)
     },
 
-    updateRide: async function (req,res,next) {
+    updateRide: async function (req, res, next) {
         let reqObj = req.body
         let ride = ridesDao.getRideByPk(reqObj.id)
         ride.set(reqObj)
@@ -32,20 +32,24 @@ module.exports = {
 
         console.log("bookRide Service Called ::")
         let reqObj = req.body
-        let { driver_id, customer_id } = req.body
+        let ride = await ridesDao.getRideByPk(reqObj.id)
+        if(!ride) throw new createHttpError.NotFound("ride Not Found")
+        console.log(ride)
+        let { driver_id, customer_id } = ride
         console.log("reqObj::", reqObj)
         let [driver_fcmtokens, customer_fcmtokens] = await Promise.all([
-            getTokensByIds(driver_id),
-            getTokensByIds(customer_id)
+            getAllTokensByIds(driver_id),
+            getAllTokensByIds(customer_id)
         ])
-        console.log("driver_fcmtokens.data:: ", driver_fcmtokens.data)
-        console.log("customer_fcmtokens.data:: ", customer_fcmtokens.data)
+        console.log("driver_fcmtokens.data:: ", driver_fcmtokens)
+        console.log("customer_fcmtokens.data:: ", customer_fcmtokens)
 
-        if (driver_fcmtokens.data.length <= 0 && customer_fcmtokens.data.length <= 0)
+        if (driver_fcmtokens.length <= 0 && customer_fcmtokens.length <= 0)
             throw new createHttpError.NotFound("fcm tokens not found")
         req.data = {
-            driver_fcmtokens: driver_fcmtokens.data,
-            customer_fcmtokens: customer_fcmtokens.data
+            ride: reqObj,
+            driver_fcmtokens: driver_fcmtokens,
+            customer_fcmtokens: customer_fcmtokens
         } //array
         next()
 
@@ -84,11 +88,13 @@ module.exports = {
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
         ])
-        let result = await ridesDao.updateRide(reqObj)
-        res.sendResponse(result)
+        let result = await ridesDao.updateRide(req.data.ride)
+        res.sendResponse({
+            msg: "success"
+        })
     },
 
-    startRide: async function (req) {
+    startRide: async function (req, res, next) {
         console.log("req.data", req.data)
         let { driver_fcmtokens, customer_fcmtokens } = req.data
 
@@ -122,8 +128,11 @@ module.exports = {
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
         ])
-        let result = await ridesDao.updateRide(reqObj)
-        res.sendResponse(result)
+        let result = await ridesDao.updateRide(req.data.ride)
+        // res.sendResponse(result)
+        res.sendResponse({
+            msg: "success"
+        })
     },
 
     endRide: async function (req) {
@@ -161,8 +170,11 @@ module.exports = {
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
         ])
-        let result = await ridesDao.updateRide(reqObj)
-        res.sendResponse(result)
+        let result = await ridesDao.updateRide(req.data.ride)
+        // res.sendResponse(result)
+        res.sendResponse({
+            msg: "success"
+        })
     },
 
     cancelRide: async function (req, res, next) {
@@ -201,8 +213,11 @@ module.exports = {
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
         ])
-        let result = await ridesDao.updateRide(reqObj)
-        res.sendResponse(result)
+        let result = await ridesDao.updateRide(req.data.ride)
+        // res.sendResponse(result)
+        res.sendResponse({
+            msg: "success"
+        })
     },
 
     getRide: async function (req, res, next) {

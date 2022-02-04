@@ -36,6 +36,7 @@ module.exports = {
 
     },
     getTokensByIds: async function (req, res, next) {
+        console.log(req.body)
         let { Ids } = req.body
         console.log("getTokensByIds Service Called ::")
         let result = await fcm_keys.findAll({
@@ -48,5 +49,20 @@ module.exports = {
             fcmtokens.push(element.fcm_key)
         });
         res.sendResponse(fcmtokens)
+    },
+
+    getAllTokensByIds : async function (Ids) {
+        console.log(Ids)
+        console.log("getTokensByIds Service Called ::")
+        let result = await fcm_keys.findAll({
+            where: { userId: Ids },
+            attributes: ['fcm_key'],
+        })
+        if (result.length <= 0) throw new createHttpError.NotFound("fcm tokens not found")
+        let fcmtokens = []
+        result.forEach(element => {
+            fcmtokens.push(element.fcm_key)
+        });
+        return fcmtokens
     }
 }

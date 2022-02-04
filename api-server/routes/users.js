@@ -43,6 +43,9 @@ router.get('/getAllUsers/:userType', authorize(), PromiseHandler(userService.get
 router.post('/getAllUsersByIds/', PromiseHandler(userService.getAllUsersByIds))
 
 
+router.get('/getDriverProfile/:id', PromiseHandler(userService.getDriverProfile))
+
+
 // const cron = require('node-cron');
 
 // const { DestroyCronJob } = require("../utils/verifytoken")

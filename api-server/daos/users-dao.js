@@ -129,9 +129,9 @@ module.exports = {
 
             ]
         })
-        if (!user.id) {
-            throw new createHttpError.NotFound()
-        }
+        // if (!user.id) {
+            // throw new createHttpError.NotFound()
+        // }
         return user
     },
 

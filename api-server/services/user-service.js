@@ -128,6 +128,13 @@ module.exports = {
         res.sendResponse(getBasicDetails(user))
     },
 
+    getDriverProfile: async function (req, res) {
+        console.log("getDriverProfile called")
+        let { id } = req.params
+        let user = await usersDao.getDriverProfile(id)
+        res.sendResponse(user)
+    },
+
     getAllUsers: async function (req, res) {
         const { page, size } = req.query;
         let userType = req.params.userType
