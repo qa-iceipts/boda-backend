@@ -2,6 +2,7 @@
 
 const createHttpError = require('http-errors')
 const { chats } = require('../models');
+const { getRideById } = require('./rides.service');
 
 module.exports = {
     addChat: async function (reqObj) {
@@ -11,17 +12,23 @@ module.exports = {
     },
 
     getChats: async function (req, res, next) {
-        let reqObj = req.body
+        let { rideId } = req.params
+        console.log("get chats called ::", rideId)
+        let ride = await getRideById(rideId)
         let result = await chats.findAll({
             where: {
-                rideId: reqObj.rideId,
-                customer_Id: reqObj.customerId,
-                driverId: reqObj.driverId
+                rideId: ride.rideId,
+                customer_Id: ride.customerId,
+                driverId: ride.driverId
             },
+            attributes: ["id", "msg", "driverId", "customer_id", "rideId", "user_type"],
             order: [["createdAt", "DESC"]],
             raw: true
         })
-        if (result.length <= 0) throw new createHttpError.NotFound()
-        return result
+        // if (result.length <= 0) 
+        // throw new createHttpError.NotFound()
+        res.sendResponse({
+            chats: result
+        })
     }
 }
