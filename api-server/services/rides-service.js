@@ -76,19 +76,25 @@ module.exports = {
             },
             data: notificationdata ? notificationdata : "",
             tokens: driver_fcmtokens,
+            // driver_fcmtokens,
         };
-        let customerMsg = driverMsg
-        customerMsg.notification = {
-            title: "Ride Booking Successfull",
-            body: "Driver is arriving soon at pickup location"
+        
+        // let customerMsg = Object.create(driverMsg);
+        let customerMsg = {
+            ...driverMsg,
+            notification : {
+                title: "Ride Booking Successfull",
+                body: "Driver is arriving soon at pickup location"
+            },
+            tokens : customer_fcmtokens
         }
-        customerMsg.tokens = customer_fcmtokens
-
+        console.log(customerMsg)
+        console.log(driverMsg)
         await Promise.all([
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
         ])
-        let result = await ridesDao.updateRide(req.data.ride)
+        await ridesDao.updateRide(req.data.ride)
         res.sendResponse({
             msg: "success"
         })
@@ -118,12 +124,18 @@ module.exports = {
             data: notificationdata ? notificationdata : "",
             tokens: driver_fcmtokens,
         };
-        let customerMsg = driverMsg
-        customerMsg.notification = {
-            title: "Ride Started by driver",
-            body: "You will reach your destination soon!"
+
+        let customerMsg = {
+            ...driverMsg,
+            notification : {
+                title: "Ride Started by driver",
+                body: "You will reach your destination soon!"
+            },
+            tokens : customer_fcmtokens
         }
-        customerMsg.tokens = customer_fcmtokens
+        console.log(customerMsg)
+        console.log(driverMsg)
+
         await Promise.all([
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
@@ -202,19 +214,21 @@ module.exports = {
             tokens: driver_fcmtokens,
         };
 
-        let customerMsg = driverMsg
-        customerMsg.notification = {
-            title: "Ride is Cancelled",
-            body: "Book a new ride to start again"
+        
+        let customerMsg = {
+            ...driverMsg,
+            notification : {
+                title: "Ride is Cancelled",
+                body: "Book a new ride to start again"
+            },
+            tokens : customer_fcmtokens
         }
-        customerMsg.tokens = customer_fcmtokens
 
         await Promise.all([
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
         ])
-        let result = await ridesDao.updateRide(req.data.ride)
-        // res.sendResponse(result)
+        await ridesDao.updateRide(req.data.ride)
         res.sendResponse({
             msg: "success"
         })

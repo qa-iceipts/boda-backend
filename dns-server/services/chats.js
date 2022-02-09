@@ -12,14 +12,14 @@ module.exports = {
     },
 
     getChats: async function (req, res, next) {
-        let { rideId } = req.params
+        let { rideId ,customerId,driverId} = req.body
         console.log("get chats called ::", rideId)
-        let ride = await getRideById(rideId)
+        // let ride = await getRideById(rideId)
         let result = await chats.findAll({
             where: {
-                rideId: ride.rideId,
-                customer_Id: ride.customerId,
-                driverId: ride.driverId
+                rideId: rideId,
+                customer_Id: customerId,
+                driverId: driverId
             },
             attributes: ["id", "msg", "driverId", "customer_id", "rideId", "user_type"],
             order: [["createdAt", "DESC"]],

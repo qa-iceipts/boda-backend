@@ -1,7 +1,7 @@
 module.exports = {
     apps: [{
         name: "API-SERVER",
-        script: "./boda-drop-api/api-server/app.js",
+        script: "../api-server/app.js",
         // watch: '.',
         // add the port as an environment variable
         env: {
@@ -49,7 +49,7 @@ module.exports = {
     },
     {
         name: "DNS-SERVER",
-        script: "./boda-drop-api/dns-server/app.js",
+        script: "../dns-server/app.js",
         watch: false,
         env: {
             NODE_ENV: "test",
@@ -87,7 +87,7 @@ module.exports = {
 
     {
         name: "LOCATION-SERVER",
-        script: "./boda-drop-api/location-server/app.js",
+        script: "../location-server/app.js",
         watch: false,
         env: {
             NODE_ENV: "test",
@@ -115,10 +115,10 @@ module.exports = {
             user: 'ubuntu',
             host: ["13.245.32.170"],
             ref: 'origin/development',
-            repo: 'https://__deepesh__146:S85ZW8b0xscyScHQpX4XAF12@bitbucket.org/BodaDrop/boda-drop-api.git',
+            repo: 'git@bitbucket.org:BodaDrop/boda-drop-api.git',
             path: 'app',
             'pre-deploy-local': '',
-            'post-deploy': 'npm install && pm2 reload ../../ecosystem.config.js --env production',
+            'post-deploy': 'cd api-server && npm install && cd ../dns-server && npm install && cd ../location-server && npm install && pm2 reload ../../../ecosystem.config.js --env test',
             'pre-setup': ''
         }
     }

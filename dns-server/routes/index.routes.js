@@ -32,7 +32,7 @@ router.post("/sendNotification", (req, res) => {
 
 })
 
-router.get("/getMsgs/:rideId", PromiseHandler(getChats));
+router.post("/getMsgs", PromiseHandler(getChats));
 
 router.post("/getPickupRequests", PromiseHandler(getPickupRequests))
 
