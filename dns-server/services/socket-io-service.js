@@ -9,7 +9,7 @@ const { calculateDistance } = require('../utils/commonUtils');
 const createHttpError = require('http-errors')
 
 module.exports = {
-    addDNSConnection: async function (reqObj) {
+    addDNSConnection: async function(reqObj) {
         console.log(reqObj)
         if (!reqObj.rideId || !reqObj.userId) {
             throw new createHttpError.BadRequest("INVALID REQUEST")
@@ -29,7 +29,7 @@ module.exports = {
     },
 
 
-    getSocketId: async function (user_id) {
+    getSocketId: async function(user_id) {
 
         let result = await dns_connections.findOne({
             //rideId: reqObj.rideId,
@@ -41,14 +41,14 @@ module.exports = {
         return result
 
     },
-    DeleteDNSConnection: async function (socketId) {
+    DeleteDNSConnection: async function(socketId) {
         return await dns_connections.destroy({
             where: { socketId: socketId },
         })
 
     },
 
-    getNearbyDrivers: async function (reqObj) {
+    getNearbyDrivers: async function(reqObj) {
         console.log("getNearbyDrivers called")
         let response = await axios.post(process.env.LOCATION_SERVER + '/getNearbyDrivers', {
             "user_id": reqObj.user_id,
@@ -82,7 +82,7 @@ module.exports = {
                 status: 0,
                 price: 0,
                 customerId: reqObj.user_id,
-                range: distance * obj.per_km,
+                range: parseInt(distance * obj.per_km),
             })
             driverIds.push(obj.user_id)
         });
@@ -121,31 +121,29 @@ module.exports = {
         let metrics = await axios.post(process.env.API_SERVER + '/users/getDriverMetrics', {
             "driverIds": driverIds,
             "customer_id": reqObj.user_id
-
         })
 
         console.log("Response of /users/getDriverMetrics => ", metrics.data.data)
-        if(metrics.data.data.length === 0) throw new createHttpError.NotFound("no drivers found or eta")
+        if (metrics.data.data.length === 0) throw new createHttpError.NotFound("no drivers found or eta")
         let merged = [];
 
         for (let i = 0; i < metrics.data.data.length; i++) {
             merged.push({
                 ...metrics.data.data[i],
                 ...(response.data.rows.find((itmInner) => itmInner.user_id === metrics.data.data[i].id))
-            }
-            );
+            });
         }
         console.log("merged::", merged);
         return ({ data: merged })
     },
 
-    fetchDrivers: async function (req) {
+    fetchDrivers: async function(req) {
         let result = await rides.findAll({
             where: {
                 rideId: req.rideId,
                 status: 0
             },
-            attributes : ['driverId']
+            attributes: ['driverId']
         })
         if (result.length <= 0) throw new createHttpError.NotFound("No drivers found")
         let driverIds = []
@@ -153,17 +151,17 @@ module.exports = {
             driverIds.push(element.driverId)
         });
         return driverIds
-        // return [result, driverIds]
+            // return [result, driverIds]
     },
 
-    getTokensByIds: async function (Ids) {
+    getTokensByIds: async function(Ids) {
         let result = await axios.post(process.env.API_SERVER + '/fcm/getTokensByIds', {
             "Ids": Ids
         })
         return result.data
     },
 
-    getResponse: async function (rideId) {
+    getResponse: async function(rideId) {
 
         await rides.destroy({
             where: {
@@ -235,8 +233,7 @@ module.exports = {
                 ...driversData.data.data[i],
                 ...(result.find((itmInner) => itmInner.driverId === driversData.data.data[i].id)),
                 ...(driversLocationData.data.find((itmInner) => itmInner.user_id === driversData.data.data[i].id))
-            }
-            );
+            });
         }
         console.log(merged)
         return merged

@@ -38,8 +38,8 @@ module.exports = {
         let { driver_id, customer_id } = ride
         console.log("reqObj::", reqObj)
         let [driver_fcmtokens, customer_fcmtokens] = await Promise.all([
-            getAllTokensByIds(driver_id),
-            getAllTokensByIds(customer_id)
+            getAllTokensByIds(reqObj.driver_id),
+            getAllTokensByIds(reqObj.customer_id)
         ])
         console.log("driver_fcmtokens.data:: ", driver_fcmtokens)
         console.log("customer_fcmtokens.data:: ", customer_fcmtokens)
@@ -147,7 +147,7 @@ module.exports = {
         })
     },
 
-    endRide: async function (req) {
+    endRide: async function (req,res,next) {
 
         console.log("req.data", req.data)
         let { driver_fcmtokens, customer_fcmtokens } = req.data
