@@ -77,7 +77,7 @@ module.exports = {
                     model: users,
                     as: 'driver',
                     required: false,
-                    attributes: ["id", "name", "phone", "email", "profile_image"]
+                    attributes: ["id", "name", "phone", "email", "profile_image", "ratings"]
                 },
             ],
             // raw:true
