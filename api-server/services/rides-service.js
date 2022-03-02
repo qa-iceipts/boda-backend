@@ -33,7 +33,7 @@ module.exports = {
         console.log("bookRide Service Called ::")
         let reqObj = req.body
         let ride = await ridesDao.getRideByPk(reqObj.id)
-        if(!ride) throw new createHttpError.NotFound("ride Not Found")
+        if (!ride) throw new createHttpError.NotFound("ride Not Found")
         console.log(ride)
         let { driver_id, customer_id } = ride
         console.log("reqObj::", reqObj)
@@ -78,15 +78,15 @@ module.exports = {
             tokens: driver_fcmtokens,
             // driver_fcmtokens,
         };
-        
+
         // let customerMsg = Object.create(driverMsg);
         let customerMsg = {
             ...driverMsg,
-            notification : {
+            notification: {
                 title: "Ride Booking Successfull",
                 body: "Driver is arriving soon at pickup location"
             },
-            tokens : customer_fcmtokens
+            tokens: customer_fcmtokens
         }
         console.log(customerMsg)
         console.log(driverMsg)
@@ -127,11 +127,11 @@ module.exports = {
 
         let customerMsg = {
             ...driverMsg,
-            notification : {
+            notification: {
                 title: "Ride Started by driver",
                 body: "You will reach your destination soon!"
             },
-            tokens : customer_fcmtokens
+            tokens: customer_fcmtokens
         }
         console.log(customerMsg)
         console.log(driverMsg)
@@ -147,7 +147,7 @@ module.exports = {
         })
     },
 
-    endRide: async function (req,res,next) {
+    endRide: async function (req, res, next) {
 
         console.log("req.data", req.data)
         let { driver_fcmtokens, customer_fcmtokens } = req.data
@@ -214,14 +214,14 @@ module.exports = {
             tokens: driver_fcmtokens,
         };
 
-        
+
         let customerMsg = {
             ...driverMsg,
-            notification : {
+            notification: {
                 title: "Ride is Cancelled",
                 body: "Book a new ride to start again"
             },
-            tokens : customer_fcmtokens
+            tokens: customer_fcmtokens
         }
 
         await Promise.all([
@@ -241,7 +241,7 @@ module.exports = {
     },
 
     getRidesByUserId: async function (req, res, next) {
-        let result = ridesDao.getRidesByUserId(req.user.id)
+        let result = await ridesDao.getRidesByUserId(req.user.id)
         res.sendResponse(result)
     },
 

@@ -32,7 +32,7 @@ module.exports = {
         return result
     },
 
-    getRideByPk : async function (rideId){
+    getRideByPk: async function (rideId) {
         return await rides.findByPk(rideId)
     },
     getRide: async function (rideId) {
@@ -82,6 +82,7 @@ module.exports = {
             ],
             // raw:true
         })
+
         return result
     },
 

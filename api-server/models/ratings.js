@@ -21,7 +21,6 @@ module.exports = (sequelize, DataTypes) => {
     driver_rating: DataTypes.FLOAT,
     feedback_type : DataTypes.STRING,
     feedback: DataTypes.STRING,
-    
   }, {
     sequelize,
     modelName: 'ratings',
