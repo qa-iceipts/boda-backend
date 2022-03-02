@@ -7,7 +7,7 @@ const createHttpError = require('http-errors');
 module.exports = {
 
     findOrCreateByUserId: async function (reqObj) {
-        reqObj.online = true
+        // reqObj.online = true
         return await user_location.findOrCreate({
             where: { user_id: reqObj.user_id },
             defaults: reqObj
