@@ -86,6 +86,26 @@ module.exports = {
         return result
     },
 
+    getDriverRideHistory: async function (userid) {
+        let result = await rides.findAll({
+            where: {
+                driver_id: userid,
+                state: ['BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED']
+            },
+            include: [
+                {
+                    model: users,
+                    as: 'customer',
+                    required: false,
+                    attributes: ["id", "name", "phone", "email", "profile_image", "ratings"]
+                },
+            ],
+            // raw:true
+        })
+
+        return result
+    },
+
     getDayWiseReport: async function () {
         let dayquery = `with recursive cte(dt) as (select '${moment().subtract(6, 'days').format("YYYY-MM-DD")}' dt union all select dt + interval 1 day from cte where dt + interval 1 day <= '${moment().format("YYYY-MM-DD")}') select @rownum := @rownum + 1 AS seq,dayname(d.dt) AS dayname,d.dt date, COUNT(\`id\`) AS 'totalRides' from (SELECT @rownum := 0) r,cte d left join \`boda_db\`.rides t ON date(t.createdAt) = d.dt and t.state = "COMPLETED"  group by  d.dt  order by d.dt`
         // query to find last week data

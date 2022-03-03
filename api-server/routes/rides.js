@@ -20,6 +20,8 @@ router.get('/:rideId', authorize(), PromiseHandler(ridesService.getRide))
 
 router.get('/', authorize(), PromiseHandler(ridesService.getRidesByUserId))
 
+router.get('/DriverHistory/:userId', authorize(), PromiseHandler(ridesService.getDriverRideHistory))
+
 router.get('/rideState/:userType/:userId', authorize(), PromiseHandler(ridesService.getRideState))
 
 module.exports = router;
