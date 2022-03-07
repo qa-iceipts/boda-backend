@@ -242,12 +242,16 @@ module.exports = {
 
     getRidesByUserId: async function (req, res, next) {
         let result = await ridesDao.getRidesByUserId(req.user.id)
-        res.sendResponse(result)
+        res.sendResponse({
+            ridehistory : result
+        })
     },
 
     getDriverRideHistory: async function (req, res, next) {
         let result = await ridesDao.getDriverRideHistory(req.params.userId)
-        res.sendResponse(result)
+        res.sendResponse({
+            ridehistory : result
+        })
     },
 
     getRideState: async function (req, res, next) {
