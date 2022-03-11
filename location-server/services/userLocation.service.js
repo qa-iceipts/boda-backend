@@ -1,5 +1,5 @@
 'use strict';
-const { user_location } = require('../models');
+const { user_location, Sequelize } = require('../models');
 const { Op } = require("sequelize");
 const createHttpError = require('http-errors');
 
@@ -47,6 +47,9 @@ module.exports = {
                 [Op.between]: [minLoc.lng, maxLoc.lng]
             },
             online: true,
+            updatedAt: {
+                [Op.lte]: Sequelize.literal("(NOW() - INTERVAL 1 HOUR)"),
+            },
             user_type: 2, // DRIVER === 2
             user_id: {
                 [Op.not]: user_id
