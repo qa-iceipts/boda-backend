@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       rides.belongsTo(models.users, { foreignKey: 'customer_id', as: 'customer' }); // Adds fk to rides
       rides.belongsTo(models.users, { foreignKey: 'driver_id', as: 'driver' }); // Adds fk to rides
       rides.belongsTo(models.user_vehicles, { foreignKey: 'vehicle_id' }); // Adds fk to rides
+      rides.hasOne(models.ratings); // Adds fk to rides
     }
   };
   rides.init({

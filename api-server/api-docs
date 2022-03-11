@@ -54,3 +54,21 @@ sequelize db:seed:all
       }    
    }
 }
+
+set foreign_key_checks = 0;
+truncate table boda_db.fcm_keys;
+truncate table boda_db.ratings;
+truncate table boda_db.refreshTokens;
+truncate table boda_db.rides;
+truncate table boda_db.tokens;
+truncate table boda_db.transactions;
+truncate table boda_db.user_subscriptions;
+truncate table boda_db.user_vehicles;
+truncate table boda_db.user_vehicles_images;
+truncate table boda_db.users;
+truncate table boda_dns_db.chats;
+truncate table boda_dns_db.dns_connections;
+truncate table boda_dns_db.rides;
+truncate table boda_location_db.user_locations;
+
+set foreign_key_checks = 1;

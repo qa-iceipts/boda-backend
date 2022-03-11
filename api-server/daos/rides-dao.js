@@ -11,7 +11,7 @@
  */
 var moment = require('moment');
 const {
-    rides, users, user_vehicles, sequelize
+    ratings, rides, users, user_vehicles, sequelize
 } = require('../models');
 const createHttpError = require('http-errors')
 /**
@@ -70,7 +70,12 @@ module.exports = {
         let result = await rides.findAll({
             where: {
                 customer_id: userid,
-                state: ['BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED']
+                state: ['BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED'],
+                attributes : {
+                    include : [
+                        [sequelize.col("rides.id"), "order_count"],
+                    ]
+                }
             },
             include: [
                 {
@@ -79,10 +84,16 @@ module.exports = {
                     required: false,
                     attributes: ["id", "name", "phone", "email", "profile_image", "ratings"]
                 },
+                {
+                    model: ratings,
+                    required: false,
+                    attributes: ["driver_rating"]
+                },
             ],
             // raw:true
         })
-
+        // console.log(Object.keys(result.__proto__));
+        // console.log(await result.hasRatings())
         return result
     },
 
@@ -102,7 +113,7 @@ module.exports = {
             ],
             // raw:true
         })
-
+        console.log(await result.getRatings())
         return result
     },
 
