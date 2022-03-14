@@ -113,7 +113,7 @@ module.exports = {
             ],
             // raw:true
         })
-        console.log(await result.getRatings())
+        // console.log(await result.getRatings())
         return result
     },
 

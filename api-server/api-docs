@@ -8,7 +8,7 @@ All Users Types - {
     2 = DRIVER
     3 = CUSTOMER
 }
-
+v9Uuvx9VGFry837f4Uw8
 sequelize db:seed:all
 
 

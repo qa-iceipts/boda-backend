@@ -48,7 +48,7 @@ module.exports = {
             },
             online: true,
             updatedAt: {
-                [Op.lte]: Sequelize.literal("(NOW() - INTERVAL 1 HOUR)"),
+                [Op.gte]: Sequelize.literal("(NOW() - INTERVAL 1 HOUR)"),
             },
             user_type: 2, // DRIVER === 2
             user_id: {
