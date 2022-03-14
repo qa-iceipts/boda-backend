@@ -90,6 +90,7 @@ module.exports = {
                     attributes: ["driver_rating"]
                 },
             ],
+            order: [["createdAt", "DESC"]],
             // raw:true
         })
         // console.log(Object.keys(result.__proto__));
@@ -111,6 +112,7 @@ module.exports = {
                     attributes: ["id", "name", "phone", "email", "profile_image", "ratings"]
                 },
             ],
+            order: [["createdAt", "DESC"]],
             // raw:true
         })
         // console.log(await result.getRatings())
