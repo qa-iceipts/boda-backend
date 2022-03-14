@@ -71,11 +71,11 @@ module.exports = {
             where: {
                 customer_id: userid,
                 state: ['BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED'],
-                attributes : {
-                    include : [
-                        [sequelize.col("rides.id"), "order_count"],
-                    ]
-                }
+                // attributes : {
+                //     include : [
+                //         [sequelize.col("rides.id"), "order_count"],
+                //     ]
+                // }
             },
             include: [
                 {
