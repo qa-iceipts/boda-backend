@@ -230,8 +230,8 @@ module.exports = {
                 roleType: 2,
                 isActive: true
             },
-            attributes: ['id', 'name', 'phone', 'email', 'profile_image', 'ratings', 'city', 'station'
-            [db.sequelize.fn("COUNT", db.sequelize.col("driver.id")), "pastExperience"]
+            attributes: ['id', 'name', 'phone', 'email', 'profile_image', 'ratings', 'city', 'station',
+                [db.sequelize.fn("COUNT", db.sequelize.col("driver.id")), "pastExperience"]
             ],
             include: {
                 model: db.rides,
