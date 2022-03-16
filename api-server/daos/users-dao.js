@@ -130,7 +130,7 @@ module.exports = {
             ]
         })
         // if (!user.id) {
-            // throw new createHttpError.NotFound()
+        // throw new createHttpError.NotFound()
         // }
         return user
     },
@@ -230,8 +230,8 @@ module.exports = {
                 roleType: 2,
                 isActive: true
             },
-            attributes: ['id', 'name', 'phone', 'email', 'profile_image','ratings',
-                [db.sequelize.fn("COUNT", db.sequelize.col("driver.id")), "pastExperience"]
+            attributes: ['id', 'name', 'phone', 'email', 'profile_image', 'ratings', 'city', 'station'
+            [db.sequelize.fn("COUNT", db.sequelize.col("driver.id")), "pastExperience"]
             ],
             include: {
                 model: db.rides,
