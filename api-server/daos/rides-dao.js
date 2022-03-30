@@ -68,14 +68,15 @@ module.exports = {
 
     getRidesByUserId: async function (userid) {
         let result = await rides.findAll({
+            attributes: {
+                include: [
+                    [sequelize.col("rating.driver_rating"), "ratings"],
+                ]
+            },
             where: {
                 customer_id: userid,
                 state: ['BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED'],
-                // attributes : {
-                //     include : [
-                //         [sequelize.col("rides.id"), "order_count"],
-                //     ]
-                // }
+
             },
             include: [
                 {
@@ -87,7 +88,7 @@ module.exports = {
                 {
                     model: ratings,
                     required: false,
-                    attributes: ["driver_rating"]
+                    attributes: []
                 },
             ],
             order: [["createdAt", "DESC"]],
@@ -100,6 +101,11 @@ module.exports = {
 
     getDriverRideHistory: async function (userid) {
         let result = await rides.findAll({
+            attributes: {
+                include: [
+                    [sequelize.col("rating.driver_rating"), "ratings"],
+                ]
+            },
             where: {
                 driver_id: userid,
                 state: ['BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED']
@@ -109,7 +115,12 @@ module.exports = {
                     model: users,
                     as: 'customer',
                     required: false,
-                    attributes: ["id", "name", "phone", "email", "profile_image", "ratings"]
+                    attributes: ["id", "name", "phone", "email", "profile_image"]
+                },
+                {
+                    model: ratings,
+                    required: false,
+                    attributes: []
                 },
             ],
             order: [["createdAt", "DESC"]],
