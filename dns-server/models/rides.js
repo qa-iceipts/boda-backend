@@ -18,6 +18,8 @@ module.exports = (sequelize, DataTypes) => {
         rideId: DataTypes.STRING,
         status: DataTypes.INTEGER,
         price: DataTypes.FLOAT,
+        ridedistance: DataTypes.STRING,
+        eta: DataTypes.STRING,
         customerId: DataTypes.STRING,
         pick_lat: DataTypes.STRING,
         pick_long: DataTypes.STRING,

@@ -9,7 +9,7 @@ const { calculateDistance } = require('../utils/commonUtils');
 const createHttpError = require('http-errors')
 
 module.exports = {
-    addDNSConnection: async function(reqObj) {
+    addDNSConnection: async function (reqObj) {
         console.log(reqObj)
         if (!reqObj.rideId || !reqObj.userId) {
             throw new createHttpError.BadRequest("INVALID REQUEST")
@@ -29,7 +29,7 @@ module.exports = {
     },
 
 
-    getSocketId: async function(user_id) {
+    getSocketId: async function (user_id) {
 
         let result = await dns_connections.findOne({
             //rideId: reqObj.rideId,
@@ -41,14 +41,14 @@ module.exports = {
         return result
 
     },
-    DeleteDNSConnection: async function(socketId) {
+    DeleteDNSConnection: async function (socketId) {
         return await dns_connections.destroy({
             where: { socketId: socketId },
         })
 
     },
 
-    getNearbyDrivers: async function(reqObj) {
+    getNearbyDrivers: async function (reqObj) {
         console.log("getNearbyDrivers called")
         let response = await axios.post(process.env.LOCATION_SERVER + '/getNearbyDrivers', {
             "user_id": reqObj.user_id,
@@ -79,6 +79,8 @@ module.exports = {
                 pick_long: reqObj.pick_long,
                 drop_lat: reqObj.drop_lat,
                 drop_long: reqObj.drop_long,
+                ridedistance: distance,
+                eta: distance * 4,
                 status: 0,
                 price: 0,
                 customerId: reqObj.user_id,
@@ -137,7 +139,7 @@ module.exports = {
         return ({ data: merged })
     },
 
-    fetchDrivers: async function(req) {
+    fetchDrivers: async function (req) {
         let result = await rides.findAll({
             where: {
                 rideId: req.rideId,
@@ -151,17 +153,17 @@ module.exports = {
             driverIds.push(element.driverId)
         });
         return driverIds
-            // return [result, driverIds]
+        // return [result, driverIds]
     },
 
-    getTokensByIds: async function(Ids) {
+    getTokensByIds: async function (Ids) {
         let result = await axios.post(process.env.API_SERVER + '/fcm/getTokensByIds', {
             "Ids": Ids
         })
         return result.data
     },
 
-    getResponse: async function(rideId) {
+    getResponse: async function (rideId) {
 
         await rides.destroy({
             where: {
