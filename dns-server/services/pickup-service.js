@@ -12,7 +12,7 @@ const { getTokensByIds } = require('../services/socket-io-service')
 
 module.exports = {
 
-    getPickupRequests: async function(req, res, next) {
+    getPickupRequests: async function (req, res, next) {
         let reqObj = req.body
         let result = await rides.findAll({
             where: {
@@ -33,7 +33,7 @@ module.exports = {
             ],
         })
         if (result.length <= 0) return res.sendResponse({})
-            //  throw new createHttpError.NotFound()
+        //  throw new createHttpError.NotFound()
 
         console.log("rides result ==> ", result)
         let origins = reqObj.lat + ',' + reqObj.long
@@ -61,8 +61,8 @@ module.exports = {
             if (result.length <= 0) throw new createHttpError.InternalServerError("ETA RESULT")
 
         console.log(etaResult.data)
-            // console.log(result)
-            // throw err
+        // console.log(result)
+        // throw err
         let customerData = await axios.post(process.env.API_SERVER + `/users/getAllUsersByIds`, {
             "Ids": customerIds
         })
@@ -83,10 +83,10 @@ module.exports = {
         })
     },
 
-    quotePrice: async function(req, res, next) {
+    quotePrice: async function (req, res, next) {
 
         let reqObj = req.body
-            // console.log(Object.keys(req.io.sockets.sockets))
+        // console.log(Object.keys(req.io.sockets.sockets))
         let rideData = await rides.findOne({
             raw: true,
             where: {
@@ -94,8 +94,8 @@ module.exports = {
                 driverId: reqObj.driverId,
                 rideId: reqObj.rideId,
                 customerId: reqObj.customerId
-                    // status: [0, 1],
-                    // rideId: reqObj.rideId
+                // status: [0, 1],
+                // rideId: reqObj.rideId
             }
         })
 
@@ -120,7 +120,7 @@ module.exports = {
 
         console.log("driverUser data =>", driverUser.data.data)
         console.log("driverLocation data =>", driverLocation.data)
-            // map eta
+        // map eta
         let destinations = rideData.pick_lat + ',' + rideData.pick_long
         let origins = driverLocation.data.data[0].lat + ',' + driverLocation.data.data[0].long
         console.log("destinations:: ", destinations, "origins :: ", origins)
@@ -135,7 +135,7 @@ module.exports = {
 
 
         if (!etaResult.data) throw new createHttpError.InternalServerError("ETA RESULT ERROR")
-            //  console.log("etaResult.data =>",etaResult.data.rows[0].elements[0].distance.text)
+        //  console.log("etaResult.data =>",etaResult.data.rows[0].elements[0].distance.text)
         var mergedData = {
             driverLocation: driverLocation.data.data[0],
             driverUser: {

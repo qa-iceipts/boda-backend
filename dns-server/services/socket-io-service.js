@@ -49,19 +49,22 @@ module.exports = {
     },
 
     getNearbyDrivers: async function (reqObj) {
-        console.log("getNearbyDrivers called")
-        let response = await axios.post(process.env.LOCATION_SERVER + '/getNearbyDrivers', {
-            "user_id": reqObj.user_id,
-            "lat": reqObj.pick_lat,
-            "long": reqObj.pick_long,
-            "radius": reqObj.radius ? reqObj.radius : 5,
-            "vehicle_type": reqObj.vehicle_type
-        })
+        console.log("getNearbyDrivers called", reqObj)
 
-        // ETA CODE
-        let distance = calculateDistance(reqObj.pick_lat, reqObj.pick_long, reqObj.drop_lat, reqObj.drop_long, 'K')
 
-        console.log("distance => ", distance)
+        let rideData = await axios.get(process.env.API_SERVER + '/rides/getRideById/' + reqObj.rideId)
+
+
+        if (!rideData.data.data) {
+            throw new createHttpError.FailedDependency("ride data not found on apiserver")
+        }
+
+        console.log("Response of process.env.API_SERVER + '/rides/getRideById ' => ", rideData.data.data)
+        console.log(rideData.data.data.distance, rideData.data.data.eta)
+
+
+        let distance = rideData.data.data.distance
+        let eta = rideData.data.data.eta
 
         console.log("Location server nearby driver get response ::", response.data)
 
@@ -79,8 +82,8 @@ module.exports = {
                 pick_long: reqObj.pick_long,
                 drop_lat: reqObj.drop_lat,
                 drop_long: reqObj.drop_long,
-                ridedistance: parseFloat(distance).toFixed(2),
-                eta: parseFloat(distance * 4).toFixed(2),
+                ridedistance: distance,
+                eta: eta,
                 status: 0,
                 price: 0,
                 customerId: reqObj.user_id,
@@ -243,3 +246,20 @@ module.exports = {
 
 
 }
+
+// async function a() {
+//     let reqObj = {
+//         rideId: 2
+//     }
+//     let rideData = await axios.get(process.env.API_SERVER + '/rides/getRideById/' + reqObj.rideId)
+
+
+//     if (!rideData.data.data) {
+//         throw new createHttpError.FailedDependency("ride data not found on apiserver")
+//     }
+
+//     console.log("Response of process.env.API_SERVER + '/rides/getRideById ' => ", rideData.data.data)
+//     console.log(rideData.data.data.distance, rideData.data.data.eta)
+
+// }
+// a()

@@ -9,6 +9,7 @@ const ridesDao = require('../daos/rides-dao');
 const { getTokensByIds, getAllTokensByIds } = require("../services/fcm-service")
 const { sendNotifications } = require('../services/notifications-service')
 const createHttpError = require('http-errors');
+const axios = require("axios")
 /**
  * export module
  */
@@ -16,7 +17,25 @@ const createHttpError = require('http-errors');
 module.exports = {
 
     addRide: async function (req, res, next) {
-        let result = await ridesDao.addRide(req.body)
+        // ETA GET
+        let reqObj = req.body
+        let origins = reqObj.origin_lat + ',' + reqObj.origin_long
+        let destinations = reqObj.destination_lat + ',' + reqObj.destination_long
+        let etaResult = await axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
+            params: {
+                destinations: destinations,
+                origins: origins,
+                key: process.env.MAPS_API_KEY
+            }
+        })
+        if (!etaResult.data)
+            throw new createHttpError.InternalServerError("ETA RESULT google error")
+
+        reqObj.distance = etaResult.data.rows[0].elements[0].distance.text
+        reqObj.eta = etaResult.data.rows[0].elements[0].duration.text
+        console.log(reqObj)
+
+        let result = await ridesDao.addRide(reqObj)
         res.sendResponse(result)
     },
 
@@ -243,14 +262,19 @@ module.exports = {
     getRidesByUserId: async function (req, res, next) {
         let result = await ridesDao.getRidesByUserId(req.user.id)
         res.sendResponse({
-            ridehistory : result
+            ridehistory: result
         })
+    },
+
+    getRideById: async function (req, res, next) {
+        let result = await ridesDao.getRidesById(req.params.rideId)
+        res.sendResponse(result)
     },
 
     getDriverRideHistory: async function (req, res, next) {
         let result = await ridesDao.getDriverRideHistory(req.params.userId)
         res.sendResponse({
-            ridehistory : result
+            ridehistory: result
         })
     },
 

@@ -66,6 +66,14 @@ module.exports = {
         return result
     },
 
+    getRidesById: async function (rideId) {
+        let result = await rides.findOne({
+            where: {
+                id: rideId
+            },
+        })
+        return result
+    },
     getRidesByUserId: async function (userid) {
         let result = await rides.findAll({
             attributes: {

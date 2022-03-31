@@ -29,7 +29,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     amount_estimated: DataTypes.FLOAT,
     amount_actual: DataTypes.FLOAT,
-    distance: DataTypes.FLOAT,
+    distance: DataTypes.STRING,
+    eta: DataTypes.STRING,
     start_time: DataTypes.DATE,
     end_time: DataTypes.DATE
   }, {
