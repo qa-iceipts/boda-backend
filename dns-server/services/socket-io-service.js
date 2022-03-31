@@ -66,7 +66,7 @@ module.exports = {
         let distance = rideData.data.data.distance
         let eta = rideData.data.data.eta
 
-        console.log("Location server nearby driver get response ::", response.data)
+        // console.log("Location server nearby driver get response ::", response.data)
 
         if (!response.data.success) throw new createHttpError.InternalServerError()
         if (Object.keys(response.data.data).length === 0) throw new createHttpError.NotFound("Nearby Drivers Not Found")
