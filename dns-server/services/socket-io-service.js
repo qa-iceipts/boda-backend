@@ -66,6 +66,12 @@ module.exports = {
         let distance = rideData.data.data.distance
         let eta = rideData.data.data.eta
 
+
+        // ETA CODE
+        let onAirDistance = calculateDistance(reqObj.pick_lat, reqObj.pick_long, reqObj.drop_lat, reqObj.drop_long, 'K')
+
+        console.log("distance => ", onAirDistance)
+
         let response = await axios.post(process.env.LOCATION_SERVER + '/getNearbyDrivers', {
             "user_id": reqObj.user_id,
             "lat": reqObj.pick_lat,
@@ -96,7 +102,7 @@ module.exports = {
                 status: 0,
                 price: 0,
                 customerId: reqObj.user_id,
-                range: parseInt(distance * obj.per_km),
+                range: parseInt(onAirDistance * obj.per_km),
             })
             driverIds.push(obj.user_id)
         });
