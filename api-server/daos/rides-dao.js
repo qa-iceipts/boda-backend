@@ -195,7 +195,7 @@ module.exports = {
 
     getRideState: async function (userId, userType) {
         console.log("getRideState dao called", userType, userId);
-        let whereObj = { state: 'BOOKED' }
+        let whereObj = { state: ['BOOKED', 'STARTED'] }
         if (userType === 'customer') {
             whereObj['customer_id'] = userId
         } else {
