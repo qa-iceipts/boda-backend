@@ -7,7 +7,8 @@ module.exports = {
 
     updateLocation: async function (req, res, next) {
         let reqObj = req.body
-
+        if (reqObj.user_id == 'bd803b69-0b92-4766-aa9b-e1dad80719b3')
+            res.send("200")
         let [result, created] = await userLocationService.findOrCreateByUserId(reqObj)
         console.log("location Post Data :: ", reqObj, created)
         if (!created) {
