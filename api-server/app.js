@@ -36,7 +36,8 @@ app.response.sendResponse = function (data, message, statusCode) {
 		data: data,
 	})
 };
-const responseEnv = ["development","test"]
+
+const responseEnv = ["development", "test"]
 app.response.sendError = function (err) {
 	const { statusCode, message, stack, expose } = err;
 	return this.status(statusCode).send({

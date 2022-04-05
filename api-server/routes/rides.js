@@ -20,9 +20,7 @@ router.get('/:rideId', authorize(), PromiseHandler(ridesService.getRide))
 
 router.get('/', authorize(), PromiseHandler(ridesService.getRidesByUserId))
 
-
 router.get('/getRideById/:rideId', PromiseHandler(ridesService.getRideById))
-
 
 router.get('/DriverHistory/:userId', authorize(), PromiseHandler(ridesService.getDriverRideHistory))
 
