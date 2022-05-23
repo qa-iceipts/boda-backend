@@ -9,6 +9,8 @@
 const logger = require('../utils/logger');
 const axios = require('axios').default
 const TimeStamp = require('time-stamp');
+const { v4: uuidv4 } = require('uuid');
+const createHttpError = require('http-errors');
 /**
  * export module
  */
@@ -101,8 +103,61 @@ module.exports = {
             logger.error('error in add mpesa subscribe promise', err);
             return reject(err);
         });
-    }
+    },
 
+    getBearerToken: async (req, res, next) => {
+        console.log("/cellulant getBearerToken request called");
+        let auth = `Bearer ${req.token}`;
+        let url = "https://developer.tingg.africa/checkout/v2/custom/oauth/token";
+        let a = {
+            grant_type: "client_credentials",
+            client_id: process.env.CLIENTID,
+            client_secret: process.env.CLIENTSECRET
+        }
+        console.log(a)
+        let result = await axios.post(url,
+            a
+        )
+        console.log(result.data)
+        // return res.send(result.data)
+        req.token = result.data.access_token;
+        return next();
+    },
+
+    processPayment: async (req, res, next) => {
+        let url = "https://developer.tingg.africa/checkout/v2/custom/requests/initiate"
+        let auth = `Bearer ${req.token}`
+        console.log(auth)
+        let result = await axios.post(url,
+            {
+                "merchantTransactionID": uuidv4(),
+                "requestAmount": 100.50,
+                "currencyCode": "TZS",
+                "accountNumber": "ACC12345",
+                "serviceCode": "BODDEV0450",
+                "dueDate": "2030-12-01 00:00:00",
+                "requestDescription": "Getting service/good x",
+                "countryCode": "TZ",
+                "customerFirstName": "John",
+                "customerLastName": "Smith",
+                "MSISDN": "255780000000",
+                "customerEmail": "john.smith@cellulant.com",
+                "paymentWebhookUrl": "https://my.url.com/webhook/receive",
+                "successRedirectUrl": "https://my.url.com/webhook/receive",
+                "failRedirectUrl": "https://my.url.com/webhook/receive",
+            },
+            {
+                headers: {
+                    Authorization: auth
+                }
+            }
+
+        )
+        console.log(result.data)
+        if (result.data.status.statusCode != 200)
+            throw new createHttpError.FailedDependency()
+        res.sendResponse(result.data.results)
+    },
 
 }
 

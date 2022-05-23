@@ -7,10 +7,12 @@ const { PromiseHandler } = require('../utils/errorHandler');
 const mpesaService = require('../services/mpesa-service')
 const {
     getOAuthToken,
-    lipaNaMpesaOnline
+    lipaNaMpesaOnline,
+    getBearerToken,
+    processPayment
 } = require('../utils/mpesa')
 
-router.post('/subscribe', authorize(role.DRIVER),PromiseHandler(getOAuthToken),PromiseHandler(mpesaService.mpesaSubscribe))
+router.post('/subscribe', authorize(role.DRIVER), PromiseHandler(getOAuthToken), PromiseHandler(mpesaService.mpesaSubscribe))
 
 router.get('/auth', getOAuthToken, lipaNaMpesaOnline, function (req, res) {
     res.send(req.token)
@@ -30,6 +32,8 @@ router.post('/lipa-na-mpesa-callback', function lipaNaMpesaOnlineCallback(req, r
     })
 
 });
+
+router.post('/cpay', PromiseHandler(getBearerToken), PromiseHandler(processPayment))
 
 
 module.exports = router;
