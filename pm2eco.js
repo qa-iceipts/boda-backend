@@ -115,7 +115,7 @@ module.exports = {
             user: 'ubuntu',
             host: ["13.245.32.170"],
             ref: 'origin/development',
-            repo: 'git@bitbucket.org:BodaDrop/boda-drop-api.git',
+            repo: 'git@github.com:qa-iceipts/boda-backend.git',
             path: 'app',
             'pre-deploy-local': '',
             'post-deploy': 'cd api-server && npm install && cd ../dns-server && npm install && cd ../location-server && npm install && pm2 reload ../../../ecosystem.config.js --env test',

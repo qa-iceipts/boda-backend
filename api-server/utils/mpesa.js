@@ -159,5 +159,24 @@ module.exports = {
         res.sendResponse(result.data.results)
     },
 
+    chargeRequest: async (req, res, next) => {
+        let url = "https://developer.tingg.africa/checkout/v2/custom/requests/charge"
+        let auth = `Bearer ${req.token}`
+        console.log(auth)
+        req.body.chargeMsisdn = "255780000000"
+        let result = await axios.post(url,
+            req.body,
+            {
+                headers: {
+                    Authorization: auth
+                }
+            }
+        )
+        console.log(result)
+        if (result.data.status.statusCode != 200)
+            throw new createHttpError.FailedDependency()
+        res.sendResponse(result.data)
+    },
+
 }
 
