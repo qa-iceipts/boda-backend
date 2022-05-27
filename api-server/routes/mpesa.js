@@ -43,7 +43,7 @@ router.post('/chargeRequest', PromiseHandler(getBearerToken), PromiseHandler(cha
 
 router.post('/processRequest', PromiseHandler(getBearerToken), PromiseHandler(processRequest))
 
-router.get('/queryStatus', PromiseHandler(getBearerToken), PromiseHandler(queryStatus))
+router.post('/queryStatus', PromiseHandler(getBearerToken), PromiseHandler(queryStatus))
 
 
 module.exports = router;
