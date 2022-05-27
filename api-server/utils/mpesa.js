@@ -177,6 +177,24 @@ module.exports = {
             throw new createHttpError.FailedDependency(result.data)
         res.sendResponse(result.data)
     },
+    queryStatus: async (req, res, next) => {
+        let url = "https://developer.tingg.africa/checkout/v2/custom/requests/query-status"
+        let auth = `Bearer ${req.token}`
+        console.log(auth)
+        req.body.serviceCode = "BODDEV0450"
+        let result = await axios.post(url,
+            req.body,
+            {
+                headers: {
+                    Authorization: auth
+                }
+            }
+        )
+        // console.log(result)
+        if (result.data.status.statusCode != 200)
+            throw new createHttpError.FailedDependency(result.data)
+        res.sendResponse(result.data)
+    },
     processRequest: async (req, res, next) => {
         console.log(req.body)
         let reqObj = req.body

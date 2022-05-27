@@ -11,7 +11,8 @@ const {
     getBearerToken,
     processPayment,
     chargeRequest,
-    processRequest
+    processRequest,
+    queryStatus
 } = require('../utils/mpesa')
 
 router.post('/subscribe', authorize(role.DRIVER), PromiseHandler(getOAuthToken), PromiseHandler(mpesaService.mpesaSubscribe))
@@ -41,6 +42,8 @@ router.post('/chargeRequest', PromiseHandler(getBearerToken), PromiseHandler(cha
 
 
 router.post('/processRequest', PromiseHandler(getBearerToken), PromiseHandler(processRequest))
+
+router.get('/queryStatus', PromiseHandler(getBearerToken), PromiseHandler(queryStatus))
 
 
 module.exports = router;
