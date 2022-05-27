@@ -10,7 +10,8 @@ const {
     lipaNaMpesaOnline,
     getBearerToken,
     processPayment,
-    chargeRequest
+    chargeRequest,
+    processRequest
 } = require('../utils/mpesa')
 
 router.post('/subscribe', authorize(role.DRIVER), PromiseHandler(getOAuthToken), PromiseHandler(mpesaService.mpesaSubscribe))
@@ -37,6 +38,9 @@ router.post('/lipa-na-mpesa-callback', function lipaNaMpesaOnlineCallback(req, r
 router.post('/cpay', PromiseHandler(getBearerToken), PromiseHandler(processPayment))
 
 router.post('/chargeRequest', PromiseHandler(getBearerToken), PromiseHandler(chargeRequest))
+
+
+router.post('/processRequest', PromiseHandler(getBearerToken), PromiseHandler(processRequest))
 
 
 module.exports = router;

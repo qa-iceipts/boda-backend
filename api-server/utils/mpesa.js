@@ -131,20 +131,20 @@ module.exports = {
         let result = await axios.post(url,
             {
                 "merchantTransactionID": uuidv4(),
-                "requestAmount": 100.50,
+                "requestAmount": 600.00,
                 "currencyCode": "TZS",
                 "accountNumber": "ACC12345",
                 "serviceCode": "BODDEV0450",
                 "dueDate": "2030-12-01 00:00:00",
                 "requestDescription": "Getting service/good x",
                 "countryCode": "TZ",
-                "customerFirstName": "John",
+                "customerFirstName": "Deepesh",
                 "customerLastName": "Smith",
                 "MSISDN": "255780000000",
                 "customerEmail": "john.smith@cellulant.com",
-                "paymentWebhookUrl": "https://my.url.com/webhook/receive",
-                "successRedirectUrl": "https://my.url.com/webhook/receive",
-                "failRedirectUrl": "https://my.url.com/webhook/receive",
+                "paymentWebhookUrl": "http://13.245.32.170:8080/api/mpesa/processRequest",
+                "successRedirectUrl": "https://5fee-103-251-217-151.ngrok.io/api/mpesa/processRequest",
+                "failRedirectUrl": "https://5fee-103-251-217-151.ngrok.io/api/mpesa/processRequest",
             },
             {
                 headers: {
@@ -174,7 +174,40 @@ module.exports = {
         )
         console.log(result)
         if (result.data.status.statusCode != 200)
-            throw new createHttpError.FailedDependency()
+            throw new createHttpError.FailedDependency(result.data)
+        res.sendResponse(result.data)
+    },
+    processRequest: async (req, res, next) => {
+        console.log(req.body)
+        let reqObj = req.body
+        if (reqObj.requestStatusCode != 178) {
+            throw new createHttpError.PaymentRequired("payment pending")
+        }
+        if (reqObj.originalRequestAmount != reqObj.amountPaid) {
+            throw new createHttpError.PreconditionRequired("partial payment")
+        }
+        let url = "https://developer.tingg.africa/checkout/v2/custom/requests/acknowledge"
+        let auth = `Bearer ${req.token}`
+        console.log(auth)
+        req.body.chargeMsisdn = "255780000000"
+        let result = await axios.post(url,
+            {
+                "merchantTransactionID": reqObj.merchantTransactionID,
+                "checkoutRequestID": reqObj.checkoutRequestID,
+                "receiptNumber": reqObj.checkoutRequestID,
+                "statusCode": 183,
+                "statusDescription": "Accepted payment"
+
+            },
+            {
+                headers: {
+                    Authorization: auth
+                }
+            }
+        )
+        console.log(result.data)
+        if (result.data.status.statusCode != 200)
+            throw new createHttpError.FailedDependency(result.data)
         res.sendResponse(result.data)
     },
 
