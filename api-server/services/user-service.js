@@ -8,6 +8,7 @@
 const role = require('../utils/roles');
 const usersDao = require('../daos/users-dao');
 const db = require('../models')
+const models = require('../models')
 const { getBasicDetails, getHash } = require('../utils/commonUtils');
 const createHttpError = require('http-errors');
 const {
@@ -20,8 +21,26 @@ const commonUtils = require('../utils/commonUtils');
 /**
  * export module
  */
+for (let model of Object.keys(db)) {
+    if (models[model].name === 'Sequelize')
+        continue;
+    if (!models[model].name)
+        continue;
 
+    console.log("\n\n----------------------------------\n",
+        models[model].name,
+        "\n----------------------------------");
+
+
+    console.log("\nAssociations");
+    for (let assoc of Object.keys(models[model].associations)) {
+        for (let accessor of Object.keys(models[model].associations[assoc].accessors)) {
+            console.log(models[model].name + '.' + models[model].associations[assoc].accessors[accessor] + '()');
+        }
+    }
+}
 module.exports = {
+
 
     addUser: async function (req, res, next) {
         // console.log("Insert Obj in addUser Service ::", req.body)
@@ -195,8 +214,8 @@ module.exports = {
     },
 
     forgotPassword: async function (req, res, next) {
-        await usersDao.forgotPassword(req.body)
-        res.sendResponse('Please check your email for password reset instructions')
+        let otp = await usersDao.forgotPassword(req.body)
+        res.sendResponse('Please check your email for password reset instructions' + otp)
     },
 
     verifyOTP: async function (req, res, next) {

@@ -200,6 +200,8 @@ module.exports = {
             html: `<h4>Boda App RESET PASSWORD REQUEST</h4><h4>Please enter this OTP in the APP</h4>
                    <h3>${user.resetToken}</h3>`
         });
+        return user.resetToken
+
     },
 
     verifyOTP: async function ({ email, otp }) {
