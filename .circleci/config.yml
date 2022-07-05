@@ -1,0 +1,79 @@
+# This builds development or production images of the api, dns and location servers, 
+# Pushes 'em to the boda drop dockerhub account'.
+
+
+## Project nvironment variable to set in circleci app.
+#
+# - DOCKER_HUB_USER_ID
+# - DOCKER_HUB_PASSWORD
+
+
+version: 2
+jobs:
+  
+  publish-dev:
+    docker:
+      - image: cimg/base:2022.06
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 19.03.13
+      - run:
+          name: Build and push api image to Docker Hub
+          command: |
+            docker build -t $DOCKER_HUB_USER_ID/api-server:dev ./api-server/
+            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
+            docker push $DOCKER_HUB_USER_ID/api-server:dev
+      - run:
+          name: Build and push dns image to Docker Hub
+          command: |
+            docker build -t $DOCKER_HUB_USER_ID/dns-server:dev ./dns-server/
+            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
+            docker push $DOCKER_HUB_USER_ID/dns-server:dev
+      - run:
+          name: Build and push dns image to Docker Hub
+          command: |
+            docker build -t $DOCKER_HUB_USER_ID/location-server:dev ./location-server/
+            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
+            docker push $DOCKER_HUB_USER_ID/location-server:dev
+
+
+  publish-latest:
+    docker:
+      - image: cimg/base:2022.06
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 19.03.13
+      - run:
+          name: Build and push api image to Docker Hub
+          command: |
+            docker build -t $DOCKER_HUB_USER_ID/api-server:latest ./api-server/
+            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
+            docker push $DOCKER_HUB_USER_ID/api-server:latest
+      - run:
+          name: Build and push dns image to Docker Hub
+          command: |
+            docker build -t $DOCKER_HUB_USER_ID/dns-server:latest ./dns-server/
+            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
+            docker push $DOCKER_HUB_USER_ID/dns-server:latest
+      - run:
+          name: Build and push dns image to Docker Hub
+          command: |
+            docker build -t $DOCKER_HUB_USER_ID/location-server:latest ./location-server/
+            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
+            docker push $DOCKER_HUB_USER_ID/location-server:latest
+
+
+workflows:
+  version: 2
+  publish-docker:
+    jobs:
+      - publish-dev:
+          filters:
+            branches:
+              only: development
+      - publish-latest:
+           filters:
+            branches:
+              only: master
