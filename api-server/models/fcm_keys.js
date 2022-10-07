@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      fcm_keys.belongsTo(models.User); // Adds fk to rides
+      fcm_keys.belongsTo(models.users); // Adds fk to rides
     }
   };
   fcm_keys.init({
@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
     indexes: [
       {
           unique: true,
-          fields: ['UserId', 'device_id', 'fcm_key']
+          fields: ['userId', 'device_id', 'fcm_key']
       }
   ]
   });

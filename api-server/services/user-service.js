@@ -5,409 +5,248 @@
  *  @author Deepesh Kushwaha
  *  @version 1.0.0
  */
-
-// var async = require('async');
-// var http = require("http");
-const logger = require('../utils/logger');
+const role = require('../utils/roles');
 const usersDao = require('../daos/users-dao');
 const db = require('../models')
-const { Op } = require("sequelize");
-const util = require('../utils/commonUtils')
-const bcrypt = require('bcrypt');
-var responseConstant = require("../constants/responseConstants");
-const jwt = require('jsonwebtoken');
+const models = require('../models')
+const { getBasicDetails, getHash } = require('../utils/commonUtils');
+const createHttpError = require('http-errors');
 const {
-    inValidateOneUser,
     signAccessToken,
-    loginRefreshToken,
-    verifyRefreshToken,
-    returnRefreshTimestamp,
-    inValidateAllUser,
-    verifyRefreshTokenWithdb,
-    returnTokens
-} = require('../utils/verifytoken')
+    generateRefreshToken,
+    getRefreshToken
+} = require('../utils/verifytoken');
+const commonUtils = require('../utils/commonUtils');
+const { getUrl } = require('../utils/aws-S3');
+
 /**
  * export module
  */
+for (let model of Object.keys(db)) {
+    if (models[model].name === 'Sequelize')
+        continue;
+    if (!models[model].name)
+        continue;
 
+    console.log("\n\n----------------------------------\n",
+        models[model].name,
+        "\n----------------------------------");
+
+
+    console.log("\nAssociations");
+    for (let assoc of Object.keys(models[model].associations)) {
+        for (let accessor of Object.keys(models[model].associations[assoc].accessors)) {
+            console.log(models[model].name + '.' + models[model].associations[assoc].accessors[accessor] + '()');
+        }
+    }
+}
 module.exports = {
 
-    addUser: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("Insert Obj in addUser Service ::", req.body)
-            usersDao.addUser(req).then(function (result) {
-                ;
-                if (result) {
-                    let req = {
-                        body: {
-                            phone: result.phone
-                        }
-                    }
-                    module.exports.login(req).then(loginres => {
-                        return resolve(loginres);
-                    }).catch(err => {
-                        logger.error('error in signup login funct Call', err);
-                        return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                    })
-                }
 
-            }).catch(function (err) {
-                logger.error('error in useraddservice', err);
-                return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
-            });
-        }, function (err) {
-            logger.error('error in add user promise', err);
-            return reject(err);
-        });
+    addUser: async function (req, res, next) {
+        // console.log("Insert Obj in addUser Service ::", req.body)
+        let { password } = req.body
+        let hash = await commonUtils.getHash(password)
+        req.body.password = hash
 
-    },
-    updateUser: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("Insert Obj in updateUser Service ::", req.body)
-            usersDao.updateUser(req).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in updateUser', err);
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            });
-        }, function (err) {
-            logger.error('error in add user promise', err);
-            return reject(err);
-        });
+        let user = await usersDao.addUser(req.body)
 
-    },
+        let roleName = await usersDao.getRoleName(user)
 
-    getUser: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("Insert Obj in getUser Service ::", req.body)
-            usersDao.getUser(req).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in getUser', err);
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            });
-        }, function (err) {
-            logger.error('error in add getUser promise', err);
-            return reject(err);
-        });
-
-    },
-
-    getUserById: function (id) {
-        return new Promise(function (resolve, reject) {
-            console.log("Insert Obj in getUserById Service ::")
-            usersDao.getUserById(id).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in getUserById', err);
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            });
-        }, function (err) {
-            logger.error('error in getUserById promise', err);
-            return reject(err);
-        });
-
-    },
-
-    getAllUsers: function (req, res) {
-        return new Promise(function (resolve, reject) {
-            usersDao.getAllUsers(req).then(function (result) {
-                // logger.debug('success ', result);
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in getAllUsers service', err);
-                return reject(err);
-            });
-        }, function (err) {
-            logger.error('error in getAllUsers promise', err);
-            return reject(err);
-        });
-    },
-
-    getAllUsersByIds : function (req, res) {
-        return new Promise(function (resolve, reject) {
-            usersDao.getAllUsersByIds(req.body.Ids).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in getAllUsersByIds service', err);
-                return reject(err);
-            });
-        }, function (err) {
-            logger.error('error in getAllUsersByIds promise', err);
-            return reject(err);
-        });
-    },
-
-    login: function (req, role) {
-        return new Promise(function (resolve, reject) {
-            let reqObj = req.body
-            console.log(reqObj)
-            let whereObj
-            // login code start
-            if (role == 'admin') {
-                whereObj = {
-                    [Op.or]: [
-                        { phone: reqObj.username },
-                        { email: reqObj.username }
-                    ]
-                }
-            } else {
-                whereObj = {
-                    phone: reqObj.phone
-                }
-            }
-            db.User.findOne({
-                where: whereObj,
-                include: {
-                    model: db.roles,
-                    attributes: ['roleName'],
-                    required: true
-                }
-            }).then((user) => {
-
-                if (!user) {
-                    return reject(util.responseUtil(null, null, responseConstant.USER_NOT_FOUND));
-
-                } else {
-                    // console.log(user.dataValues)
-                    if (role == 'admin') {
-                        if (user.dataValues.roleType == 1) {
-                            bcrypt.compare(req.body.password, user.dataValues.password, function (err, result) {
-                                // console.log(result)
-                                if (err) {
-                                    return reject(err);
-                                }
-                                if (!result) {
-                                    return reject(util.responseUtil(null, null, responseConstant.INVALIDE_CREDENTIAL));
-                                } else {
-                                    returnTokens(user).then(function (result) {
-                                        return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                                    }).catch(function (err) {
-                                        logger.error('error in returnTokens service', err);
-                                        return reject(err);
-                                    });
-                                }
-                            });
-                        } else {
-                            return reject(util.responseUtil("User role is not admin", null, responseConstant.UNAUTHORIZE));
-                        }
-
-                    } else {
-                        returnTokens(user).then(function (result) {
-                            return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                        }).catch(function (err) {
-                            logger.error('error in returnTokens service', err);
-                            return reject(err);
-                        });
-                    }
-
-                }
-
-            }).catch(err => {
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            });
-
-            // login ends
-
-        }, function (err) {
-            logger.error('error in login user promise', err);
-            return reject(err);
-        });
-
-    },
-    checkUserExists: function (req, res) {
-        return new Promise(function (resolve, reject) {
-            usersDao.checkUserExists(req).then(function (result) {
-                logger.debug('success ', result);
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in checkUserExists service', err);
-                return reject(err);
-            });
-        }, function (err) {
-            logger.error('error in checkUserExists promise', err);
-            return reject(err);
-        });
-    },
-    refreshToken: async (req, res, next) => {
-        try {
-            const {
-                refreshToken
-            } = req.body
-            console.log("refreshtoken ::", refreshToken)
-            if (!refreshToken) return res.status(400).send({
-                status: 400,
-                message: "Bad Request"
-            })
-            verifyRefreshToken(refreshToken).then(function (user) {
-                console.log("result ::", user)
-                verifyRefreshTokenWithdb(refreshToken).then(function (dbUser) {
-                    if (dbUser.is_used == 0) {
-                        signAccessToken(user).then(function (result) {
-                            let accTok = result
-                            loginRefreshToken(user).then(function (res1) {
-                                let rT = res1
-                                inValidateOneUser(refreshToken).then(() => {
-
-                                    returnRefreshTimestamp(rT).then(function (exp) {
-                                        if (exp) {
-                                            let tokenObj = {
-                                                userId: dbUser.userId,
-                                                refresh_token: rT,
-                                                timestamp: exp,
-                                                is_used: '0'
-                                            }
-
-                                            db.tokens.create(tokenObj).then(() => {
-                                                res.status(200).send({
-                                                    accessToken: accTok,
-                                                    refreshToken: rT
-                                                })
-                                            }).catch(err => {
-                                                res.status(500).send(err)
-                                            });
-                                        }
-                                    }).catch(err => {
-                                        res.status(500).send(err)
-                                    });
-
-                                }).catch(err => {
-                                    res.status(500).send(err)
-                                });
-
-                            }).catch(err => {
-                                res.status(500).send(err)
-                            });
-                        }).catch(err => {
-                            res.status(500).send(err)
-                        });
-                    } else {
-                        inValidateAllUser(dbUser.userId).then((res2) => {
-                            res.status(511).send(res2)
-                        }).catch(err => {
-                            return res.status(500).send(err)
-                        });
-                    }
-
-                }).catch(err => {
-                    return res.status(511).send(err)
-                });
-
-            }).catch(err => {
-                return res.status(401).send(err)
-            });
-        } catch (error) {
-            console.log(error)
-            next(error)
-
+        req.params = { roleName: roleName }
+        req.body = {
+            "username": user.dataValues.email,
+            "password": password
         }
-    },
-    // loginss: function (req) {
-    //     return new Promise(function (resolve, reject) {
-    //         let reqObj = req.body
-    //         // login code start
-    //         db.User.findOne({
-    //             where: {
-    //                 phone: reqObj.phone
-    //             }
-    //         }).then(user => {
-
-    //             if (!user) {
-    //                 return reject(util.responseUtil(null, null, responseConstant.USER_NOT_FOUND));
-
-    //             } else {
-
-    //                 let accessToken, refreshToken
-    //                 signAccessToken(user.dataValues).then(function (result) {
-    //                     accessToken = result
-    //                     console.log(accessToken)
-    //                     loginRefreshToken(user.dataValues).then(function (result1) {
-    //                         refreshToken = result1
-    //                         console.log("refreshToken::", refreshToken)
-    //                         return resolve({
-
-    //                             tokens: {
-    //                                 accesstoken: accessToken,
-    //                                 refreshtoken: refreshToken
-    //                             },
-    //                             user: user.dataValues
-    //                         });
-
-    //                     });
-    //                 });
-    //             }
-
-    //         }).catch(err => {
-    //             return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-    //         });
-
-    //         // login ends
-
-    //     }, function (err) {
-    //         logger.error('error in login user promise', err);
-    //         return reject(err);
-    //     });
-
-    // },
-
-    verifyjwttoken: function (req, res) {
-
-        return new Promise(function (resolve, reject) {
-            const authHeader = req.headers['authorization']
-            const token = authHeader && authHeader.split(' ')[1]
-
-            jwt.verify(token, process.env.JWT_SECRET, function (err, decoded) {
-                if (err) {
-                    return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-                } else {
-                    return resolve(util.responseUtil(null, decoded, responseConstant.SUCCESS));
-                }
-
-            });
-        });
-
-
+        next()
     },
 
-    logout: function (req) {
-        return new Promise(function (resolve, reject) {
-            let reqObj = req.body
-            console.log("reqObj in Logout Service :: ", reqObj)
-            let refresh_token = reqObj.refreshToken
-            inValidateOneUser(refresh_token).then(res => {
-                console.log("logged out")
-                return resolve(util.responseUtil(null, "Successfully Logged Out", responseConstant.SUCCESS));
-            }).catch(err => {
-                console.log(err);
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            })
-        }, function (err) {
-            logger.error('error in login user promise', err);
-            return reject(err);
+    // admin , gm , employee role based login
+    login: async function (req, res, next) {
+
+        let { roleName } = req.params
+        let { username, password } = req.body
+
+        console.log("login service called=>", req.body, "rolename=>", roleName)
+
+        if (!Object.values(role).includes(roleName))
+            throw new createHttpError.Forbidden("User role is not Valid " + roleName)
+
+        let user = await usersDao.getUserByUsername(username)
+        let DbRoleName = await usersDao.getRoleName(user)
+        let matched = await commonUtils.comparePassword(password, user.password)
+
+        if (!matched) throw new createHttpError.Unauthorized("Invalid Password")
+
+        if (DbRoleName != roleName)
+            throw new createHttpError.Forbidden("Unathorized! User role is " + DbRoleName)
+
+        console.log(roleName, "===", DbRoleName)
+
+        let jwtToken = signAccessToken(user);
+        let refreshToken = generateRefreshToken(user, req.ip);
+        // save refresh token
+        await refreshToken.save();
+        // return basic details and tokens
+        res.sendResponse({
+            user: getBasicDetails(user),
+            accessToken: jwtToken,
+            refreshToken: refreshToken.token
+        })
+    },
+
+    refreshToken: async function (req, res, next) {
+        //throw new createHttpError.Unauthorized("Custom error")
+        let { userId } = req.body
+        let token = req.body.refreshToken
+        if (!token) throw new createHttpError.BadRequest("Refresh Token missing")
+        console.log("refresh Token called =>", token)
+
+        const refreshToken = await getRefreshToken(token);
+        const account = await refreshToken.getUser();
+
+        if (account.id != userId) throw new createHttpError.Unauthorized("user verification failed for token")
+        // replace old refresh token with a new one and save
+        const newRefreshToken = generateRefreshToken(account, req.ip);
+        refreshToken.revoked = Date.now();
+        refreshToken.revokedByIp = req.ip;
+        refreshToken.replacedByToken = newRefreshToken.token;
+        await refreshToken.save();
+        await newRefreshToken.save();
+
+        // generate new jwt
+        const accessToken = signAccessToken(account);
+        res.sendResponse({
+            accessToken,
+            refreshToken: newRefreshToken.token
         });
 
     },
-    getDriverMetrics : function (driverIds) {
-        return new Promise(function (resolve, reject) {
-            console.log("getDriverMetrics Service :: ")
-            db.User.findAll({
-                where: {
-                    id : driverIds,
-                    roleType : 2
-                },
-                attributes: {exclude: ['password']},
-            }).then(result=>{
-                // console.log(result)
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(err => {
-                console.log(err);
-                return reject(util.responseUtil(err, null, responseConstant.RUN_TIME_ERROR));
-            })
-        }, function (err) {
-            logger.error('error in login user promise', err);
-            return reject(err);
-        });
+
+    updateUser: async function (req, res) {
+        console.log("Insert Obj in updateUser Service ::", req.body)
+        let reqObj = req.body
+        let { userId } = req.params
+        if (req.user.id != userId) throw new createHttpError.Forbidden("Session Mismatch")
+        let user = await usersDao.getUserWithId(userId)
+        user.set(reqObj)
+        await user.save()
+        res.sendResponse(getBasicDetails(user))
+    },
+
+    patchUser: async function (req, res) {
+        let reqObj = req.body
+        let { userId } = req.params
+        if (req.user.id != userId) throw new createHttpError.Forbidden("Session Mismatch")
+        let user = await usersDao.getUserWithId(userId)
+        user.set(reqObj)
+        await user.save()
+        res.sendResponse({
+            msg: "success"
+        })
+    },
+
+    //throw off
+    getUser: async function (req, res, next) {
+        let result = await usersDao.getUser(req)
+        res.sendResponse(result)
+    },
+
+    getUserById: async function (req, res) {
+        console.log("getUserById called")
+        let { id } = req.params
+        if (req.user.id != id) throw new createHttpError.Forbidden("Session Mismatch")
+        let user = await usersDao.getUserWithId(id)
+        user.profile_image = user.profile_image ? await getUrl(user.profile_image) : null
+        res.sendResponse(getBasicDetails(user))
+    },
+
+    getDriverProfile: async function (req, res) {
+        console.log("getDriverProfile called")
+        let { id } = req.params
+        let user = await usersDao.getDriverProfile(id)
+        user.profile_image = user.profile_image ? await getUrl(user.profile_image) : null
+        res.sendResponse(user)
+    },
+
+    getAllUsers: async function (req, res) {
+        const { page, size } = req.query;
+        let userType = req.params.userType
+        userType = userType.toString().toLowerCase()
+        let roleName = userType === 'driver' ? 'driver' : 'customer'
+
+        let users = await usersDao.getAllUsers({ roleName, page, size })
+        res.sendResponse(users)
 
     },
+
+    //dns server dependency
+    getAllUsersByIds: async function (req, res) {
+        let result = await usersDao.getAllUsersByIds(req.body.Ids)
+        res.sendResponse(result)
+    },
+
+    //profile image
+    getUserImageById: async function (req, res) {
+        let result = usersDao.getUserImageById(req.body.Id)
+        res.sendResponse(result)
+    },
+
+    checkUserExists: async function (req, res) {
+        console.log("reqObj ::", req.body)
+        let { email, phone } = req.body
+        let result = await usersDao.checkUserExists({ email, phone })
+        res.sendResponse(result)
+    },
+
+    logout: async function (req, res) {
+        let reqObj = req.body
+        console.log("reqObj in Logout Service :: ", reqObj)
+        let refresh_token = reqObj.refreshToken
+        res.sendResponse({
+            msg: "Successfully Logged Out"
+        })
+    },
+
+    //lookAtThis
+    getDriverMetrics: async (req, res, next) => {
+        let { driverIds, customer_id } = req.body
+        console.log("getDriverMetrics Service ", driverIds, customer_id);
+        let result = await usersDao.getDriverMetrics({ driverIds, customer_id })
+        console.log(result);
+        res.sendResponse(result);
+    },
+
+    disableUser: async function (req, res, next) {
+        let user = await usersDao.getUserUnscoped(req.params.userId)
+        user.isActive = !user.isActive
+        user.save()
+        res.sendResponse({
+            id: user.id,
+            name: user.name,
+            isActive: user.isActive
+        })
+    },
+
+    forgotPassword: async function (req, res, next) {
+        let otp = await usersDao.forgotPassword(req.body)
+        res.sendResponse('Please check your email for password reset instructions' + otp)
+    },
+
+    verifyOTP: async function (req, res, next) {
+        await usersDao.verifyOTP(req.body)
+        res.sendResponse("verified")
+    },
+
+    changePassword: async function (req, res, next) {
+
+        let user = await usersDao.verifyOTP(req.body)
+        req.body.password = await getHash(req.body.password,)
+        user.password = req.body.password
+        user.resetToken = null
+        user.resetTokenExpires = null
+        user.save()
+        res.sendResponse('Password Changed Successfully')
+    }
 
 }

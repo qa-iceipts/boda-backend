@@ -25,6 +25,12 @@ var superSchema = {
             type: "enum",
             optional: false,
             values: [2, 3]
+        },
+        password: {
+            type: "string",
+            optional: false,
+            max: "500",
+            empty: false
         }
 
     },
@@ -38,14 +44,14 @@ var superSchema = {
         }
 
     },
-    logoutSchema : {
-        refreshToken:{
+    logoutSchema: {
+        refreshToken: {
             type: "string",
             optional: false,
             empty: false
         }
     },
-    adminloginSchema:{
+    adminloginSchema: {
         username: {
             type: "string",
             optional: false,

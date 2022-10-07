@@ -18,49 +18,31 @@ const { getPagination, getPagingData } = require('../utils/pagination')
 const {
     Op
 } = require("sequelize");
+const createHttpError = require('http-errors')
+
 /**
  * export module
  */
 module.exports = {
-    getVehicles: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("getVehicles dao called");
-            if(req.query.type && req.query.type == 'all'){
-                vehicles.findAll().then((result) => {
-                    if (result.length > 0) {
-                        return resolve(result);
-                    } else {
-                        return reject("No Vehicles Found ");
-                    }
-                }).catch(err => {
-                    return reject(err);
-                })
+    getVehicles: async function (reqObj) {
+        let { page, size, name,type } = reqObj;
+        if (type && type == 'all') {
+            let result = await vehicles.findAll()
+            if (result.length <= 0) throw new createHttpError.NotFound("No Vehicles Found")
+            return {
+                vehicles : result
             }
-            else{
-                const { page, size, name } = req.query;
-                var condition = name ? { name: { [Op.like]: `%${name}%` } } : null;
-                const { limit, offset } = getPagination(page, size);
-                vehicles.findAndCountAll({
-                    where :condition,
-                    offset: offset,
-                    limit: limit
-                }).then((result) => {
-                    if (result) {
-                        const response = getPagingData(result, page, limit);
-                        return resolve(response);
-                    } else {
-                        return reject("No vehicles found !");
-                    }
-                }).catch(err => {
-                    return reject(err);
-                })
-            }
-          
-            console.log("getVehicles dao returned");
-
-        }, function (err) {
-            logger.error('error in getVehicles promise', err);
-            return reject(err);
-        });
+        }
+        else {
+            let condition = name ? { name: { [Op.like]: `%${name}%` } } : null;
+            let { limit, offset } = getPagination(page, size);
+            let result = await vehicles.findAndCountAll({
+                where: condition,
+                offset: offset,
+                limit: limit
+            })
+            if (!result) throw new createHttpError.NotFound("No Vehicles Found")
+            return getPagingData(result, page, limit);
+        }
     },
 }

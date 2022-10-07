@@ -11,14 +11,16 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      user_subscriptions.belongsTo(models.User); 
-      user_subscriptions.belongsTo(models.subscriptions, {foreignKey: 'subscriptionType', targetKey: 'type'});
+      user_subscriptions.belongsTo(models.users);
+      user_subscriptions.belongsTo(models.subscriptions, { foreignKey: 'subscriptionType', targetKey: 'type' });
+      user_subscriptions.hasMany(models.transactions)
     }
   };
   user_subscriptions.init({
     start: DataTypes.DATE,
     end: DataTypes.DATE,
-    is_active: DataTypes.BOOLEAN
+    is_active: DataTypes.BOOLEAN,
+    paymentStatus: DataTypes.BOOLEAN
   }, {
     sequelize,
     modelName: 'user_subscriptions',

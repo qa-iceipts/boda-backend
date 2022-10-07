@@ -31,15 +31,15 @@ const sequelize = new Sequelize(config.database, config.username, config.passwor
 });
 
 
-// Test the connection
-sequelize
-  .authenticate()
-  .then(() => {
-    console.log('Connection has been established successfully.');
-  })
-  .catch(err => {
-    console.error('Unable to connect to the database:', err);
-  });
+// // Test the connection
+// sequelize
+//   .authenticate()
+//   .then(() => {
+//     console.log('Connection has been established successfully.');
+//   })
+//   .catch(err => {
+//     console.error('Unable to connect to the database:', err);
+//   });
 
 fs
   .readdirSync(__dirname)

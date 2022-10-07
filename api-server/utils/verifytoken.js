@@ -8,8 +8,10 @@
 
 const logger = require('../utils/logger');
 const db = require('../models')
-const JWT = require('jsonwebtoken');
-const {getUser} = require('../daos/users-dao')
+const jwt = require('jsonwebtoken');
+const { getUser } = require('../daos/users-dao')
+const crypto = require("crypto");
+const createHttpError = require('http-errors');
 /**
  * export module
  */
@@ -17,66 +19,41 @@ module.exports = {
 
     signAccessToken: (user) => {
         // console.log("users ::", user)
-        let id = user.id
-        let phone = user.phone
-        let email = user.email
-        let roleType = user.roleType
-        return new Promise((resolve, reject) => {
-            const payload = {
-                roleType,
-                id,
-                phone,
-                email
-            }
-            console.log("payload::", payload)
-            const secret = process.env.JWT_SECRET
-            const options = {
-                expiresIn: '1h',
+        return jwt.sign(
+            {
+                id: user.id,
+                phone: user.phone,
+                email: user.email,
+                roleType: user.roleType
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: '30d',
                 audience: user.name
             }
-            JWT.sign(payload, secret, options, (err, token) => {
-                if (err) {
-                    console.log(err.message)
-                    reject(err.message)
-                }
-
-                resolve(token)
-            })
-        })
+        )
     },
 
     loginRefreshToken: (user) => {
         // console.log("users ::", user)
-        let id = user.id
-        let phone = user.phone
-        let email = user.email
-        let roleType = user.roleType
-        return new Promise((resolve, reject) => {
-            const payload = {
-                roleType,
-                id,
-                phone,
-                email
+        return jwt.sign(
+            {
+                id: user.id,
+                phone: user.phone,
+                email: user.email,
+                roleType: user.roleType
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: '1y',
+                audience: user.name
             }
-            const secret = process.env.JWT_REF_SECRET
-            const options = {
-                expiresIn: '1d',
-                audience: user.name,
-            }
-            JWT.sign(payload, secret, options, (err, token) => {
-                if (err) {
-                    console.log(err.message)
-                    reject(err.message)
-                    //   return
-                }
-                resolve(token)
-            })
-        })
+        )
     },
 
     verifyRefreshToken: (refToken) => {
         return new Promise((resolve, reject) => {
-            JWT.verify(refToken, process.env.JWT_REF_SECRET, (err, payload) => {
+            jwt.verify(refToken, process.env.JWT_REF_SECRET, (err, payload) => {
                 if (err) return reject(401).send("Unauthorized")
                 console.log("payload ::", payload)
                 let name = payload.aud
@@ -155,7 +132,7 @@ module.exports = {
 
     returnRefreshTimestamp: (refToken) => {
         return new Promise((resolve, reject) => {
-            JWT.verify(refToken, process.env.JWT_REF_SECRET, (err, payload) => {
+            jwt.verify(refToken, process.env.JWT_REF_SECRET, (err, payload) => {
                 if (err) return reject(401).send("Unauthorized")
                 console.log("exp ::", payload.exp)
                 let exp = payload.exp
@@ -164,49 +141,38 @@ module.exports = {
         })
     },
 
-    returnTokens: (user) => {
-        return new Promise((resolve, reject) => {
-            let accessToken, refreshToken
-            module.exports.signAccessToken(user.dataValues).then(function (result) {
-                accessToken = result
-                console.log("accessToken::",accessToken)
-                module.exports.loginRefreshToken(user.dataValues).then(function (result1) {
-                    refreshToken = result1
-                    console.log("refreshToken::", refreshToken)
+    returnTokens: async (user) => {
 
-                    module.exports.returnRefreshTimestamp(refreshToken).then(function (exp) {
-                        if (exp) {
-                            let tokenObj = {
-                                userId: user.dataValues.id,
-                                refresh_token: refreshToken,
-                                timestamp: exp,
-                                is_used: '0'
-                            }
-                            delete user.dataValues.password
-                            db.tokens.create(tokenObj).then(() => {
-                                return resolve({
-                                    tokens: {
-                                        accesstoken: accessToken,
-                                        refreshtoken: refreshToken
-                                    },
-                                    user: user.dataValues
-                                });
+        let accessToken = module.exports.signAccessToken(user)
+        console.log("accessToken::", accessToken)
+        // let refreshToken = module.exports.loginRefreshToken(user)
+        let refreshToken = module.exports.generateRefreshToken(user,'01')
+        console.log("refreshToken::", refreshToken)
+        // save refresh token
+        await refreshToken.save();
+        // let exp = await module.exports.returnRefreshTimestamp(refreshToken)
+        // if (exp) {
+        //     let tokenObj = {
+        //         userId: user.id,
+        //         refresh_token: refreshToken,
+        //         timestamp: exp,
+        //         is_used: '0'
+        //     }
+        //     delete user.password
+        //     await db.tokens.create(tokenObj)
+        //     return ({
+        //         tokens: {
+        //             accesstoken: accessToken,
+        //             refreshtoken: refreshToken
+        //         },
+        //         user: user.dataValues
+        //     });
+        // }
 
-                            }).catch(err => {
-                                console.log(err)
-                            });
-
-                        }
-
-
-                    }).catch(err => {
-                        console.log(err)
-                        return reject(err)
-                    })
-
-                });
-            });
-        })
+        return ({
+            accesstoken: accessToken,
+            refreshtoken: refreshToken.token
+        });
     },
 
     verifyAccessToken: (req, res, next) => {
@@ -225,7 +191,7 @@ module.exports = {
             const token = authHeader && authHeader.split(' ')[1]
             console.log("token..", token)
             if (token) {
-                JWT.verify(token, process.env.JWT_SECRET, (err, payload) => {
+                jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
                     if (err) {
                         res.status(401).send(err)
                     } else {
@@ -242,46 +208,46 @@ module.exports = {
     },
 
     // rolename = ANY(driv)
-    verifyUser: (req,roleName) => {
+    verifyUser: (req, roleName) => {
         return new Promise((resolve, reject) => {
             // console.log("in verifyDriver payload ::", req.payload)
             let userId = req.payload.id
-            db.User.findOne({
+            db.users.findOne({
                 where: {
                     id: userId
                 },
                 include: {
                     model: db.roles,
-                    attributes:['roleName'],
+                    attributes: ['roleName'],
                     required: true
                 }
             }).then((user) => {
                 if (user) {
-                        
-                    if(roleName){
-                         //  console.log("verifyUser Values::",user.dataValues)
-                    let DBroleName = user.dataValues.role.dataValues.roleName
-                    if(!DBroleName){
-                        return reject("Valid roleType Required")
-                    }
-                    console.log("USER ROLE VALIDATION::",roleName.toLowerCase()  +" == " + DBroleName.toLowerCase())
-                    
-                    // Driver User
-                    if(roleName.toLowerCase() == DBroleName.toLowerCase()){
-        
+
+                    if (roleName) {
+                        //  console.log("verifyUser Values::",user.dataValues)
+                        let DBroleName = user.dataValues.role.dataValues.roleName
+                        if (!DBroleName) {
+                            return reject("Valid roleType Required")
+                        }
+                        console.log("USER ROLE VALIDATION::", roleName.toLowerCase() + " == " + DBroleName.toLowerCase())
+
+                        // Driver User
+                        if (roleName.toLowerCase() == DBroleName.toLowerCase()) {
+
                             return resolve("User roleType is " + DBroleName)
-                        
-                    }else {
-                        return reject( {
-                            status:401,
-                            error:" Unauthorized ! "+ roleName +" Account Required"
-                        })
+
+                        } else {
+                            return reject({
+                                status: 401,
+                                error: " Unauthorized ! " + roleName + " Account Required"
+                            })
+                        }
                     }
-                    }
-                    else{
+                    else {
                         return resolve(user.dataValues)
                     }
-                   
+
 
                 } else {
                     return reject("User Not found")
@@ -295,39 +261,73 @@ module.exports = {
         });
     },
 
+    generateRefreshToken: function (user, ipAddress) {
+        // create a refresh token that expires in 7 days
+        return db.refreshTokens.build({
+            userId: user.id,
+            token: module.exports.randomTokenString(),
+            expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            createdByIp: ipAddress
+        });
+    },
+    randomTokenString: function () {
+        return crypto.randomBytes(40).toString('hex');
+    },
 
+    getRefreshToken: async function (token) {
+        const refreshToken = await db.refreshTokens.findOne({ where: { token } });
+        if (!refreshToken || !refreshToken.isActive) throw new createHttpError.Forbidden('Invalid Refresh token');
+        console.log("DBrefreshToken",refreshToken.dataValues)
+        return refreshToken;
+    },
+    
     // new authorize user
-    authorize: (roles = [])=> {
-            return (req,res,next)=>{
-                if (typeof roles === 'string') {
-                    roles = [roles];
-                }
-                getUser(req).then((user) => {
-                    if (user) {
-                        if(roles){
-                        let DBroleName = user.role.dataValues.roleName
-                        console.log("DBroleName :: ",DBroleName)
-                        if (roles.length && !roles.includes(DBroleName.toLowerCase())) {
+    authorize: (roles = []) => {
+        return (req, res, next) => {
+            if (typeof roles === 'string') {
+                roles = [roles];
+            }
+            getUser(req).then((user) => {
+                if (user) {
+                    if (roles) {
+                        let DBroleName = user.role.dataValues.roleName.toLowerCase()
+                        console.log("DBroleName :: ", DBroleName)
+                        if (roles.length && !roles.includes(DBroleName)) {
                             // user's role is not authorized
                             return res.status(401).json({ message: 'Unauthorized Role' });
                         }
                         next()
-                        }
-                        else{
-                            next()
-                            // return resolve(user.dataValues)
-                        }
-                    } else {
-                        return res.status(401).json({ message: 'User Not Found' });
                     }
-                }).catch(err => {
-                    logger.error("error in authorize:: ", err)
-                    return res.status(401).json({ err:err});
-                });
-            }
-        
+                    else {
+                        next()
+                        // return resolve(user.dataValues)
+                    }
+                } else {
+                    return res.status(401).json({ message: 'User Not Found' });
+                }
+            }).catch(err => {
+                logger.error("error in authorize:: ", err)
+                return res.status(401).json({ err: err });
+            });
+        }
 
-    }
+
+    },
+
+    DestroyCronJob: async function () {
+        console.log("DestroyCronJob Service Called ::")
+        return await db.tokens.destroy({
+            where: {
+                // timestamp < unix_timestamp
+                timestamp: db.Sequelize.where(db.Sequelize.col("timestamp"), "<", db.Sequelize.fn("UNIX_TIMESTAMP"))
+                // timestamp: Sequelize.where(Sequelize.fn("UPPER", Sequelize.col("columnWithFunction")), "=", "SOME UPPER CASE VALUE")
+            }
+
+        })
+    },
+
+
+
 
 
 }

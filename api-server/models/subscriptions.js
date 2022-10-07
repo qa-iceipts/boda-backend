@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      subscriptions.hasMany(models.user_subscriptions, { foreignKey: 'subscriptionType', targetKey: 'type' })
     }
   };
   subscriptions.init({
@@ -20,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     name: DataTypes.STRING,
     rate: DataTypes.FLOAT,
-    description : DataTypes.STRING,
+    description: DataTypes.STRING,
     currency: DataTypes.STRING,
     duration: {
       type: DataTypes.INTEGER //DAYS

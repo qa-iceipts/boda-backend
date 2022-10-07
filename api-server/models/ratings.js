@@ -13,13 +13,14 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       ratings.belongsTo(models.rides); // Adds fk to ratings
       ratings.belongsTo(models.user_vehicles); // Adds fk to ratings
-      ratings.belongsTo(models.User, {foreignKey: 'driver_id'}); // Adds fk to ratings
+      ratings.belongsTo(models.users, {foreignKey: 'driver_id'}); // Adds fk to ratings
     }
   };
   ratings.init({
     vehicle_rating: DataTypes.FLOAT,
     driver_rating: DataTypes.FLOAT,
-    feedback: DataTypes.STRING
+    feedback_type : DataTypes.STRING,
+    feedback: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'ratings',

@@ -1,10 +1,14 @@
+rm -rf boda-drop-api/
+
+git clone git@bitbucket.org:bodadrop/boda-drop-api.git
+https://d3aqd0lttt7b0w.cloudfront.net/profile/2021-10-21T10:35:50.413Zb30bc85c-b06c-4888-b485-d560d41752b0-patrick-fore-850jTF12RSQ-unsplash%20(1).jpg
 All Users Types - {
     Integer Value Refers to type column Value in DB
     1 = ADMIN
     2 = DRIVER
     3 = CUSTOMER
 }
-
+v9Uuvx9VGFry837f4Uw8
 sequelize db:seed:all
 
 
@@ -15,7 +19,12 @@ sequelize db:seed:all
   ResponseDescription: 'Success. Request accepted for processing',
   CustomerMessage: 'Success. Request accepted for processing'
 }
-
+// const model = db.users
+        // for (let assoc of Object.keys(model.associations)) {
+        //   for (let accessor of Object.keys(model.associations[assoc].accessors)) {
+        //     console.log(model.name + '.' + model.associations[assoc].accessors[accessor]+'()');
+        //   }
+        // }
 
 {    
    "Body": {        
@@ -45,3 +54,21 @@ sequelize db:seed:all
       }    
    }
 }
+
+set foreign_key_checks = 0;
+truncate table boda_db.fcm_keys;
+truncate table boda_db.ratings;
+truncate table boda_db.refreshTokens;
+truncate table boda_db.rides;
+truncate table boda_db.tokens;
+truncate table boda_db.transactions;
+truncate table boda_db.user_subscriptions;
+truncate table boda_db.user_vehicles;
+truncate table boda_db.user_vehicles_images;
+truncate table boda_db.users;
+truncate table boda_dns_db.chats;
+truncate table boda_dns_db.dns_connections;
+truncate table boda_dns_db.rides;
+truncate table boda_location_db.user_locations;
+
+set foreign_key_checks = 1;

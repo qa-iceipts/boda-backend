@@ -6,30 +6,40 @@
  *  @version 1.0.0
  */
 
-const logger = require('../utils/logger');
 const subscriptionsDao = require('../daos/subscriptions-dao');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
+const createHttpError = require('http-errors');
+const db = require('../models')
 /**
  * export module
  */
 
 module.exports = {
 
-    getSubscriptions: function (req) {
-        return new Promise(function (resolve, reject) {
-            subscriptionsDao.getSubscriptions(req).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            logger.error('error in add getSubscriptions promise', err);
-            return reject(err);
-        });
+    getSubscriptions: async function (req, res, next) {
+        let result
+        if (req.query.type && req.query.type === 'all') {
+            result = await subscriptionsDao.getAllSubscriptions()
+        } else {
+            result = await subscriptionsDao.getAllSubscriptionsPage(req.query)
+        }
+        res.sendResponse(result)
+    },
 
+    getUserSubscriptions: async function (req, res, next) {
+        let { userId } = req.params
+        let result = await db.user_subscriptions.findAll({
+            where: {
+                is_active: true,
+                userId: userId
+            },
+            include: {
+                model: db.subscriptions,
+                required: true
+            }
+        })
+        // if (result.length <= 0) throw new createHttpError.NotFound()
+        res.sendResponse({
+            subscriptions: result
+        })
     }
-
-    
-
 }

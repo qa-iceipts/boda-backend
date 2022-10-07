@@ -15,22 +15,30 @@ module.exports = (sequelize, DataTypes) => {
   };
   user_location.init({
     user_id: {
-      type:DataTypes.STRING,
-      unique:true
+      type: DataTypes.STRING,
+      unique: true
     },
-    vehicle_type : {
-      type:DataTypes.INTEGER
+    vehicle_type: {
+      type: DataTypes.INTEGER
     },
-    user_type:{
-      type:DataTypes.INTEGER
+    user_type: {
+      type: DataTypes.INTEGER
     },
     lat: DataTypes.STRING,
+    per_km: DataTypes.FLOAT,
     long: DataTypes.STRING,
-    time: DataTypes.DATE,
+    // time: DataTypes.DATE,
     online: DataTypes.BOOLEAN
   }, {
+    // scopes
+    defaultScope: {
+      attributes: {
+        exclude: ['createdAt', 'updatedAt']
+      }
+    },
+    scopes: {},
     sequelize,
     modelName: 'user_location',
   });
-  return user_location;
+return user_location;
 };

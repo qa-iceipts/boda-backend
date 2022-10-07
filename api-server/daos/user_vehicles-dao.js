@@ -11,78 +11,53 @@
  */
 
 const logger = require('../utils/logger');
-const {user_vehicles} = require('../models');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
+const { user_vehicles, vehicles } = require('../models');
+const createHttpError = require('http-errors')
+
 /**
  * export module
  */
 module.exports = {
-    addUserVehicles: function (req) {
-        return new Promise(function (resolve, reject) {
-            let reqObj = req.body
-            logger.debug("addUserVehicles dao called");
-            user_vehicles.findOne({where: {UserId : reqObj.UserId}}).then((result)=>{
-                if(result){
-                    // console.log(result)
-                    let err ={
-                        message : "Sorry ! one User Can add only one vehicle !"
-                    }
-                     return reject(err)
-                }else{
-                    user_vehicles.create(reqObj).then(function (result) {
-                        return resolve(result);
-                    }).catch(function (err) {
-                        logger.error('error inaddUserVehicles', err);
-                        return reject(err);
-                    });
-                }
-                })
-           
-            logger.debug("add addUserVehicles dao returned");
-
-        }, function (err) {
-            logger.error('error in addUserVehicles promise', err);
-            return reject(err);
-        });
+    addUserVehicles: async function (reqObj) {
+        let count = await user_vehicles.count({ where: { userId: reqObj.userId } })
+        if (count) throw new createHttpError.NotAcceptable("Sorry ! one User Can add only one vehicle !")
+        let result = user_vehicles.create(reqObj)
+        return result
     },
 
-    updateUserVehicles: function (req) {
-        return new Promise(function (resolve, reject) {
-            let reqObj = req.body
-            logger.debug("updateUserVehicles dao called");
-            user_vehicles.update(reqObj,{where: {UserId : req.payload.id}}).then((result)=>{
-                        return resolve(result);
-                }).catch(err=>{
-                    return reject(err)
-                })
-           
-            logger.debug("updateUserVehicles dao returned");
-
-        }, function (err) {
-            logger.error('error in updateUserVehicles promise', err);
-            return reject(err);
-        });
+    updateUserVehicles: async function (reqObj) {
+        let result = await user_vehicles.update(reqObj, { where: { userId: req.user.id } })
+        return result
     },
 
-    getUserVehicles: function (UserId) {
-        return new Promise(function (resolve, reject) {
-            logger.debug("getUserVehicles dao called");
-            user_vehicles.findOne({where: {UserId : UserId}}).then((result)=>{
-                        if(result){
-                            return resolve(result);
-                        }else{
-                            return reject("No vehicles found !!")
-                        }
-                }).catch(err=>{
-                    return reject(err)
-                })
-           
-            logger.debug("getUserVehicles dao returned");
+    getUserVehicles: async function (userId) {
+        let result = await user_vehicles.findOne({
+            where: {
+                userId: userId
+            },
+            include: {
+                model: vehicles,
+                required: true
+            }
+        })
+        // if (!result) throw new createHttpError.NotFound("No vehicles found !!")
+        if(!result) return {}
+        return result
 
-        }, function (err) {
-            logger.error('error in getUserVehicles promise', err);
-            return reject(err);
-        });
+    },
+
+    getVehicleById: async function (vehicleId) {
+        console.log("getVehicleById dao called");
+        user_vehicles.findOne({
+            where: {
+                id: vehicleId
+            },
+            include: {
+                model: vehicles,
+                required: true
+            }
+        })
+        if (!result) throw new createHttpError.NotFound("No vehicles found !!")
+        return result
     },
 }

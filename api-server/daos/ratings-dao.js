@@ -9,36 +9,12 @@
  *  import project modules
  */
 
-const logger = require('../utils/logger');
-const {
-    ratings
-} = require('../models');
-// const {
-//     Op
-// } = require("sequelize");
-/**
- * export module
- */
+const { ratings } = require('../models');
+
 module.exports = {
-    addRating: function (reqObj) {
-        return new Promise(function (resolve, reject) {
-
-            console.log("addRating dao called");
-
-            ratings.create(reqObj).then((result) => {
-                return resolve(result);
-            }).catch(err => {
-                console.log(err)
-                return reject(err);
-            })
-
-            console.log("addRating dao returned");
-
-        }, function (err) {
-            console.log(err)
-            logger.error('error in addRating promise', err);
-            return reject(err);
-        });
+    addRating: async function (reqObj) {
+        let result = await ratings.create(reqObj)
+        return result
     },
 
 }

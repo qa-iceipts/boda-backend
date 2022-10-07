@@ -1,55 +1,34 @@
 'use strict';
 
-const axios = require('axios');
-const logger = require('../utils/logger');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
-const {
-    chats
-} = require('../models');
-const { Op } = require("sequelize")
-module.exports = {
-    addChat : function (reqObj){
-        return new Promise(function (resolve,reject){
-            chats.create(reqObj).then(result=>{
-                if(result){
-                    return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                }else{
-                    return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
-                }
-            }).catch(err=>{
-                console.log(err)
-                return reject(err)
-            })
-        });
-    },
-    getChats : function (reqObj){
-        return new Promise(function (resolve,reject){
-            chats.findAll({
-                where:{
-                    rideId : reqObj.rideId,
-                    // customer_Id: {
-                    //     [Op.or]: [ reqObj.customerId, reqObj.driverId ]
-                    //   }
-                    // customer_Id: {
-                    //     [Op.or]: [ reqObj.customerId, reqObj.driverId ]
-                    //   }
+const createHttpError = require('http-errors')
+const { chats } = require('../models');
+const { getRideById } = require('./rides.service');
 
-                    customer_Id : reqObj.customerId,
-                    driverId : reqObj.driverId 
-                },
-                order:[["createdAt", "DESC"]],
-                raw : true
-            }).then(result=>{
-                if(result.length>0){
-                    return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-                }else{
-                    return reject(util.responseUtil(null, null, responseConstant.RECORD_NOT_FOUND));
-                }
-            }).catch(err=>{
-                console.log(err)
-                return reject(err)
-            })
-        });
+module.exports = {
+    addChat: async function (reqObj) {
+        let result = await chats.create(reqObj)
+        if (!result) throw new createHttpError.NotFound()
+        return result
+    },
+
+    getChats: async function (req, res, next) {
+        let { rideId ,customerId,driverId} = req.body
+        console.log("get chats called ::", rideId)
+        // let ride = await getRideById(rideId)
+        let result = await chats.findAll({
+            where: {
+                rideId: rideId,
+                customer_Id: customerId,
+                driverId: driverId
+            },
+            attributes: ["id", "msg", "driverId", "customer_id", "rideId", "user_type"],
+            order: [["createdAt", "DESC"]],
+            raw: true
+        })
+        // if (result.length <= 0) 
+        // throw new createHttpError.NotFound()
+        res.sendResponse({
+            chats: result
+        })
     }
 }

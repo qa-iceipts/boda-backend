@@ -1,86 +1,89 @@
+// .env
 require('dotenv').config()
-const fs = require('fs')
+// S3 & uuid require
+const aws = require('aws-sdk')
 const S3 = require('aws-sdk/clients/s3')
-const {v4 : uuidv4} = require('uuid')
-const AWS_Bucket_Name = process.env.AWS_Bucket_Name
-const AWS_Access_Key_ID = process.env.AWS_Access_Key_ID
-const AWS_Secret_Access_ID = process.env.AWS_Secret_Access
-const AWS_Cloudfront = process.env.AWS_Cloudfront
-const AWS_REGION = process.env.AWS_REGION
-var multerS3 = require('multer-s3')
+const { v4: uuidv4 } = require('uuid')
+const multerS3 = require('multer-s3')
 const multer = require('multer')
+const { AWS_Bucket_Name, AWS_Access_Key_ID, AWS_Secret_Access, AWS_REGION } = process.env
+
+// initialize S3 object
 // const s3 = new S3({
-//     AWS_Access_Key_ID,
-//     AWS_REGION,
-//     AWS_Secret_Access_ID
-// })
-const s3 = new S3({
-    credentials: {
-        accessKeyId: AWS_Access_Key_ID,
-        secretAccessKey: AWS_Secret_Access_ID,
-        region : AWS_REGION
-    },
-});
+//     // accessKeyId: AWS_Access_Key_ID,
+//     // secretAccessKey: AWS_Secret_Access,
+//     // // Bucket: AWS_Bucket_Name,
+//     // region: AWS_REGION
+// });
 
-const s3Config = new S3({
-  accessKeyId: AWS_Access_Key_ID,
-  secretAccessKey: AWS_Secret_Access_ID,
-  Bucket: AWS_Bucket_Name
+aws.config.update({
+    accessKeyId: AWS_Access_Key_ID,
+    secretAccessKey: AWS_Secret_Access,
+    region: AWS_REGION,
+    bucket: AWS_Bucket_Name,
+    // endpoint: "http://testboda.s3.amazonaws.com"
 });
+const s3 = new aws.S3()
 
+console.log({
+    accessKeyId: AWS_Access_Key_ID,
+    secretAccessKey: AWS_Secret_Access,
+    bucket: AWS_Bucket_Name,
+    region: AWS_REGION
+})
+//delete file with Key
 function deleteFile(key) {
-s3.deleteObject({ Bucket: AWS_Bucket_Name, Key: key }, (err, data) => {
-    if(err){
-        console.log(err)
-    }
-    console.error(data);
-    return data
-});
+    s3.deleteObject({ Bucket: AWS_Bucket_Name, Key: key }, (err, data) => {
+        if (err) {
+            console.log(err)
+        }
+        console.log("data::", data);
+        return data
+    });
 }
-exports.deleteFile = deleteFile
-  
-  
-// uploads a file to s3
-function uploadFile(dest,file) {
-    // const fileStream = fs.createReadStream(file.path)
-    let myFile = file.originalname.split(".")
-    const fileType = myFile[myFile.length - 1]
 
-    const uploadParams = {
-      Bucket: AWS_Bucket_Name,
-      Body: file.buffer,
-      Key: dest + file.originalname,
-      ContentType: file.mimetype,
-    //   ACL: 'public-read'
+async function getImage() {
+    const data = s3.getObject(
+        {
+            Bucket: AWS_Bucket_Name,
+            Key: 'your stored image'
+        }
+
+    ).promise();
+    return data;
+}
+async function getUrl(myKey) {
+    return s3.getSignedUrlPromise('getObject', {
+        Bucket: AWS_Bucket_Name,
+        Key: myKey,
+        Expires: 60 * 5
+    });
+}
+
+
+// whole new idea code with multer S3
+
+// this is just to test locally if multer is working fine.
+const storage = multer.diskStorage({
+    destination: (req, res, cb) => {
+        cb(null, './')
+    },
+    filename: (req, file, cb) => {
+        cb(null, new Date().toISOString() + '-' + file.originalname)
     }
-    // s3.upload(params, (error, data) => {
-    //     if(error){
-    //         res.status(500).send(error)
-    //     }
+})
+// test locally ends
 
-    //     res.status(200).send(data)
-    // })
-    // return s3.upload(uploadParams).promise()
-  }
-  exports.uploadFile = uploadFile
-  
-  
-  // downloads a file from s3
-  function getFileStream(fileKey) {
-    const downloadParams = {
-      Key: fileKey,
-      Bucket: bucketName
-    }
-  
-    return s3.getObject(downloadParams).createReadStream()
-  }
-
-
-
-//   whole new idea code with multer S3
+// file types check
 const fileFilter = (req, file, cb) => {
+    console.log("filefilter", file)
+    console.log({
+        accessKeyId: AWS_Access_Key_ID,
+        secretAccessKey: AWS_Secret_Access,
+        bucket: AWS_Bucket_Name,
+        region: AWS_REGION
+    })
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/jpg') {
-        
         cb(null, true)
     } else {
         req.file_error = "image not allowed"
@@ -88,41 +91,105 @@ const fileFilter = (req, file, cb) => {
     }
 
 }
-
-// this is just to test locally if multer is working fine.
-const storage = multer.diskStorage({
-    destination: (req, res, cb) => {
-        cb(null, './logs')
-    },
-    filename: (req, file, cb) => {
-        cb(null, new Date().toISOString() + '-' + file.originalname)
-    }
-})
+// multerS3 configurations
 const multerS3Config = multerS3({
-    s3: s3Config,
+    s3: s3,
     bucket: AWS_Bucket_Name,
     metadata: function (req, file, cb) {
         cb(null, { fieldName: file.fieldname });
     },
     key: function (req, file, cb) {
-        console.log(file)
-        cb(null,req.subdir + new Date().toISOString() + uuidv4() + '-' + file.originalname)
+        console.log("filedetails", file)
+        cb(null, req.subdir + new Date().toISOString() + uuidv4() + '-' + file.originalname)
     },
     contentDisposition: 'inline',
+    //acl: "public-read",
     contentType: multerS3.AUTO_CONTENT_TYPE,
 });
 
-const upload = multer({
-    storage: multerS3Config,
+const uploadFile = multer({
+    storage: multerS3Config,//multer.buffer,
     fileFilter: fileFilter,
     limits: {
         fileSize: 1024 * 1024 * 5 // we are allowing only 5 MB files
     }
 })
+// // old Code starts
 
-exports.profileImage = upload;
-  exports.getFileStream = getFileStream
-  exports.uploadFile = uploadFile
+// // downloads a file from s3
+// function getFileStream(fileKey) {
+//     const downloadParams = {
+//         Key: fileKey,
+//         Bucket: AWS_Bucket_Name
+//     }
+//     s3.getObject(downloadParams, function (err, data) {
+//         if (err) {
+//             console.log("Error", err);
+//         } else {
+//             console.log("getObject", data);
+//         }
+//     })
+
+//     return s3.getObject(downloadParams).createReadStream()
+// }
+
+// //list all buckets
+// const listBuckets = () => {
+//     s3.listBuckets(function (err, data) {
+//         if (err) {
+//             console.log("Error", err);
+//         } else {
+//             console.log("Success", data.Buckets);
+//         }
+//     });
+// }
+// const listObjectsInBucket = (bucketName) => {
+//     // Create the parameters for calling listObjects
+//     var bucketParams = {
+//         Bucket: bucketName,
+//     };
+
+//     // Call S3 to obtain a list of the objects in the bucket
+//     s3.listObjects(bucketParams, function (err, data) {
+//         if (err) {
+//             console.log("Error", err);
+//         } else {
+//             console.log("Success", data);
+//         }
+//     });
+// }
+// // listObjectsInBucket("testboda")
+// const clearBucket = (bucket) => {
+//     // var self = this;
+//     console.log("clear Bucket :: Called")
+//     s3.listObjects({ Bucket: bucket }, function (err, data) {
+//         if (err) {
+//             console.log("error listing bucket objects " + err);
+//             return;
+//         }
+//         var items = data.Contents;
+//         for (var i = 0; i < items.length; i += 1) {
+
+//             var deleteParams = { Bucket: bucket, Key: items[i].Key };
+//             // s3.deleteObject(client, deleteParams);
+
+//             s3.deleteObject(deleteParams, function (err, data) {
+//                 if (err) console.log(err, err.stack);  // error
+//                 else console.log("deleted");                 // deleted
+//             });
+//         }
+//     });
+// }
+// // old code ends
 
 
-  
+module.exports = {
+    deleteFile,
+    uploadFile,
+    getImage,
+    getUrl
+}
+
+
+
+

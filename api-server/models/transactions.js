@@ -11,35 +11,75 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      transactions.belongsTo(models.User); 
-      transactions.belongsTo(models.subscriptions, {foreignKey: 'subscriptionType', targetKey: 'type'});
       transactions.belongsTo(models.user_subscriptions);
-      transactions.belongsTo(models.payment_modes, {foreignKey: 'paymentMode', targetKey: 'type'});   
     }
   };
   transactions.init({
-    time: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
-      // This way, the current date/time will be used to populate this column (at the moment of insertion)
-    },
-    transaction_id: {
+    merchantTransactionID: {
       type: DataTypes.STRING,
-      unique:true
+      unique: true
     },
-    MerchantRequestID :{
+    requestAmount: {
+      type: DataTypes.FLOAT,
+      unique: false
+    },
+    currencyCode: {
       type: DataTypes.STRING,
-      unique:true
+      unique: false
     },
-    CheckoutRequestID :{
+    accountNumber: {
       type: DataTypes.STRING,
-      unique:true
+      unique: false
     },
-    ResponseDescription :DataTypes.STRING,
-    CustomerMessage : DataTypes.STRING,
-    amount: DataTypes.FLOAT,
-    currency: DataTypes.STRING,
-    status : DataTypes.BOOLEAN
+    dueDate: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    requestDescription: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    countryCode: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    customerFirstName: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    customerLastName: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    MSISDN: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    customerEmail: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    status: DataTypes.BOOLEAN,
+    checkoutRequestID: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    conversionRate: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    originalCurrencyCode: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    convertedCurrencyCode: {
+      type: DataTypes.STRING,
+      unique: false
+    },
+    convertedAmount: {
+      type: DataTypes.STRING,
+      unique: false
+    },
   }, {
     sequelize,
     modelName: 'transactions',

@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class dns_connections extends Model {
+  class user_vehicles_images extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,14 +11,15 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      dns_connections.belongsTo(models.rides);
+      // user_vehicles_images.belongsTo(models.users); 
+      user_vehicles_images.belongsTo(models.user_vehicles);
     }
   };
-  dns_connections.init({
-    socketId: DataTypes.STRING
+  user_vehicles_images.init({
+    image: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'dns_connections',
+    modelName: 'user_vehicles_images',
   });
-  return dns_connections;
+  return user_vehicles_images;
 };

@@ -1,101 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const logger = require('../utils/logger')
-const HttpStatus = require('http-status-codes');
 const ridesService = require('../services/rides-service');
-const {validate,superSchema}  = require('../utils/validator')
-const {
-    verifyAccessToken,
-    verifyUser
-} = require("../utils/verifytoken")
+const authorize = require('../middleware/authorize');
+const { PromiseHandler } = require('../utils/errorHandler');
 
+router.post('/', authorize(), PromiseHandler(ridesService.addRide))
 
-router.post('/', verifyAccessToken , (req, res, next) => {
+router.post('/update', authorize(), PromiseHandler(ridesService.updateRide))
 
-    console.log("rides/ post Route Called")
+router.post('/bookRide', authorize(), PromiseHandler(ridesService.getRideUsers), PromiseHandler(ridesService.bookRide))
 
-    ridesService.addRide(req).then((result) => {
-        res.status(HttpStatus.StatusCodes.OK).send(result);
-    }, (err) => {
-        if (err.status === 1130) {
-            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
-        }
-        else {
-            console.log(err)
-            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-        }
-    });
+router.post('/cancelRide', authorize(), PromiseHandler(ridesService.getRideUsers), PromiseHandler(ridesService.cancelRide))
 
-}, (err) => {
-    console.log(err)
-    logger.error("router error", err);
-    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-});
+router.post('/startRide', authorize(), PromiseHandler(ridesService.getRideUsers), PromiseHandler(ridesService.startRide))
 
-router.post('/update', verifyAccessToken , (req, res, next) => {
+router.post('/endRide', authorize(), PromiseHandler(ridesService.getRideUsers), PromiseHandler(ridesService.endRide))
 
-    console.log("rides/update post Route Called")
+router.get('/:rideId', authorize(), PromiseHandler(ridesService.getRide))
 
-    ridesService.updateRide(req).then((result) => {
-        res.status(HttpStatus.StatusCodes.OK).send(result);
-    }, (err) => {
-        if (err.status === 1130) {
-            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
-        }
-        else {
-            console.log(err)
-            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-        }
-    });
+router.get('/', authorize(), PromiseHandler(ridesService.getRidesByUserId))
 
-}, (err) => {
-    console.log(err)
-    logger.error("router error", err);
-    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-});
+router.get('/getRideById/:rideId', PromiseHandler(ridesService.getRideById))
 
-router.get('/:rideId', verifyAccessToken , (req, res, next) => {
+router.get('/DriverHistory/:userId', authorize(), PromiseHandler(ridesService.getDriverRideHistory))
 
-    console.log("rides / get Route Called")
-    rideId = req.params.rideId
-    ridesService.getRide(rideId).then((result) => {
-        res.status(HttpStatus.StatusCodes.OK).send(result);
-    }, (err) => {
-        if (err.status === 1130) {
-            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
-        }
-        else {
-            console.log(err)
-            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-        }
-    });
-
-}, (err) => {
-    console.log(err)
-    logger.error("router error", err);
-    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-});
-
-router.get('/', verifyAccessToken , (req, res, next) => {
-
-    console.log("rides all / get Route Called",req.payload.id)
-    ridesService.getRidesByUserId(req.payload.id).then((result) => {
-        res.status(HttpStatus.StatusCodes.OK).send(result);
-    }, (err) => {
-        if (err.status === 1130) {
-            res.status(HttpStatus.StatusCodes.NOT_FOUND).send(err)
-        }
-        else {
-            console.log(err)
-            res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-        }
-    });
-
-}, (err) => {
-    console.log(err)
-    logger.error("router error", err);
-    res.status(HttpStatus.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
-});
-
+router.get('/rideState/:userType/:userId', authorize(), PromiseHandler(ridesService.getRideState))
 
 module.exports = router;

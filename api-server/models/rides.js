@@ -11,9 +11,10 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      rides.belongsTo(models.User, {foreignKey: 'customer_id',as: 'customer'}); // Adds fk to rides
-      rides.belongsTo(models.User, {foreignKey: 'driver_id',as: 'driver'}); // Adds fk to rides
-      rides.belongsTo(models.user_vehicles, {foreignKey: 'vehicle_id'}); // Adds fk to rides
+      rides.belongsTo(models.users, { foreignKey: 'customer_id', as: 'customer' }); // Adds fk to rides
+      rides.belongsTo(models.users, { foreignKey: 'driver_id', as: 'driver' }); // Adds fk to rides
+      rides.belongsTo(models.user_vehicles, { foreignKey: 'vehicle_id' }); // Adds fk to rides
+      rides.hasOne(models.ratings); // Adds fk to rides
     }
   };
   rides.init({
@@ -23,13 +24,13 @@ module.exports = (sequelize, DataTypes) => {
     destination_long: DataTypes.STRING,
     origin_location: DataTypes.STRING,
     destination_location: DataTypes.STRING,
-    is_booked: {
-      defaultValue: false,
-      type : DataTypes.BOOLEAN
+    state: {
+      type: DataTypes.ENUM('FINDING', 'NEGOTIATING', 'BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED')
     },
     amount_estimated: DataTypes.FLOAT,
     amount_actual: DataTypes.FLOAT,
-    distance: DataTypes.FLOAT,
+    distance: DataTypes.STRING,
+    eta: DataTypes.STRING,
     start_time: DataTypes.DATE,
     end_time: DataTypes.DATE
   }, {

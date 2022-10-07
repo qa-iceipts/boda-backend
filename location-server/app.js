@@ -6,24 +6,18 @@ require('dotenv').config()
 // express intitialization
 const express = require("express");
 const app = express();
-
-// path 
 const path = require('path');
-
-// http & bodyparser
-const http = require('http');
-const bodyParser = require("body-parser");
-const createError = require('http-errors');
-
+const development = "development"
 // morgan & winston combined logger setup
 const morgan = require('morgan');
-const winston = require('./utils/logger')
+// const winston = require('./utils/logger')
 app.use(morgan('tiny'));
-app.use(morgan('combined', {
-	stream: winston.stream
-}));
+// app.use(morgan('combined', {
+// 	stream: winston.stream
+// }));
 // CORS 
 const cors = require("cors");
+const { handleError } = require('./utils/errorHandler.js');
 app.use(cors());
 
 // parse requests of content-type - application/json
@@ -37,39 +31,51 @@ app.use(express.urlencoded({
 }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-
-// set port, listen for requests
-const PORT = process.env.PORT || 8080;
-
-
-// IMPORT DATABASE HELPER
-const {
-	dbhelper
-} = require("./utils/dbhelper")
-
-dbhelper().then(() => {
-	console.log("dbhelper promise done")
-
-	// EXPRESS ROUTER SECTION
-
-	const db = require('./models/index')
-	
-    const routes = require('./routes/routes.js')
-	app.use('/location', routes)
-
-	// sync the db
-	db.sequelize.sync({
-		force: false
-	}).then(() => {
-		console.log('Database Synced.');
-		app.listen(PORT, () => {
-			console.log(`Server is running on port ${PORT}.`);
-		});
-
-	}).catch(err => {
-		console.error('Unable to sync the database:', err);
+app.response.sendResponse = function (data, message, statusCode) {
+	statusCode = statusCode ? statusCode : 200
+	return this.status(statusCode).send({
+		success: true,
+		status: statusCode,
+		message: message,
+		data: data,
 	})
+};
 
-}).catch(err => {
-	console.log(err)
+const responseEnv = ["development","test"]
+app.response.sendError = function (err) {
+	const { statusCode, message, stack, expose } = err;
+	return this.status(statusCode).send({
+		success: false,
+		status: statusCode,
+		expose: expose,
+		error_message: message,
+		...(responseEnv.includes(process.env.NODE_ENV)) && { error_stack: stack }
+	});
+};
+
+app.use('/location', require('./routes/index.routes.js'))
+
+app.use((req, res, next) => {
+	res.status(404).send({
+		msg: `Requested URL ${req.get('host')}${req.path} not found!`
+	});
 })
+
+app.use((err, req, res, next) => {
+	handleError(err, res);
+});
+
+async function start() {
+	try {
+		console.log("=> starting the server ...")
+		await require("./utils/dbhelper");
+		console.log("=> dbhelper file executed")
+		const port = process.env.PORT || 4000
+		// const port = process.env.NODE_ENV === 'production' ? (process.env.PORT || 80) : 4000;
+		app.listen(port, () => console.log(' Server listening on port ' + port));
+
+	} catch (error) {
+		console.log(error)
+	}
+}
+start()

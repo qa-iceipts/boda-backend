@@ -6,66 +6,32 @@
  *  @version 1.0.0
  */
 
-const logger = require('../utils/logger');
 const users_vehiclesDao = require('../daos/user_vehicles-dao');
-const util = require('../utils/commonUtils')
-var responseConstant = require("../constants/responseConstants");
+const createHttpError = require('http-errors');
 /**
  * export module
  */
 
 module.exports = {
 
-    addUserVehicles: function (req) {
-        return new Promise(function (resolve, reject) {
-            console.log("Insert Obj in addUserVehicles Service ::", req.body)
-            
-            if(req.payload.id != req.body.UserId){
-                return reject(util.responseUtil("Access token id and body userId mismatch !!", null, responseConstant.ACCESS_DENIED));
-            }
-            users_vehiclesDao.addUserVehicles(req).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in addUserVehicles', err);
-                return reject(util.responseUtil(err, null, responseConstant.SEQUELIZE_FOREIGN_KEY_CONSTRAINT_ERROR));
-            });
-        }, function (err) {
-            logger.error('error in add addUserVehicles promise', err);
-            return reject(err);
-        });
-
+    addUserVehicles: async function (req, res, next) {
+        let reqObj = req.body
+        if (req.user.id != reqObj.userId) {
+            throw new createHttpError.Forbidden("Session userId mismatch")
+        }
+        let result = await users_vehiclesDao.addUserVehicles(reqObj)
+        res.sendResponse(result)
     },
 
-    getUserVehicles: function (UserId) {
-        return new Promise(function (resolve, reject) {
-
-            users_vehiclesDao.getUserVehicles(UserId).then(function (result) {
-                return resolve(util.responseUtil(null, result, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in getUserVehicles', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            logger.error('error in add getUserVehicles promise', err);
-            return reject(err);
-        });
-
+    getUserVehicles: async function (req, res, next) {
+        let { userId } = req.params
+        let result = await users_vehiclesDao.getUserVehicles(userId)
+        res.sendResponse(result)
     },
 
-    updateUserVehicles: function (req) {
-        return new Promise(function (resolve, reject) {
-
-            users_vehiclesDao.updateUserVehicles(req).then(function (result) {
-                return resolve(util.responseUtil(null, null, responseConstant.SUCCESS));
-            }).catch(function (err) {
-                logger.error('error in updateUserVehicles', err);
-                return reject(util.responseUtil(err, null, responseConstant.RECORD_NOT_FOUND));
-            });
-        }, function (err) {
-            logger.error('error in add updateUserVehicles promise', err);
-            return reject(err);
-        });
-
+    updateUserVehicles: async function (req) {
+        let result = await users_vehiclesDao.updateUserVehicles(req.payload.id)
+        res.sendResponse(result)
     },
 
 }

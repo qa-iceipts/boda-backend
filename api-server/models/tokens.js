@@ -17,8 +17,8 @@ module.exports = (sequelize, DataTypes) => {
     userId: DataTypes.UUID,
     refresh_token: DataTypes.TEXT,
     timestamp: DataTypes.STRING,
-    is_used : DataTypes.ENUM('0','1')
-    
+    is_used: DataTypes.ENUM('0', '1')
+
   }, {
     sequelize,
     modelName: 'tokens',

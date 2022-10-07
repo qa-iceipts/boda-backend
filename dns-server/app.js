@@ -1,100 +1,89 @@
 'use strict';
-// dotenv
-require('dotenv').config();
-// express intitialization & socketIO
-const express = require("express");
+require('dotenv').config();// dotenv
+const express = require("express"); // express intitialization & socketIO
 const app = express();
-
 const server = require('http').createServer(app);
-//{path: '/test'}
-const io = require('socket.io')(server,{
-    cors:{ origin: "*"}
+const io = require('socket.io')(server, {
+	cors: { origin: "*" }
 });
 
-require('./utils/socketio')(io)
-
-// path 
-const path = require('path');
-
-// morgan & winston combined logger setup
-const morgan = require('morgan');
-const winston = require('./utils/logger')
-app.use(morgan('tiny'));
-app.use(morgan('combined', {
-	stream: winston.stream
-}));
-// CORS 
-const cors = require("cors");
+const path = require('path'); // path 
+const cors = require("cors"); //cors
 app.use(cors());
+//{path: '/test'}
 
-// parse requests of content-type - application/json
-app.use(express.json());
+// const io = require('socket.io')(server, {
+// 	cors: { origin: "*" }
+// }).listen(server);
 
-// app.use(expressValidator());
+// require('./utils/socketio')(io)
+require('./controllers/socketio.controller')(io)
 
-// parse requests of content-type - application/x-www-form-urlencoded
-app.use(express.urlencoded({
-	extended: true
-}));
+app.use((req, res, next) => {
+	req.io = io
+	next()
+})
+
+const morgan = require('morgan');   // morgan & winston combined logger setup
+const { handleError } = require('./utils/errorHandler');
+// const winston = require('./utils/logger')
+app.use(morgan('tiny'));
+// app.use(morgan('combined', {
+// 	stream: winston.stream
+// }));
+
+app.use(express.json()); // parse requests of content-type - application/json
+
+
+app.use(express.urlencoded({ extended: true })); // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.static(path.join(__dirname, 'public')));
 
-// set port, listen for requests
-const PORT = process.env.PORT || 8080;
-
-// IMPORT DATABASE HELPER
-const {
-	dbhelper
-} = require("./utils/dbhelper")
-
-dbhelper().then(() => {
-	console.log("dbhelper promise done")
-
-	// EXPRESS ROUTER SECTION
-	const db = require('./models/index')
-
-   	const routes = require('./routes/routes.js')
-	
-    app.use('/dns', routes)
-
-	// sync the db
-	db.sequelize.sync({
-		force: false
-	}).then(() => {
-		console.log('Database Synced.');
-		server.listen(PORT, () => {
-			console.log(`Server is running on port ${PORT}.`);
-		});
-
-	}).catch(err => {
-		console.error('Unable to sync the database:', err);
+app.response.sendResponse = function (data, message, statusCode) {
+	statusCode = statusCode ? statusCode : 200
+	return this.status(statusCode).send({
+		success: true,
+		status: statusCode,
+		message: message,
+		data: data,
 	})
+};
 
-}).catch(err => {
-	console.log(err)
+const responseEnv = ["development", "test"]
+app.response.sendError = function (err) {
+	const { statusCode, message, stack, expose } = err;
+	return this.status(statusCode).send({
+		success: false,
+		status: statusCode,
+		expose: expose,
+		error_message: message,
+		...(responseEnv.includes(process.env.NODE_ENV)) && { error_stack: stack }
+	});
+};
+
+app.use('/dns', require('./routes/index.routes.js'))
+
+app.use((req, res, next) => {
+	res.status(404).send({
+		msg: `Requested URL ${req.get('host')}${req.path} not found!`
+	});
 })
- 
-//Whenever someone connects this gets executed
-// io.on('connection', function(socket){
-//    console.log('A user connected',socket.id);
-//    console.log("rideId => " +  socket.handshake.query.rideId);
-//    socket.emit("welcome", {a:"hyy"});
-//    //Whenever someone disconnects this piece of code executed
-//    socket.on('disconnect', function () {
-//       console.log('A user disconnected');
-//    });
 
-//    socket.on('message', function (data) {
-//     console.log(data);
-	
-//  });
-//  socket.on('ride', function (data) {
-//     console.log(data);
-	
-//  });
+app.use((err, req, res, next) => {
+	handleError(err, res);
+});
 
-// });
-// server.listen(3001, function(){
-//    console.log('listening on *:3001');
-// });
+async function start() {
+	try {
+		console.log("=> starting the server ...")
+		await require("./utils/dbhelper");
+		console.log("=> dbhelper file executed")
+		const port = process.env.PORT || 4000
+		// const port = process.env.NODE_ENV === 'production' ? (process.env.PORT || 80) : 4000;
+		server.listen(port, () => console.log(' Server listening on port ' + port));
 
-module.exports = io
+	} catch (error) {
+		console.log(error)
+	}
+}
+start()
+// module.exports = io

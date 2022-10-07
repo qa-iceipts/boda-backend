@@ -12,8 +12,11 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       // user_vehicles.belongsTo(models.vehicles); 
-      user_vehicles.belongsTo(models.User); 
+      user_vehicles.belongsTo(models.users); 
       user_vehicles.belongsTo(models.vehicles, {foreignKey: 'vehicleType', targetKey: 'type'});
+      user_vehicles.hasMany(models.user_vehicles_images)
+      user_vehicles.hasMany(models.rides, { foreignKey: 'vehicle_id'})
+
     }
   };
   user_vehicles.init({

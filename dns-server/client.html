@@ -1,0 +1,80 @@
+<script type="module">
+  import { io } from "https://cdn.socket.io/4.4.1/socket.io.esm.min.js";
+  let userId = "97ec532d-daef-4e12-88f0-73602766257a"
+  let driverId = ""
+  let rideId = prompt("Enter rideId")
+  let user_type = 3
+  let pick_lat = 22.29407881814916
+  let pick_long = 73.18299037135844
+  let drop_lat = 22.249977129718673
+  let drop_long = 73.18499810045428
+  let radius = 50
+  let vehicleType = 2
+
+
+  const socket = io("http://localhost:4200?user_type=" + user_type + "&userId=" + userId + "&rideId=" + rideId);
+
+  socket.on("onconnect", (data) => {
+    document.getElementById('onconnect').innerHTML =
+      `<p>successfully connected</p>
+      <p>Message - ${data.message}</p>
+    <p>Socket Id ${data.socketId}</p>`
+
+    let send = {
+      rideId: rideId,
+      // pick_lat: pick_lat,
+      // pick_long: pick_long,
+      // drop_lat: drop_lat,
+      // drop_long: drop_long,
+      // user_id: userId,
+      radius: radius,
+      vehicle_type: 2
+    }
+    console.log(send)
+    socket.emit('getAvailableRides', send)
+    socket.on("getAvailableRidesCallback", (data) => {
+      console.log("getAvailableRidesCallback>>>", data)
+    })
+    socket.on("nearbyDriversList", (data) => {
+      console.log("nearbyDriversList>>>", data)
+
+      socket.emit('getOffers', {
+        rideId: rideId
+      })
+      socket.on("notified", (data) => console.log("notified", data))
+    })
+
+
+    socket.on("error", (error) => {
+      console.log("error>>>", error)
+    })
+
+
+
+  })
+
+  socket.on("disconnect", (data) => {
+    document.getElementById('onconnect').innerHTML =
+      `<p>user Disconnected</p>`
+  })
+
+
+
+
+</script>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta h ttp-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  hello
+  <div id="onconnect"></div>
+</body>
+
+</html>
