@@ -7,7 +7,7 @@ const basename = path.basename(__filename);
 // const env = process.env.NODE_ENV || 'development';
 // const config = require(__dirname + '/../config/config.json')[env];
 var config = require(__dirname + '/../config/config');
-console.log("Using Configuration ::",config.activeEnv)
+console.log("Using Configuration ::", config.activeEnv)
 config = config[config.activeEnv];
 const db = {};
 
@@ -21,13 +21,14 @@ const db = {};
 const sequelize = new Sequelize(config.database, config.username, config.password, {
   host: config.host,
   dialect: config.dialect,
+  port: config.port,
   pool: {
     max: 5,
     min: 0,
     idle: 10000
   },
   dialectOptions: config.dialectOptions,
-  logging: console.log ,
+  logging: console.log,
   // timezone: "+05:30"
 });
 

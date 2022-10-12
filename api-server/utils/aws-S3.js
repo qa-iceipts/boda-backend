@@ -16,21 +16,37 @@ const { AWS_Bucket_Name, AWS_Access_Key_ID, AWS_Secret_Access, AWS_REGION } = pr
 //     // region: AWS_REGION
 // });
 
-aws.config.update({
-    accessKeyId: AWS_Access_Key_ID,
-    secretAccessKey: AWS_Secret_Access,
-    region: AWS_REGION,
-    bucket: AWS_Bucket_Name,
-    // endpoint: "http://testboda.s3.amazonaws.com"
-});
-const s3 = new aws.S3()
+
+// aws.config.update({
+//     accessKeyId: AWS_Access_Key_ID,
+//     secretAccessKey: AWS_Secret_Access,
+//     region: AWS_REGION,
+//     bucket: AWS_Bucket_Name,
+//     // endpoint: "http://testboda.s3.amazonaws.com"
+// });
+// const s3 = new aws.S3()
 
 console.log({
     accessKeyId: AWS_Access_Key_ID,
     secretAccessKey: AWS_Secret_Access,
     bucket: AWS_Bucket_Name,
-    region: AWS_REGION
+    // region: AWS_REGION
 })
+
+aws.config.update({
+    apiVersion: 'latest',
+    credentials: {
+        accessKeyId: AWS_Access_Key_ID,
+        secretAccessKey: AWS_Secret_Access
+    }
+});
+// Set S3 endpoint to DigitalOcean Spaces
+const spacesEndpoint = new aws.Endpoint("https://fra1.digitaloceanspaces.com");
+const s3 = new aws.S3({
+    endpoint: spacesEndpoint
+});
+
+
 //delete file with Key
 function deleteFile(key) {
     s3.deleteObject({ Bucket: AWS_Bucket_Name, Key: key }, (err, data) => {
@@ -81,7 +97,7 @@ const fileFilter = (req, file, cb) => {
         accessKeyId: AWS_Access_Key_ID,
         secretAccessKey: AWS_Secret_Access,
         bucket: AWS_Bucket_Name,
-        region: AWS_REGION
+        // region: AWS_REGION
     })
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/jpg') {
         cb(null, true)

@@ -1,79 +1,100 @@
-# This builds development or production images of the api, dns and location servers, 
-# Pushes 'em to the boda drop dockerhub account'.
+orbs:
+  docker: circleci/docker@1.5.0
+version: 2.1
+executors:
+  docker-publisher:
+    environment:
+      IMAGE_NAME: iceipts/backend_boda
+    docker: # Each job requires specifying an executor
+      # (either docker, macos, or machine), see
+      - image: circleci/node:latest
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
 
-
-## Project nvironment variable to set in circleci app.
-#
-# - DOCKER_HUB_USER_ID
-# - DOCKER_HUB_PASSWORD
-
-
-version: 2
 jobs:
-  
-  publish-dev:
-    docker:
-      - image: cimg/base:2022.06
+  publishAPISERVER:
+    executor: docker-publisher
+
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 19.03.13
+      - setup_remote_docker
       - run:
-          name: Build and push api image to Docker Hub
+          name: Publish apiserver Docker Image to Docker Hub
           command: |
-            docker build -t $DOCKER_HUB_USER_ID/api-server:dev ./api-server/
-            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
-            docker push $DOCKER_HUB_USER_ID/api-server:dev
-      - run:
-          name: Build and push dns image to Docker Hub
-          command: |
-            docker build -t $DOCKER_HUB_USER_ID/dns-server:dev ./dns-server/
-            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
-            docker push $DOCKER_HUB_USER_ID/dns-server:dev
-      - run:
-          name: Build and push dns image to Docker Hub
-          command: |
-            docker build -t $DOCKER_HUB_USER_ID/location-server:dev ./location-server/
-            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
-            docker push $DOCKER_HUB_USER_ID/location-server:dev
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            ls
+            pwd
+            cd api-server
+            docker build -t $IMAGE_NAME:apiserver .
+            docker push $IMAGE_NAME:apiserver
 
+  publishDNS_SERVER:
+    executor: docker-publisher
 
-  publish-latest:
-    docker:
-      - image: cimg/base:2022.06
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 19.03.13
+      - setup_remote_docker
       - run:
-          name: Build and push api image to Docker Hub
+          name: Publish apiserver Docker Image to Docker Hub
           command: |
-            docker build -t $DOCKER_HUB_USER_ID/api-server:latest ./api-server/
-            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
-            docker push $DOCKER_HUB_USER_ID/api-server:latest
-      - run:
-          name: Build and push dns image to Docker Hub
-          command: |
-            docker build -t $DOCKER_HUB_USER_ID/dns-server:latest ./dns-server/
-            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
-            docker push $DOCKER_HUB_USER_ID/dns-server:latest
-      - run:
-          name: Build and push dns image to Docker Hub
-          command: |
-            docker build -t $DOCKER_HUB_USER_ID/location-server:latest ./location-server/
-            echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USER_ID" --password-stdin
-            docker push $DOCKER_HUB_USER_ID/location-server:latest
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            ls
+            pwd
+            cd dns-server
+            docker build -t $IMAGE_NAME:dnsserver .
+            docker push $IMAGE_NAME:dnsserver
 
+  publishLOCATION_SERVER:
+    executor: docker-publisher
+
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Publish apiserver Docker Image to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            ls
+            pwd
+            cd location-server
+            docker build -t $IMAGE_NAME:location .
+            docker push $IMAGE_NAME:location
+
+  pull-and-build:
+    docker:
+      - image: arvindr226/alpine-ssh
+    steps:
+      - checkout
+      - run:
+          command: |
+            ssh -oStrictHostKeyChecking=no -v root@$DIGITAL_OCEAN_IP "./deploy.sh"
 
 workflows:
   version: 2
-  publish-docker:
+  build-master:
     jobs:
-      - publish-dev:
+      - publishAPISERVER:
           filters:
             branches:
-              only: development
-      - publish-latest:
-           filters:
+              only:
+                - master
+      - publishDNS_SERVER:
+          filters:
             branches:
-              only: master
+              only:
+                - master
+      - publishLOCATION_SERVER:
+          filters:
+            branches:
+              only:
+                - master
+      - pull-and-build:
+          requires:
+            - publishAPISERVER
+            - publishDNS_SERVER
+            - publishLOCATION_SERVER
+          filters:
+            branches:
+              only:
+                - master

@@ -10,7 +10,8 @@
  *  import project modules
  */
 const { user_vehicles_images } = require('../models');
-const createHttpError = require('http-errors')
+const createHttpError = require('http-errors');
+const { getUrl } = require('../utils/aws-S3');
 
 /**
  * export module
@@ -24,8 +25,14 @@ module.exports = {
         let result = await user_vehicles_images.findAndCountAll({
             where: {
                 userVehicleId: userVehicleId
-            }
+            },
+            attibutes: ["id", "image"],
+            raw: true
         })
+        for (let index = 0; index < result.rows.length; index++) {
+            result.rows[index].image = await getUrl(result.rows[index].image)
+        }
+
         return result
     },
 
@@ -59,8 +66,6 @@ module.exports = {
         if (!result) {
             throw new createHttpError.NotFound();
         }
-        // let imageKey = result.image.split(process.env.AWS_Cloudfront)[1];
-        // console.log("image Key => ", imageKey)
         console.log("getVehicleImageById dao returned");
         return result
     },
