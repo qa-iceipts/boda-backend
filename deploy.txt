@@ -1,0 +1,54 @@
+docker pull iceipts/backend_boda:apiserver
+docker pull iceipts/backend_boda:dnsserver
+docker pull iceipts/backend_boda:location
+
+
+docker run --env-file ./env_api -p 8080:8080 -d \
+ --restart always \
+ --name apiserver \
+ iceipts/backend_boda:apiserver
+
+
+ docker run --env-file ./env_dns -p 4200:4200 -d \
+ --restart always \
+ --name dnsserver \
+ iceipts/backend_boda:dnsserver
+
+ 
+ docker run --env-file ./env_loc -p 4000:4000 -d \
+ --restart always \
+ --name location \
+ iceipts/backend_boda:location
+
+
+
+
+#!/bin/bash
+
+#replace this with the path of your project on the VPS
+docker pull iceipts/backend_boda:apiserver
+docker pull iceipts/backend_boda:dnsserver
+docker pull iceipts/backend_boda:location
+docker stop apiserver
+docker rm apiserver
+docker run --env-file ./env_api -p 8080:8080 -d \
+ --restart always \
+ --name apiserver \
+ iceipts/backend_boda:apiserver
+
+docker stop dnsserver
+docker rm dnsserver
+ docker run --env-file ./env_dns -p 4200:4200 -d \
+ --restart always \
+ --name dnsserver \
+ iceipts/backend_boda:dnsserver
+
+docker stop location
+docker rm location
+ docker run --env-file ./env_loc -p 4000:4000 -d \
+ --restart always \
+ --name location \
+ iceipts/backend_boda:location
+
+
+ 

@@ -41,14 +41,14 @@ module.exports = {
             }
         })
         // if (!result) throw new createHttpError.NotFound("No vehicles found !!")
-        if(!result) return {}
+        if (!result) return {}
         return result
 
     },
 
     getVehicleById: async function (vehicleId) {
         console.log("getVehicleById dao called");
-        user_vehicles.findOne({
+        let result = user_vehicles.findOne({
             where: {
                 id: vehicleId
             },
