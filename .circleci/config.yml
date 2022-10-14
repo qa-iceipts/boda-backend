@@ -78,7 +78,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - migrate
       - publishDNS_SERVER:
           filters:
             branches:
@@ -97,4 +97,4 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - migrate
