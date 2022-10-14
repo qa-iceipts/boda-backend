@@ -83,12 +83,12 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - migrate
       - publishLOCATION_SERVER:
           filters:
             branches:
               only:
-                - master
+                - migrate
       - pull-and-build:
           requires:
             - publishAPISERVER
