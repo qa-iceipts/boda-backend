@@ -48,18 +48,72 @@ module.exports = {
         res.sendResponse(ride)
     },
 
+    acceptRide: async function (req, res, next) {
+        let reqObj = req.body
+        let ride = await ridesDao.getRideByPk(req.params.rideId)
+        if (!ride) throw new createHttpError.NotFound("ride Not Found")
+        console.log(ride)
+        let [driver_fcmtokens, customer_fcmtokens] = await Promise.all([
+            getAllTokensByIds(ride.driver_id),
+            getAllTokensByIds(ride.customer_id)
+        ])
+
+        ride.state = "ACCEPTED"
+        await ride.save()
+
+        let notificationdata = {
+            data: JSON.stringify({
+                rideId: ride.id,
+                state: ride.state
+            })
+        }
+        let driverMsg = {
+            notification: {
+                title: "Booking Successfull",
+                body: "Accepted"
+            },
+            android: {
+                notification: {
+                    clickAction: 'pendingRide'
+                }
+            },
+            data: notificationdata ? notificationdata : "",
+            tokens: driver_fcmtokens,
+            // driver_fcmtokens,
+        };
+
+        // let customerMsg = Object.create(driverMsg);
+        let customerMsg = {
+            ...driverMsg,
+            notification: {
+                title: "Ride Accepted",
+                body: "Driver arriving soon at pickup location"
+            },
+            tokens: customer_fcmtokens
+        }
+        console.log(customerMsg)
+        console.log(driverMsg)
+        await Promise.all([
+            sendNotifications(driverMsg),
+            sendNotifications(customerMsg)
+        ])
+
+        res.sendResponse({
+            msg: "ride accepted successfully"
+        })
+    },
+
     getRideUsers: async function (req, res, next) {
 
         console.log("bookRide Service Called ::")
         let reqObj = req.body
         let ride = await ridesDao.getRideByPk(reqObj.id)
         if (!ride) throw new createHttpError.NotFound("ride Not Found")
-        console.log(ride)
-        let { driver_id, customer_id } = ride
+        console.log(ride.dataValues)
         console.log("reqObj::", reqObj)
         let [driver_fcmtokens, customer_fcmtokens] = await Promise.all([
             getAllTokensByIds(reqObj.driver_id),
-            getAllTokensByIds(reqObj.customer_id)
+            getAllTokensByIds(ride.customer_id)
         ])
         console.log("driver_fcmtokens.data:: ", driver_fcmtokens)
         console.log("customer_fcmtokens.data:: ", customer_fcmtokens)
@@ -68,6 +122,7 @@ module.exports = {
             throw new createHttpError.NotFound("fcm tokens not found")
         req.data = {
             ride: reqObj,
+            rideData: ride.dataValues,
             driver_fcmtokens: driver_fcmtokens,
             customer_fcmtokens: customer_fcmtokens
         } //array
@@ -75,8 +130,12 @@ module.exports = {
 
     },
 
+
     bookRide: async function (req, res, next) {
         console.log("req.data", req.data)
+        if (req.data.rideData.state != 'FINDING') {
+            throw new createHttpError.Conflict("ride is already " + req.data.rideData.state)
+        }
         let { driver_fcmtokens, customer_fcmtokens } = req.data
         let notificationdata = {
             data: JSON.stringify({
@@ -86,12 +145,12 @@ module.exports = {
         }
         let driverMsg = {
             notification: {
-                title: "Ride Booked By Customer",
-                body: "Customer is waiting at pickup location"
+                title: "New ride booked",
+                body: "Waiting for approval"
             },
             android: {
                 notification: {
-                    clickAction: 'rideclick'
+                    clickAction: 'pendingRide'
                 }
             },
             data: notificationdata ? notificationdata : "",
@@ -104,7 +163,7 @@ module.exports = {
             ...driverMsg,
             notification: {
                 title: "Ride Booking Successfull",
-                body: "Driver is arriving soon at pickup location"
+                body: "Waiting for driver confirmation"
             },
             tokens: customer_fcmtokens
         }
@@ -114,11 +173,61 @@ module.exports = {
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
         ])
+        req.data.ride.state = 'BOOKED'
         await ridesDao.updateRide(req.data.ride)
         res.sendResponse({
             msg: "success"
         })
     },
+
+    getPendingRequests: async function (req, res, next) {
+        let result = await ridesDao.getPendingRequests(req.params.driverId)
+        res.sendResponse(result)
+    },
+    // bookRide: async function (req, res, next) {
+    //     console.log("req.data", req.data)
+    //     let { driver_fcmtokens, customer_fcmtokens } = req.data
+    //     let notificationdata = {
+    //         data: JSON.stringify({
+    //             rideId: req.body.id,
+    //             state: req.state
+    //         })
+    //     }
+    //     let driverMsg = {
+    //         notification: {
+    //             title: "Ride Booked By Customer",
+    //             body: "Customer is waiting at pickup location"
+    //         },
+    //         android: {
+    //             notification: {
+    //                 clickAction: 'rideclick'
+    //             }
+    //         },
+    //         data: notificationdata ? notificationdata : "",
+    //         tokens: driver_fcmtokens,
+    //         // driver_fcmtokens,
+    //     };
+
+    //     // let customerMsg = Object.create(driverMsg);
+    //     let customerMsg = {
+    //         ...driverMsg,
+    //         notification: {
+    //             title: "Ride Booking Successfull",
+    //             body: "Driver is arriving soon at pickup location"
+    //         },
+    //         tokens: customer_fcmtokens
+    //     }
+    //     console.log(customerMsg)
+    //     console.log(driverMsg)
+    //     await Promise.all([
+    //         sendNotifications(driverMsg),
+    //         sendNotifications(customerMsg)
+    //     ])
+    //     await ridesDao.updateRide(req.data.ride)
+    //     res.sendResponse({
+    //         msg: "success"
+    //     })
+    // },
 
     startRide: async function (req, res, next) {
         console.log("req.data", req.data)

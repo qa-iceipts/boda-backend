@@ -3,12 +3,18 @@ const router = express.Router();
 const ridesService = require('../services/rides-service');
 const authorize = require('../middleware/authorize');
 const { PromiseHandler } = require('../utils/errorHandler');
+const roles = require('../utils/roles');
 
 router.post('/', authorize(), PromiseHandler(ridesService.addRide))
 
 router.post('/update', authorize(), PromiseHandler(ridesService.updateRide))
 
 router.post('/bookRide', authorize(), PromiseHandler(ridesService.getRideUsers), PromiseHandler(ridesService.bookRide))
+
+
+router.get('/getPendingRequests/:driverId', authorize(roles.DRIVER), PromiseHandler(ridesService.getPendingRequests))
+
+router.post('/acceptRide/:rideId', authorize(), PromiseHandler(ridesService.acceptRide))
 
 router.post('/cancelRide', authorize(), PromiseHandler(ridesService.getRideUsers), PromiseHandler(ridesService.cancelRide))
 

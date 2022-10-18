@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
     origin_location: DataTypes.STRING,
     destination_location: DataTypes.STRING,
     state: {
-      type: DataTypes.ENUM('FINDING', 'NEGOTIATING', 'BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED')
+      type: DataTypes.ENUM('FINDING', 'NEGOTIATING', 'BOOKED', 'ACCEPTED', 'STARTED', 'CANCELLED', 'COMPLETED')
     },
     amount_estimated: DataTypes.FLOAT,
     amount_actual: DataTypes.FLOAT,
