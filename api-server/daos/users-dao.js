@@ -98,13 +98,13 @@ module.exports = {
     getDriverProfile: async function (id) {
 
         logger.debug("getUser dao called");
+        logger.debug(id)
         let user = await db.users.findOne({
             where: {
                 id: id
             },
             attributes: {
-                include: [[db.Sequelize.fn("COUNT", db.Sequelize.col("driver.id")), "totalRides"]],
-
+                // include: [[db.Sequelize.fn("COUNT", db.Sequelize.col("driver.id")), "totalRides"]],
             },
             include: [
                 {
@@ -119,7 +119,8 @@ module.exports = {
                 {
                     model: db.rides,
                     as: 'driver',
-                    attributes: [],
+                    attributes: ['id'],
+                    group: ['id'],
                     where: {
                         state: ['COMPLETED']
                         // is_booked:1 
@@ -127,12 +128,16 @@ module.exports = {
                     required: false
                 },
 
-            ]
+            ],
         })
         if (!user || !user.id) {
             return {}
             // throw new createHttpError.NotFound()
         }
+        user.dataValues.totalRides = 0
+        if (user.dataValues.driver.length > 0)
+            user.dataValues.totalRides = user.dataValues.driver.length
+        delete user.dataValues.driver
         return user
     },
 

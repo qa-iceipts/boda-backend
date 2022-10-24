@@ -83,7 +83,7 @@ module.exports = {
             },
             where: {
                 customer_id: userid,
-                state: ['BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED'],
+                state: ['BOOKED', 'ACCEPTED', 'STARTED', 'CANCELLED', 'COMPLETED'],
 
             },
             include: [
@@ -116,7 +116,7 @@ module.exports = {
             },
             where: {
                 driver_id: userid,
-                state: ['BOOKED', 'STARTED', 'CANCELLED', 'COMPLETED']
+                state: ['BOOKED', 'ACCEPTED', 'STARTED', 'CANCELLED', 'COMPLETED']
             },
             include: [
                 {
@@ -194,7 +194,7 @@ module.exports = {
 
     getRideState: async function (userId, userType) {
         console.log("getRideState dao called", userType, userId);
-        let whereObj = { state: ['BOOKED', 'STARTED'] }
+        let whereObj = { state: ['ACCEPTED', 'STARTED'] }
         if (userType === 'customer') {
             whereObj['customer_id'] = userId
         } else {
@@ -208,5 +208,17 @@ module.exports = {
         return result
     },
 
+
+    getPendingRequests: async function (driver_id) {
+        let result = await rides.findAndCountAll({
+            where: {
+                driver_id: driver_id
+            }, include: { model: user_vehicles }
+        })
+        if (!result) {
+            return {}
+        }
+        return result
+    },
 
 }

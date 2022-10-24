@@ -13,5 +13,5 @@ let a = {
 }
 console.log("fbDATA>>>", a)
 module.exports = {
-    "firebase_config": a
+    firebase_config: a
 }
