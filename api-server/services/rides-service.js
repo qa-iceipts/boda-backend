@@ -509,7 +509,6 @@ module.exports = {
         if (!ride) throw new createHttpError.FailedDependency("ride not found in post requests ride")
         let requests = await ridesDao.createRideReq(reqArray, rideId)
         console.log("ride>>><", ride, requests)
-        // await requests.setRide(ride)
         res.sendResponse({
             msg: "success"
         })

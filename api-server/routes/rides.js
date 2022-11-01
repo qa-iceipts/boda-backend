@@ -5,8 +5,6 @@ const authorize = require('../middleware/authorize');
 const { PromiseHandler } = require('../utils/errorHandler');
 const roles = require('../utils/roles');
 
-// router.post('/', authorize(), PromiseHandler(ridesService.addRide))
-
 router.post('/update', authorize(), PromiseHandler(ridesService.updateRide))
 
 router.post('/bookRide', authorize(), PromiseHandler(ridesService.addRide), PromiseHandler(ridesService.bookingSendNotifications), PromiseHandler(ridesService.notifyDrivers))
