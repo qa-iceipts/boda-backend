@@ -15,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
       rides.belongsTo(models.users, { foreignKey: 'driver_id', as: 'driver' }); // Adds fk to rides
       rides.belongsTo(models.user_vehicles, { foreignKey: 'vehicle_id' }); // Adds fk to rides
       rides.hasOne(models.ratings); // Adds fk to rides
+      rides.hasMany(models.ride_requests);
     }
   };
   rides.init({
@@ -25,7 +26,8 @@ module.exports = (sequelize, DataTypes) => {
     origin_location: DataTypes.STRING,
     destination_location: DataTypes.STRING,
     state: {
-      type: DataTypes.ENUM('FINDING', 'NEGOTIATING', 'BOOKED', 'ACCEPTED', 'STARTED', 'CANCELLED', 'COMPLETED')
+      //DataTypes.ENUM('FINDING', 'NEGOTIATING', 'BOOKED', 'ACCEPTED', 'STARTED', 'CANCELLED', 'COMPLETED')
+      type: DataTypes.ENUM('FINDING', 'BOOKED', 'ACCEPTED', 'STARTED', 'CANCELLED', 'COMPLETED')
     },
     amount_estimated: DataTypes.FLOAT,
     amount_actual: DataTypes.FLOAT,
