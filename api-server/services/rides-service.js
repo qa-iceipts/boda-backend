@@ -39,7 +39,6 @@ module.exports = {
         console.log(reqObj)
 
         let result = await ridesDao.addRide(reqObj)
-        // res.sendResponse(result)
         req.body.id = result.id
         next()
     },
@@ -368,7 +367,6 @@ module.exports = {
             start_time: req.body.start_time,
             state: "STARTED"
         })
-        // res.sendResponse(result)
         res.sendResponse({
             msg: "success"
         })
@@ -418,7 +416,6 @@ module.exports = {
                 state: "COMPLETED"
 
             })
-        // res.sendResponse(result)
         res.sendResponse({
             msg: "success"
         })
