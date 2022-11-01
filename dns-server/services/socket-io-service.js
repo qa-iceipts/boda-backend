@@ -50,7 +50,7 @@ module.exports = {
 
     getNearbyDrivers: async function (reqObj) {
         console.log("getNearbyDrivers called", reqObj)
-
+        reqObj.rideId = parseInt(reqObj.rideId)
 
         let rideData = await axios.get(process.env.API_SERVER + '/rides/getRideById/' + reqObj.rideId)
 
@@ -83,33 +83,8 @@ module.exports = {
         if (Object.keys(response.data.data).count === 0) throw new createHttpError.NotFound("Nearby Drivers Not Found")
         response.data = response.data.data
         let destinations = rideData.data.data.origin_lat + ',' + rideData.data.data.origin_long
-        let array = []
+        let array2 = []
         let driverIds = []
-        // throw new Error("World")
-        response.data.rows.forEach(obj => {
-            array.push({
-                driverId: obj.user_id,
-                rideId: reqObj.rideId,
-                "user_id": rideData.data.data.customer_id,
-                pick_lat: rideData.data.data.origin_lat,
-                pick_long: rideData.data.data.origin_long,
-                drop_lat: rideData.data.data.destination_lat,
-                drop_long: rideData.data.data.destination_long,
-                ridedistance: rideData.data.data.distance,
-                eta: rideData.data.data.distance.eta,
-                status: 0,
-                price: 0,
-                customerId: rideData.data.data.customer_id,
-                range: parseInt(onAirDistance * obj.per_km),
-            })
-            driverIds.push(obj.user_id)
-        });
-        await rides.destroy({
-            where: {
-                rideId: reqObj.rideId
-            }
-        })
-        await rides.bulkCreate(array)
 
         let origins = ''
         response.data.rows.forEach((element, index) => {
@@ -140,6 +115,33 @@ module.exports = {
             response.data.rows[index].distance = element.elements[0].distance.text
             response.data.rows[index].duration = element.elements[0].duration.text
         });
+
+        response.data.rows.forEach(obj => {
+            array2.push({
+                driver_id: obj.user_id,
+                rideId: reqObj.rideId,
+                driverDistance: obj.distance,
+                driverDuration: obj.duration,
+                status: "PENDING",
+                range: parseInt(onAirDistance * obj.per_km),
+            })
+            driverIds.push(obj.user_id)
+        });
+
+
+        console.log("rideRequest create data >>>>>", {
+            rideId: reqObj.rideId,
+            reqArray: array2
+        })
+        let rideRequestCreate = await axios.post(process.env.API_SERVER + '/rides/postRideRequests/', {
+            rideId: parseInt(reqObj.rideId),
+            reqArray: array2
+        })
+        console.log("rideRequestCreate", rideRequestCreate)
+
+        if (rideRequestCreate.status != 200) {
+            throw new createHttpError.FailedDependency("ride requests failed")
+        }
 
         let metrics = await axios.post(process.env.API_SERVER + '/users/getDriverMetrics', {
             "driverIds": driverIds,

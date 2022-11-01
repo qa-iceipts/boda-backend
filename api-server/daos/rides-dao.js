@@ -10,10 +10,12 @@
  *  import project modules
  */
 var moment = require('moment');
+const { Op } = require("sequelize")
 const {
-    ratings, rides, users, user_vehicles, sequelize
+    ratings, rides, users, user_vehicles, ride_requests, sequelize
 } = require('../models');
-const createHttpError = require('http-errors')
+const createHttpError = require('http-errors');
+const db = require('../models');
 /**
  * export module
  */
@@ -45,7 +47,7 @@ module.exports = {
                 {
                     model: users,
                     as: 'driver',
-                    required: true,
+                    required: false,
                     attributes: ["id", "name", "phone", "email", "profile_image"]
                 },
                 {
@@ -56,8 +58,9 @@ module.exports = {
                 },
                 {
                     model: user_vehicles,
-                    required: true
+                    required: false
                 },
+
 
             ]
         })
@@ -194,13 +197,13 @@ module.exports = {
 
     getRideState: async function (userId, userType) {
         console.log("getRideState dao called", userType, userId);
-        let whereObj = { state: ['ACCEPTED', 'STARTED'] }
+        let whereObj = { state: ['BOOKED', 'ACCEPTED', 'STARTED'] }
         if (userType === 'customer') {
             whereObj['customer_id'] = userId
         } else {
             whereObj['driver_id'] = userId
         }
-        let result = await rides.findOne({ where: whereObj, include: { model: user_vehicles } })
+        let result = await rides.findOne({ where: whereObj, include: { model: user_vehicles }, order: [['createdAt', 'desc']] })
         if (!result) {
             return {}
             // throw new createHttpError.NotFound()
@@ -210,14 +213,77 @@ module.exports = {
 
 
     getPendingRequests: async function (driver_id) {
-        let result = await rides.findAndCountAll({
+        let result = await db.ride_requests.findAndCountAll({
+            attributes: [
+                "id",
+                "status",
+                "price",
+                "range",
+                "driverDuration",
+                "driverDistance",
+                "rideId",
+            ],
             where: {
-                driver_id: driver_id
-            }, include: { model: user_vehicles }
+                driver_id: driver_id,
+                status: "PENDING",
+                createdAt: {
+                    [Op.gte]: sequelize.literal("DATE_SUB(NOW(), INTERVAL 5 MINUTE)"),
+                }
+            }, include: [
+                {
+                    model: rides,
+                    attributes: [
+                        "origin_lat",
+                        "origin_long",
+                        "destination_lat",
+                        "destination_long",
+                        "origin_location",
+                        "destination_location",
+                        "state",
+                        "amount_estimated",
+                        "amount_actual",
+                        "distance",
+                        "eta",
+                        "start_time",
+                        "end_time",
+                        "customer_id"
+                    ],
+                    include: {
+                        model: users,
+                        as: 'customer',
+                        attributes: [
+                            "name",
+                            "phone",
+                            "email",
+                            "address",
+                            "country",
+                            "state",
+                            "city",
+                            "station",
+                            "profile_image",
+                        ]
+                    }
+
+                },
+
+            ],
+            order: [
+                ["driverDuration", "asc"]
+            ]
         })
         if (!result) {
             return {}
         }
+        return result
+    },
+
+    createRideReq: async function (rideArray, rideId) {
+        await db.ride_requests.destroy({
+            where: {
+                rideId: rideId
+            }
+        })
+        let result = await db.ride_requests.bulkCreate(rideArray)
         return result
     },
 
