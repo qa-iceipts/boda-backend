@@ -12,11 +12,7 @@ const cors = require("cors"); //cors
 app.use(cors());
 //{path: '/test'}
 
-// const io = require('socket.io')(server, {
-// 	cors: { origin: "*" }
-// }).listen(server);
 
-// require('./utils/socketio')(io)
 require('./controllers/socketio.controller')(io)
 
 app.use((req, res, next) => {

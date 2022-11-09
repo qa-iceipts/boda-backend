@@ -51,3 +51,4 @@ Thumbs.db
 .env*
 client.js
 client2.js
+location-server/loc.html
