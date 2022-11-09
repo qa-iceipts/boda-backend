@@ -16,13 +16,15 @@ module.exports = (sequelize, DataTypes) => {
   user_location.init({
     user_id: {
       type: DataTypes.STRING,
-      unique: true
+      unique: true,
+      required: true
     },
     vehicle_type: {
       type: DataTypes.INTEGER
     },
     user_type: {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
+      required: true
     },
     lat: DataTypes.STRING,
     per_km: DataTypes.FLOAT,
@@ -40,5 +42,5 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'user_location',
   });
-return user_location;
+  return user_location;
 };

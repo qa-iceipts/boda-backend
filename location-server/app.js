@@ -7,7 +7,19 @@ require('dotenv').config()
 const express = require("express");
 const app = express();
 const path = require('path');
-const development = "development"
+
+const server = require('http').createServer(app);
+const io = require('socket.io')(server, {
+	cors: { origin: "*" }
+});
+
+require('./controllers/socketio.controller')(io)
+
+app.use((req, res, next) => {
+	req.io = io
+	next()
+})
+
 // morgan & winston combined logger setup
 const morgan = require('morgan');
 // const winston = require('./utils/logger')
@@ -41,7 +53,7 @@ app.response.sendResponse = function (data, message, statusCode) {
 	})
 };
 
-const responseEnv = ["development","test"]
+const responseEnv = ["development", "test"]
 app.response.sendError = function (err) {
 	const { statusCode, message, stack, expose } = err;
 	return this.status(statusCode).send({
@@ -72,7 +84,7 @@ async function start() {
 		console.log("=> dbhelper file executed")
 		const port = process.env.PORT || 4000
 		// const port = process.env.NODE_ENV === 'production' ? (process.env.PORT || 80) : 4000;
-		app.listen(port, () => console.log(' Server listening on port ' + port));
+		server.listen(port, () => console.log(' Server listening on port ' + port));
 
 	} catch (error) {
 		console.log(error)
