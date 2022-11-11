@@ -35,6 +35,8 @@ module.exports = {
             throw new createHttpError.InternalServerError("ETA RESULT google error")
 
         reqObj.distance = etaResult.data.rows[0].elements[0].distance.text
+        let value = etaResult.data.rows[0].elements[0].distance.value
+        reqObj.amount_estimated = value ? (value * 0.3) : 0
         reqObj.eta = etaResult.data.rows[0].elements[0].duration.text
         console.log(reqObj)
 
