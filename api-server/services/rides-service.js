@@ -6,11 +6,13 @@
  *  @version 1.0.0
  */
 const ridesDao = require('../daos/rides-dao');
-const { getTokensByIds, getAllTokensByIds } = require("../services/fcm-service")
+const { getAllTokensByIds } = require("../services/fcm-service")
 const { sendNotifications } = require('../services/notifications-service')
 const createHttpError = require('http-errors');
 const axios = require("axios");
 const { calculateDistance } = require('../utils/commonUtils');
+const usersDao = require('../daos/users-dao');
+const { getUserWithId } = require('../daos/users-dao');
 /**
  * export module
  */
@@ -35,6 +37,8 @@ module.exports = {
             throw new createHttpError.InternalServerError("ETA RESULT google error")
 
         reqObj.distance = etaResult.data.rows[0].elements[0].distance.text
+        let value = etaResult.data.rows[0].elements[0].distance.value
+        reqObj.amount_estimated = value ? (value * 0.3) : 0
         reqObj.eta = etaResult.data.rows[0].elements[0].duration.text
         console.log(reqObj)
 
@@ -51,12 +55,35 @@ module.exports = {
         res.sendResponse(ride)
     },
 
+    updateDriverStatus: async function (req, res, next) {
+        console.log("updateDriverStatus", req.ride)
+        let user = await usersDao.getUserWithId(req.ride.driverId)
+        user.rideStatus = req.ride.rideStatus
+        await user.save()
+        let response = await axios.post(process.env.LOCATION_SERVER + '/location', {
+            "user_id": user.id,
+            "rideStatus": req.ride.rideStatus
+        })
+        console.log("RESPONSE updateDriverStatus>>", response)
+        delete req.ride.rideStatus
+        res.sendResponse(req.ride)
+
+    },
+
     acceptRide: async function (req, res, next) {
 
         let ride = await ridesDao.getRideByPk(req.body.rideId)
         if (!ride) throw new createHttpError.NotFound("ride Not Found")
         if (ride.state != 'BOOKED')
             throw new createHttpError.Conflict("ride is already " + ride.state)
+
+
+        //driver is already on ride check ---
+        let driverUser = await getUserWithId(req.body.driverId)
+        console.log(driverUser.rideStatus)
+        if (driverUser.rideStatus != "AVAILABLE") {
+            throw new createHttpError.Conflict("already accepted another ride")
+        }
         console.log(await ride.getRide_requests({
             where: {
                 driver_id: req.body.driverId
@@ -119,41 +146,15 @@ module.exports = {
             sendNotifications(customerMsg)
         ])
 
-        res.sendResponse({
+
+        req.ride = {
             msg: "ride accepted successfully",
-            rideId: ride.id
-        })
-    },
-
-    getRideUsers: async function (req, res, next) {
-
-        console.log("bookRide Service Called ::")
-        let reqObj = req.body
-        let ride = await ridesDao.getRideByPk(reqObj.id)
-        if (!ride) throw new createHttpError.NotFound("ride Not Found")
-        console.log(ride.dataValues)
-        //startride check include
-        console.log("reqObj::", reqObj)
-        let [driver_fcmtokens, customer_fcmtokens] = await Promise.all([
-            getAllTokensByIds(ride.driver_id),
-            getAllTokensByIds(ride.customer_id)
-        ])
-        console.log("driver_fcmtokens.data:: ", driver_fcmtokens)
-        console.log("customer_fcmtokens.data:: ", customer_fcmtokens)
-
-        if (driver_fcmtokens.length <= 0 && customer_fcmtokens.length <= 0)
-            throw new createHttpError.NotFound("fcm tokens not found")
-        req.data = {
-            ride: reqObj,
-            rideData: ride.dataValues,
-            driver_fcmtokens: driver_fcmtokens,
-            customer_fcmtokens: customer_fcmtokens
+            rideId: ride.id,
+            driverId: ride.driver_id,
+            rideStatus: "NOT_AVAILABLE"
         }
         next()
-
     },
-
-
 
     notifyDrivers: async function (req, res, next) {
         console.log("req.ride , body", req.ride, req.body)
@@ -319,11 +320,15 @@ module.exports = {
         ]
 
     },
+
+},
     startRide: async function (req, res, next) {
         console.log("req.body", req.body)
         let ride = await ridesDao.getRideByPk(req.body.id)
         if (ride.state != "ACCEPTED")
             throw new createHttpError.Conflict("Ride is already " + ride.state)
+
+
         let [driver_fcmtokens, customer_fcmtokens] = await module.exports.getUserTokens(ride.driver_id, ride.customer_id)
 
         let notificationdata = {
@@ -372,147 +377,157 @@ module.exports = {
         })
     },
 
-    endRide: async function (req, res, next) {
-        console.log("req.body", req.body)
-        let ride = await ridesDao.getRideByPk(req.body.id)
-        if (ride.state != "STARTED")
-            throw new createHttpError.Conflict("Ride is already " + ride.state)
-        let [driver_fcmtokens, customer_fcmtokens] = await module.exports.getUserTokens(ride.driver_id, ride.customer_id)
+endRide: async function (req, res, next) {
+    console.log("req.body", req.body)
+    let ride = await ridesDao.getRideByPk(req.body.id)
+    if (ride.state != "STARTED")
+        throw new createHttpError.Conflict("Ride is already " + ride.state)
+    let [driver_fcmtokens, customer_fcmtokens] = await module.exports.getUserTokens(ride.driver_id, ride.customer_id)
 
-        let notificationdata = {
-            data: JSON.stringify({
-                rideId: req.body.id,
-                state: req.state
-            })
-        }
-
-        let driverMsg = {
-            notification: {
-                title: "Ride Ended",
-                body: "Ride is ended successfully"
-            },
-            android: {
-                notification: {
-                    clickAction: 'endRide'
-                }
-            },
-            data: notificationdata ? notificationdata : "",
-            tokens: driver_fcmtokens,
-        };
-        let customerMsg = driverMsg
-        customerMsg.notification = {
-            title: "Ride Ended Successfully",
-            body: "Thank you, have a nice day!"
-        }
-        customerMsg.tokens = customer_fcmtokens
-        await Promise.all([
-            sendNotifications(driverMsg),
-            sendNotifications(customerMsg)
-        ])
-        let result = await ridesDao.updateRide(
-            {
-                id: ride.id,
-                end_time: req.body.end_time,
-                state: "COMPLETED"
-
-            })
-        res.sendResponse({
-            msg: "success"
+    let notificationdata = {
+        data: JSON.stringify({
+            rideId: req.body.id,
+            state: req.state
         })
-    },
+    }
 
-    cancelRide: async function (req, res, next) {
-        console.log("req.body", req.body)
-        let ride = await ridesDao.getRideByPk(req.body.id)
-        // 
-        let [driver_fcmtokens, customer_fcmtokens] = await module.exports.getUserTokens(ride.driver_id, ride.customer_id)
-
-        let notificationdata = {
-            data: JSON.stringify({
-                rideId: req.body.id,
-                state: req.state
-            })
-        }
-
-        let driverMsg = {
+    let driverMsg = {
+        notification: {
+            title: "Ride Ended",
+            body: "Ride is ended successfully"
+        },
+        android: {
             notification: {
-                title: "Ride is Cancelled",
-                body: "Customer cancelled the ride"
-            },
-            android: {
-                notification: {
-                    clickAction: 'cancelRide'
-                }
-            },
-            data: notificationdata ? notificationdata : "",
-            tokens: driver_fcmtokens,
-        };
-
-
-        let customerMsg = {
-            ...driverMsg,
-            notification: {
-                title: "Ride is Cancelled",
-                body: "Book a new ride to start again"
-            },
-            tokens: customer_fcmtokens
-        }
-
-        await Promise.all([
-            sendNotifications(driverMsg),
-            sendNotifications(customerMsg)
-        ])
-        await ridesDao.updateRide({
-
+                clickAction: 'endRide'
+            }
+        },
+        data: notificationdata ? notificationdata : "",
+        tokens: driver_fcmtokens,
+    };
+    let customerMsg = driverMsg
+    customerMsg.notification = {
+        title: "Ride Ended Successfully",
+        body: "Thank you, have a nice day!"
+    }
+    customerMsg.tokens = customer_fcmtokens
+    await Promise.all([
+        sendNotifications(driverMsg),
+        sendNotifications(customerMsg)
+    ])
+    let result = await ridesDao.updateRide(
+        {
             id: ride.id,
-            state: "CANCELLED"
+            end_time: req.body.end_time,
+            state: "COMPLETED"
+
         })
-        res.sendResponse({
-            msg: "success"
+    req.ride = {
+        msg: "ride ended successfully",
+        rideId: ride.id,
+        driverId: ride.driver_id,
+        rideStatus: "AVAILABLE"
+    }
+    next()
+},
+
+cancelRide: async function (req, res, next) {
+    console.log("req.body", req.body)
+    let ride = await ridesDao.getRideByPk(req.body.id)
+    if (["BOOKED,ACCEPTED,STARTED"].includes(ride.state))
+        throw new createHttpError.Conflict("Ride is already " + ride.state)
+    let [driver_fcmtokens, customer_fcmtokens] = await module.exports.getUserTokens(ride.driver_id, ride.customer_id)
+
+    let notificationdata = {
+        data: JSON.stringify({
+            rideId: req.body.id,
+            state: req.state
         })
-    },
+    }
 
-    getRide: async function (req, res, next) {
-        let { rideId } = req.params
-        let result = await ridesDao.getRide(parseInt(rideId))
-        res.sendResponse(result)
-    },
+    let driverMsg = {
+        notification: {
+            title: "Ride is Cancelled",
+            body: "Customer cancelled the ride"
+        },
+        android: {
+            notification: {
+                clickAction: 'cancelRide'
+            }
+        },
+        data: notificationdata ? notificationdata : "",
+        tokens: driver_fcmtokens,
+    };
 
-    getRidesByUserId: async function (req, res, next) {
-        let result = await ridesDao.getRidesByUserId(req.user.id)
-        res.sendResponse({
-            ridehistory: result
-        })
-    },
 
-    getRideById: async function (req, res, next) {
-        let result = await ridesDao.getRidesById(req.params.rideId)
-        res.sendResponse(result)
-    },
+    let customerMsg = {
+        ...driverMsg,
+        notification: {
+            title: "Ride is Cancelled",
+            body: "Book a new ride to start again"
+        },
+        tokens: customer_fcmtokens
+    }
 
-    getDriverRideHistory: async function (req, res, next) {
-        let result = await ridesDao.getDriverRideHistory(req.params.userId)
-        res.sendResponse({
-            ridehistory: result
-        })
-    },
+    await Promise.all([
+        sendNotifications(driverMsg),
+        sendNotifications(customerMsg)
+    ])
+    await ridesDao.updateRide({
 
-    getRideState: async function (req, res, next) {
-        let { userId, userType } = req.params
-        let result = await ridesDao.getRideState(userId, userType)
-        res.sendResponse(result)
-    },
+        id: ride.id,
+        state: "CANCELLED"
+    })
 
-    postRideRequests: async function (req, res, next) {
-        let { rideId, reqArray } = req.body
-        let ride = await ridesDao.getRidesById(rideId)
-        if (!ride) throw new createHttpError.FailedDependency("ride not found in post requests ride")
-        let requests = await ridesDao.createRideReq(reqArray, rideId)
-        console.log("ride>>><", ride, requests)
-        res.sendResponse({
-            msg: "success"
-        })
-    },
+    req.ride = {
+        msg: "ride cancelled successfully",
+        rideId: ride.id,
+        driverId: ride.driver_id,
+        rideStatus: "AVAILABLE"
+    }
+    next()
+},
+
+getRide: async function (req, res, next) {
+    let { rideId } = req.params
+    let result = await ridesDao.getRide(parseInt(rideId))
+    res.sendResponse(result)
+},
+
+getRidesByUserId: async function (req, res, next) {
+    let result = await ridesDao.getRidesByUserId(req.user.id)
+    res.sendResponse({
+        ridehistory: result
+    })
+},
+
+getRideById: async function (req, res, next) {
+    let result = await ridesDao.getRidesById(req.params.rideId)
+    res.sendResponse(result)
+},
+
+getDriverRideHistory: async function (req, res, next) {
+    let result = await ridesDao.getDriverRideHistory(req.params.userId)
+    res.sendResponse({
+        ridehistory: result
+    })
+},
+
+getRideState: async function (req, res, next) {
+    let { userId, userType } = req.params
+    let result = await ridesDao.getRideState(userId, userType)
+    res.sendResponse(result)
+},
+
+postRideRequests: async function (req, res, next) {
+    let { rideId, reqArray } = req.body
+    let ride = await ridesDao.getRidesById(rideId)
+    if (!ride) throw new createHttpError.FailedDependency("ride not found in post requests ride")
+    let requests = await ridesDao.createRideReq(reqArray, rideId)
+    console.log("ride>>><", ride, requests)
+    res.sendResponse({
+        msg: "success"
+    })
+},
 
 }
 

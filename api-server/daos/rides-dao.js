@@ -13,9 +13,11 @@ var moment = require('moment');
 const { Op } = require("sequelize")
 const {
     ratings, rides, users, user_vehicles, ride_requests, sequelize
+    ratings, rides, users, user_vehicles, ride_requests, sequelize
 } = require('../models');
 const createHttpError = require('http-errors');
 const db = require('../models');
+const { getUserWithId } = require('./users-dao');
 /**
  * export module
  */
@@ -35,7 +37,9 @@ module.exports = {
     },
 
     getRideByPk: async function (rideId) {
-        return await rides.findByPk(rideId)
+        let ride = await rides.findByPk(rideId)
+        if (!ride) throw new createHttpError.NotFound("ride Not Found")
+        return ride
     },
     getRide: async function (rideId) {
 
@@ -213,6 +217,9 @@ module.exports = {
 
 
     getPendingRequests: async function (driver_id) {
+        let driverUser = await getUserWithId(driver_id)
+        if (driverUser.rideStatus != "AVAILABLE")
+            throw new createHttpError.Conflict("driver is not available")
         let result = await db.ride_requests.findAndCountAll({
             attributes: [
                 "id",

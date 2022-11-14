@@ -12,13 +12,13 @@ router.post('/bookRide', authorize(), PromiseHandler(ridesService.addRide), Prom
 
 router.get('/getPendingRequests/:driverId', authorize(roles.DRIVER), PromiseHandler(ridesService.getPendingRequests))
 //driver accept ride api
-router.post('/acceptRide', authorize(), PromiseHandler(ridesService.acceptRide))
+router.post('/acceptRide', authorize(), PromiseHandler(ridesService.acceptRide), PromiseHandler(ridesService.updateDriverStatus))
 
-router.post('/cancelRide', authorize(), PromiseHandler(ridesService.cancelRide))
+router.post('/cancelRide', authorize(), PromiseHandler(ridesService.cancelRide), PromiseHandler(ridesService.updateDriverStatus))
 
 router.post('/startRide', authorize(), PromiseHandler(ridesService.startRide))
 
-router.post('/endRide', authorize(), PromiseHandler(ridesService.endRide))
+router.post('/endRide', authorize(), PromiseHandler(ridesService.endRide), PromiseHandler(ridesService.updateDriverStatus))
 
 router.get('/:rideId', authorize(), PromiseHandler(ridesService.getRide))
 

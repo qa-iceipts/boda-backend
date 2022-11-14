@@ -79,11 +79,6 @@ workflows:
             branches:
               only:
                 - master
-      - publishDNS_SERVER:
-          filters:
-            branches:
-              only:
-                - master
       - publishLOCATION_SERVER:
           filters:
             branches:
@@ -92,7 +87,6 @@ workflows:
       - pull-and-build:
           requires:
             - publishAPISERVER
-            - publishDNS_SERVER
             - publishLOCATION_SERVER
           filters:
             branches:

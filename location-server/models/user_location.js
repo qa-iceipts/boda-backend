@@ -29,7 +29,11 @@ module.exports = (sequelize, DataTypes) => {
     lat: DataTypes.STRING,
     per_km: DataTypes.FLOAT,
     long: DataTypes.STRING,
-    // time: DataTypes.DATE,
+    rideStatus: {
+      type: DataTypes.ENUM("NOT_AVAILABLE", "AVAILABLE"),
+      defaultValue: "AVAILABLE",
+      allowNull: false
+    },
     online: DataTypes.BOOLEAN
   }, {
     // scopes
