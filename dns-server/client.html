@@ -12,7 +12,9 @@
   let vehicleType = 2
 
 
-  const socket = io("http://localhost:4200?user_type=" + user_type + "&userId=" + userId + "&rideId=" + rideId);
+  const socket = io("http://159.89.172.116:4000?user_type=" + user_type + "&userId=" + userId + "&rideId=" + rideId);
+
+  //const socket = io(url + "?userId=" + userId);
 
   socket.on("onconnect", (data) => {
     document.getElementById('onconnect').innerHTML =
@@ -48,6 +50,10 @@
     socket.on("error", (error) => {
       console.log("error>>>", error)
     })
+    socket.on("noDriversFound", (error) => {
+      console.log("noDriversFound>>>", error)
+    })
+
 
 
 

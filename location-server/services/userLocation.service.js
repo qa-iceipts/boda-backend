@@ -7,7 +7,6 @@ const createHttpError = require('http-errors');
 module.exports = {
 
     findOrCreateByUserId: async function (reqObj) {
-        // reqObj.online = true
         return await user_location.findOrCreate({
             where: { user_id: reqObj.user_id },
             defaults: reqObj
@@ -44,7 +43,6 @@ module.exports = {
             }
         })
         if (!result) return {}
-        // throw new createHttpError.NotFound("User Not Found")
         return result
     },
 
@@ -62,6 +60,7 @@ module.exports = {
     getNearbyDrivers: async function (reqObj) {
         let { minLoc, maxLoc, vehicle_type, user_id } = reqObj
         let whereObj = {
+            rideStatus: "AVAILABLE",
             lat: {
                 [Op.between]: [minLoc.lat, maxLoc.lat]
             },
@@ -81,11 +80,11 @@ module.exports = {
             whereObj.vehicle_type = vehicle_type
         }
         let nearbyUsers = await user_location.findAndCountAll({
-            where: whereObj, attributes: { exclude: ['createdAt', 'updatedAt'] }
+            attributes: ["id", "user_id", "vehicle_type", "user_type", "lat", "per_km", "long", "online"],
+            where: whereObj,
+
         })
         console.log(nearbyUsers)
-        // if (nearbyUsers.count <= 0) return {}
-        // throw new createHttpError.NotFound("No Nearby Drivers Found")
         return nearbyUsers
     },
 

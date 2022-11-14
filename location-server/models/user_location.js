@@ -16,18 +16,24 @@ module.exports = (sequelize, DataTypes) => {
   user_location.init({
     user_id: {
       type: DataTypes.STRING,
-      unique: true
+      unique: true,
+      required: true
     },
     vehicle_type: {
       type: DataTypes.INTEGER
     },
     user_type: {
-      type: DataTypes.INTEGER
+      type: DataTypes.INTEGER,
+      required: true
     },
     lat: DataTypes.STRING,
     per_km: DataTypes.FLOAT,
     long: DataTypes.STRING,
-    // time: DataTypes.DATE,
+    rideStatus: {
+      type: DataTypes.ENUM("NOT_AVAILABLE", "AVAILABLE"),
+      defaultValue: "AVAILABLE",
+      allowNull: false
+    },
     online: DataTypes.BOOLEAN
   }, {
     // scopes
@@ -40,5 +46,5 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'user_location',
   });
-return user_location;
+  return user_location;
 };
