@@ -64,7 +64,6 @@ module.exports = {
             "user_id": user.id,
             "rideStatus": req.ride.rideStatus
         })
-        console.log("RESPONSE updateDriverStatus>>", response)
         delete req.ride.rideStatus
         res.sendResponse(req.ride)
 
@@ -431,14 +430,16 @@ module.exports = {
     cancelRide: async function (req, res, next) {
         console.log("req.body", req.body)
         let ride = await ridesDao.getRideByPk(req.body.id)
-        if (["BOOKED,ACCEPTED,STARTED"].includes(ride.state))
-            throw new createHttpError.Conflict("Ride is already " + ride.state)
-        let [driver_fcmtokens, customer_fcmtokens] = await module.exports.getUserTokens(ride.driver_id, ride.customer_id)
+        if (!['BOOKED', 'ACCEPTED', 'STARTED'].includes(ride.state))
+            throw new createHttpError.Conflict("Ride is already " + String(ride.state).toLowerCase())
+
+        ride.state = "CANCELLED"
+        await ride.save()
 
         let notificationdata = {
             data: JSON.stringify({
-                rideId: req.body.id,
-                state: req.state
+                rideId: ride.id,
+                state: ride.state
             })
         }
 
@@ -453,7 +454,6 @@ module.exports = {
                 }
             },
             data: notificationdata ? notificationdata : "",
-            tokens: driver_fcmtokens,
         };
 
 
@@ -463,18 +463,27 @@ module.exports = {
                 title: "Ride is Cancelled",
                 body: "Book a new ride to start again"
             },
-            tokens: customer_fcmtokens
         }
 
-        await Promise.all([
-            sendNotifications(driverMsg),
-            sendNotifications(customerMsg)
-        ])
-        await ridesDao.updateRide({
+        let customerTokens = await getAllTokensByIds(ride.customer_id)
+        customerMsg.tokens = customerTokens
 
-            id: ride.id,
-            state: "CANCELLED"
-        })
+        if (!ride.driver_id || ride.state == "BOOKED") {
+            await sendNotifications(customerMsg)
+            return res.sendResponse({
+                msg: "ride cancelled successfully",
+                rideId: ride.id,
+                driverId: ride.driver_id,
+            })
+        }
+        else {
+            let driver_fcmtokens = await getAllTokensByIds(ride.driver_id)
+            driverMsg.tokens = driver_fcmtokens
+            await Promise.all([
+                sendNotifications(driverMsg),
+                sendNotifications(customerMsg)
+            ])
+        }
 
         req.ride = {
             msg: "ride cancelled successfully",
