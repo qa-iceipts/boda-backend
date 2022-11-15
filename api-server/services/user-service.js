@@ -18,6 +18,8 @@ const {
 } = require('../utils/verifytoken');
 const commonUtils = require('../utils/commonUtils');
 const { getUrl } = require('../utils/aws-S3');
+const { getAllTokensByIds } = require('./fcm-service');
+const { sendNotifications } = require('./notifications-service');
 
 /**
  * export module
@@ -247,6 +249,49 @@ module.exports = {
         user.resetTokenExpires = null
         user.save()
         res.sendResponse('Password Changed Successfully')
+    },
+
+    sendNotification: async function (req, res, next) {
+        let userId = req.params.userId
+        let reqObj = req.body
+        let tokens = await getAllTokensByIds(userId)
+        if (tokens.length <= 0)
+            throw new createHttpError.FailedDependency("user tokens not found")
+        let notificationdata = {
+            data: JSON.stringify(reqObj.notificationData)
+        }
+
+        let msg = {
+            notification: {
+                title: reqObj.title,
+                body: reqObj.body
+            },
+            android: {
+                notification: {
+                    clickAction: reqObj.clickAction,
+                    imageUrl: reqObj.imageUrl
+                }
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        'mutable-content': 1
+                    }
+                },
+                fcm_options: {
+                    image: reqObj.imageUrl
+                }
+            },
+            webpush: {
+                headers: {
+                    image: reqObj.imageUrl
+                }
+            },
+            data: notificationdata ? notificationdata : "",
+            tokens: tokens,
+        };
+        let result = await sendNotifications(msg)
+        res.sendResponse(result)
     }
 
 }

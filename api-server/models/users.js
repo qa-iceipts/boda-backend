@@ -57,11 +57,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       defaultValue: true
     },
-    // verificationToken: { type: DataTypes.STRING },
-    // verified: { type: DataTypes.DATE },
+    rideStatus: { type: DataTypes.ENUM("AVAILABLE", "NOT_AVAILABLE"), defaultValue: "AVAILABLE", allowNull: false },
     resetToken: { type: DataTypes.STRING },
     resetTokenExpires: { type: DataTypes.DATE },
-    // passwordReset: { type: DataTypes.DATE },
+
 
 
   }, {
@@ -72,7 +71,7 @@ module.exports = (sequelize, DataTypes) => {
         isActive: true
       },
       attributes: {
-        exclude: ['resetToken', 'resetTokenExpires', 'password','createdAt','updatedAt']
+        exclude: ['resetToken', 'resetTokenExpires', 'password', 'createdAt', 'updatedAt']
       }
     },
     scopes: {

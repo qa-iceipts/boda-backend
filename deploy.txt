@@ -21,6 +21,16 @@ docker run --env-file ./env_api -p 8080:8080 -d \
  iceipts/backend_boda:location
 
 
+///test
+
+
+ 
+ docker run --env-file ./env_loc -p 4200:4000 -d \
+ --restart always \
+ --name location \
+ iceipts/backend_boda:location
+
+
 
 
 #!/bin/bash

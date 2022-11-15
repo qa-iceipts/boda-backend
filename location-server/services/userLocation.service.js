@@ -60,6 +60,7 @@ module.exports = {
     getNearbyDrivers: async function (reqObj) {
         let { minLoc, maxLoc, vehicle_type, user_id } = reqObj
         let whereObj = {
+            rideStatus: "AVAILABLE",
             lat: {
                 [Op.between]: [minLoc.lat, maxLoc.lat]
             },
@@ -79,11 +80,11 @@ module.exports = {
             whereObj.vehicle_type = vehicle_type
         }
         let nearbyUsers = await user_location.findAndCountAll({
-            where: whereObj, attributes: { exclude: ['createdAt', 'updatedAt'] }
+            attributes: ["id", "user_id", "vehicle_type", "user_type", "lat", "per_km", "long", "online"],
+            where: whereObj,
+
         })
         console.log(nearbyUsers)
-        // if (nearbyUsers.count <= 0) return {}
-        // throw new createHttpError.NotFound("No Nearby Drivers Found")
         return nearbyUsers
     },
 

@@ -13,8 +13,11 @@ const io = require('socket.io')(server, {
 	cors: { origin: "*" }
 });
 
-require('./controllers/socketio.controller')(io)
+const cors = require("cors");
+const { handleError } = require('./utils/errorHandler.js');
+app.use(cors());
 
+require('./controllers/socketio.controller')(io)
 app.use((req, res, next) => {
 	req.io = io
 	next()
@@ -28,9 +31,9 @@ app.use(morgan('tiny'));
 // 	stream: winston.stream
 // }));
 // CORS 
-const cors = require("cors");
-const { handleError } = require('./utils/errorHandler.js');
-app.use(cors());
+
+
+
 
 // parse requests of content-type - application/json
 app.use(express.json());
