@@ -247,6 +247,11 @@ module.exports = {
         user.resetTokenExpires = null
         user.save()
         res.sendResponse('Password Changed Successfully')
+    },
+
+    sendNotification: async function (req, res, next) {
+        let userId = req.params.userId
+
     }
 
 }

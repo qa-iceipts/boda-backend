@@ -3,7 +3,6 @@ const router = express.Router();
 const role = require('../utils/roles')
 const { PromiseHandler } = require('../utils/errorHandler')
 const userService = require('../services/user-service');
-const { authMiddleware } = require("../utils/firebase/firebase_middleware");
 const authorize = require("../middleware/authorize")
 
 // Routes
@@ -36,16 +35,16 @@ router.post('/changePassword', PromiseHandler(userService.changePassword));
 // disable User with userId
 router.put('/disableUser/:userId', authorize(role.ADMIN), PromiseHandler(userService.disableUser))
 
-// router.post('/checkUserExists', PromiseHandler(userService.checkUserExists))
-
 router.post('/getDriverMetrics', PromiseHandler(userService.getDriverMetrics))
 
 router.get('/getAllUsers/:userType', authorize(), PromiseHandler(userService.getAllUsers))
 
 router.post('/getAllUsersByIds/', PromiseHandler(userService.getAllUsersByIds))
 
-
 router.get('/getDriverProfile/:id', PromiseHandler(userService.getDriverProfile))
+
+//send custom Notifications to any user api
+router.post('/sendNotification/:userId', PromiseHandler(userService.sendNotification))
 
 
 // const cron = require('node-cron');

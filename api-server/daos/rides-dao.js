@@ -13,7 +13,6 @@ var moment = require('moment');
 const { Op } = require("sequelize")
 const {
     ratings, rides, users, user_vehicles, ride_requests, sequelize
-    ratings, rides, users, user_vehicles, ride_requests, sequelize
 } = require('../models');
 const createHttpError = require('http-errors');
 const db = require('../models');
