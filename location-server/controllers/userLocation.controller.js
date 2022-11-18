@@ -8,6 +8,9 @@ module.exports = {
 
     updateLocation: async function (req, res, next) {
         let reqObj = req.body
+        if (reqObj.rideStatus === 'AVAILABLE') {
+            reqObj.customerId = null
+        }
         let [result, created] = await userLocationService.findOrCreateByUserId(reqObj)
         console.log("location Post Data :: ", reqObj, created)
         if (!created) {

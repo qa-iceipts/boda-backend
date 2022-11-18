@@ -34,6 +34,10 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: "AVAILABLE",
       allowNull: false
     },
+    customerId: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
     online: DataTypes.BOOLEAN
   }, {
     // scopes
