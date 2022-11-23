@@ -62,7 +62,8 @@ module.exports = {
         await user.save()
         let response = await axios.post(process.env.LOCATION_SERVER + '/location', {
             "user_id": user.id,
-            "rideStatus": req.ride.rideStatus
+            "rideStatus": req.ride.rideStatus,
+            "customerId": req.ride.customerId
         })
         delete req.ride.rideStatus
         res.sendResponse(req.ride)
@@ -150,6 +151,7 @@ module.exports = {
             msg: "ride accepted successfully",
             rideId: ride.id,
             driverId: ride.driver_id,
+            customerId: ride.customer_id,
             rideStatus: "NOT_AVAILABLE"
         }
         next()

@@ -31,7 +31,7 @@ exports = module.exports = function (io) {
             //Whenever someone disconnects this piece of code executed
             socket.on('disconnect', () => disconnectUser(socket));
 
-            socket.on('postLocation', data => postLocation(data, socket));
+            socket.on('postLocation', data => postLocation(data, socket, io));
 
 
             socket.on('getLocation', (data, callback) => getLocation(data, callback, socket))
@@ -64,7 +64,7 @@ function handleError(err, socket) {
 }
 
 //saveLocation 
-async function postLocation(data, socket) {
+async function postLocation(data, socket, io) {
     try {
         console.log("in Post Location>>", data, socket.userObj)
         let [result, created] = await findOrCreateByUserId(data)
@@ -73,6 +73,20 @@ async function postLocation(data, socket) {
             result.save()
         }
         socket.emit("locResponse", { message: "location updated" })
+        let customer = await getByUserId(data.user_id)
+        await result.reload()
+        console.log(result)
+        if (result && result.customerId) {
+            io.to(result.customerId).emit("driver-move", {
+                location: {
+                    lat: data.lat,
+                    long: data.long,
+                    vehicle_type: data.vehicle_type,
+                    user_id: data.user_id
+                },
+            });
+        }
+
     } catch (err) {
         handleError(err, socket)
     }
@@ -85,9 +99,8 @@ async function getLocation(data, callback, socket) {
         callback({
             userLocation
         });
-
     } catch (error) {
-
+        handleError(error, socket)
     }
 }
 

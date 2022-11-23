@@ -29,9 +29,11 @@ module.exports = {
         res.sendResponse(result)
     },
 
-    updateUserVehicles: async function (req) {
-        let result = await users_vehiclesDao.updateUserVehicles(req.payload.id)
-        res.sendResponse(result)
+    updateUserVehicles: async function (req, res) {
+        let result = await users_vehiclesDao.updateUserVehicles(req.body)
+        res.sendResponse({
+            msg: "success"
+        })
     },
 
 }

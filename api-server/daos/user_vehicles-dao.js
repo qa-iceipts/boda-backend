@@ -26,7 +26,7 @@ module.exports = {
     },
 
     updateUserVehicles: async function (reqObj) {
-        let result = await user_vehicles.update(reqObj, { where: { userId: req.user.id } })
+        let result = await user_vehicles.update(reqObj, { where: { id: reqObj.id } })
         return result
     },
 
