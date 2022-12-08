@@ -67,7 +67,7 @@ module.exports = {
     login: async function (req, res, next) {
 
         let { roleName } = req.params
-        let { username, password } = req.body
+        let { username } = req.body
 
         console.log("login service called=>", req.body, "rolename=>", roleName)
 
@@ -76,9 +76,9 @@ module.exports = {
 
         let user = await usersDao.getUserByUsername(username)
         let DbRoleName = await usersDao.getRoleName(user)
-        let matched = await commonUtils.comparePassword(password, user.password)
+        // let matched = await commonUtils.comparePassword(password, user.password)
 
-        if (!matched) throw new createHttpError.Unauthorized("Invalid Password")
+        // if (!matched) throw new createHttpError.Unauthorized("Invalid Password")
 
         if (DbRoleName != roleName)
             throw new createHttpError.Forbidden("Unathorized! User role is " + DbRoleName)

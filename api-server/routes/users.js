@@ -5,6 +5,7 @@ const { PromiseHandler } = require('../utils/errorHandler')
 const userService = require('../services/user-service');
 const authorize = require("../middleware/authorize")
 
+const { authMiddleware } = require('../middleware/firebase_middleware');
 // Routes
 router.get('/', function (req, res) {
     console.log("/user request called");
@@ -13,7 +14,7 @@ router.get('/', function (req, res) {
 
 router.post('/addUser', PromiseHandler(userService.addUser), PromiseHandler(userService.login))
 
-router.post('/login/:roleName', PromiseHandler(userService.login))
+router.post('/login/:roleName', authMiddleware, PromiseHandler(userService.login))
 
 router.get('/getUser/:id', authorize(), PromiseHandler(userService.getUserById))
 
