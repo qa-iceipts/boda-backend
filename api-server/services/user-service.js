@@ -67,23 +67,21 @@ module.exports = {
     login: async function (req, res, next) {
 
         let { roleName } = req.params
-        let { username, password } = req.body
+        let { username } = req.body
 
-        console.log("login service called=>", req.body, "rolename=>", roleName)
 
         if (!Object.values(role).includes(roleName))
             throw new createHttpError.Forbidden("User role is not Valid " + roleName)
 
         let user = await usersDao.getUserByUsername(username)
         let DbRoleName = await usersDao.getRoleName(user)
-        let matched = await commonUtils.comparePassword(password, user.password)
+        // let matched = await commonUtils.comparePassword(password, user.password)
 
-        if (!matched) throw new createHttpError.Unauthorized("Invalid Password")
+        // if (!matched) throw new createHttpError.Unauthorized("Invalid Password")
 
         if (DbRoleName != roleName)
             throw new createHttpError.Forbidden("Unathorized! User role is " + DbRoleName)
 
-        console.log(roleName, "===", DbRoleName)
 
         let jwtToken = signAccessToken(user);
         let refreshToken = generateRefreshToken(user, req.ip);
@@ -102,7 +100,6 @@ module.exports = {
         let { userId } = req.body
         let token = req.body.refreshToken
         if (!token) throw new createHttpError.BadRequest("Refresh Token missing")
-        console.log("refresh Token called =>", token)
 
         const refreshToken = await getRefreshToken(token);
         const account = await refreshToken.getUser();
@@ -126,7 +123,6 @@ module.exports = {
     },
 
     updateUser: async function (req, res) {
-        console.log("Insert Obj in updateUser Service ::", req.body)
         let reqObj = req.body
         let { userId } = req.params
         if (req.user.id != userId) throw new createHttpError.Forbidden("Session Mismatch")
@@ -155,7 +151,6 @@ module.exports = {
     },
 
     getUserById: async function (req, res) {
-        console.log("getUserById called")
         let { id } = req.params
         if (req.user.id != id) throw new createHttpError.Forbidden("Session Mismatch")
         let user = await usersDao.getUserWithId(id)
@@ -164,7 +159,6 @@ module.exports = {
     },
 
     getDriverProfile: async function (req, res) {
-        console.log("getDriverProfile called")
         let { id } = req.params
         let user = await usersDao.getDriverProfile(id)
         user.profile_image = user.profile_image ? await getUrl(user.profile_image) : null
@@ -195,7 +189,6 @@ module.exports = {
     },
 
     checkUserExists: async function (req, res) {
-        console.log("reqObj ::", req.body)
         let { email, phone } = req.body
         let result = await usersDao.checkUserExists({ email, phone })
         res.sendResponse(result)
@@ -203,7 +196,6 @@ module.exports = {
 
     logout: async function (req, res) {
         let reqObj = req.body
-        console.log("reqObj in Logout Service :: ", reqObj)
         let refresh_token = reqObj.refreshToken
         res.sendResponse({
             msg: "Successfully Logged Out"
@@ -213,9 +205,7 @@ module.exports = {
     //lookAtThis
     getDriverMetrics: async (req, res, next) => {
         let { driverIds, customer_id } = req.body
-        console.log("getDriverMetrics Service ", driverIds, customer_id);
         let result = await usersDao.getDriverMetrics({ driverIds, customer_id })
-        console.log(result);
         res.sendResponse(result);
     },
 

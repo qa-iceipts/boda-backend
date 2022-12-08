@@ -32,7 +32,6 @@ module.exports = {
                 key: process.env.MAPS_API_KEY
             }
         })
-        console.log(etaResult)
         if (!etaResult.data || etaResult.data.rows.length <= 0)
             throw new createHttpError.InternalServerError("ETA RESULT google error")
 
@@ -40,7 +39,6 @@ module.exports = {
         let value = etaResult.data.rows[0].elements[0].distance.value
         reqObj.amount_estimated = value ? (value * 0.3) : 0
         reqObj.eta = etaResult.data.rows[0].elements[0].duration.text
-        console.log(reqObj)
 
         let result = await ridesDao.addRide(reqObj)
         req.body.id = result.id
@@ -56,7 +54,6 @@ module.exports = {
     },
 
     updateDriverStatus: async function (req, res, next) {
-        console.log("updateDriverStatus", req.ride)
         let user = await usersDao.getUserWithId(req.ride.driverId)
         user.rideStatus = req.ride.rideStatus
         await user.save()
@@ -80,15 +77,10 @@ module.exports = {
 
         //driver is already on ride check ---
         let driverUser = await getUserWithId(req.body.driverId)
-        console.log(driverUser.rideStatus)
         if (driverUser.rideStatus != "AVAILABLE") {
             throw new createHttpError.Conflict("already accepted another ride")
         }
-        console.log(await ride.getRide_requests({
-            where: {
-                driver_id: req.body.driverId
-            }
-        }))
+
         let pendingCheck = await ride.getRide_requests({
             where: {
                 driver_id: req.body.driverId
@@ -139,8 +131,7 @@ module.exports = {
             },
             tokens: customer_fcmtokens
         }
-        console.log(customerMsg)
-        console.log(driverMsg)
+
         await Promise.all([
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
@@ -158,7 +149,6 @@ module.exports = {
     },
 
     notifyDrivers: async function (req, res, next) {
-        console.log("req.ride , body", req.ride, req.body)
         let { driverIds, customerId } = req.ride
         let rideData = await ridesDao.getRideByPk(req.body.id)
         let [driver_fcmtokens, customer_fcmtokens] = await Promise.all([
@@ -195,8 +185,7 @@ module.exports = {
             },
             tokens: customer_fcmtokens
         }
-        console.log(customerMsg)
-        console.log(driverMsg)
+
         await Promise.all([
             sendNotifications(driverMsg),
             sendNotifications(customerMsg)
@@ -211,17 +200,13 @@ module.exports = {
         /**
          * reqObj { needs vehicle_type,rideId}
          */
-        console.log("bookingSendNotifications called body>>", reqObj)
         let rideData = await ridesDao.getRideByPk(reqObj.id)
-        console.log("rideData>>>>", rideData.dataValues)
         if (rideData.state != 'FINDING') {
             throw new createHttpError.Conflict("ride is already " + rideData.state)
         }
 
         // ETA calculation
         let onAirDistance = calculateDistance(rideData.origin_lat, rideData.origin_long, rideData.destination_lat, rideData.destination_long, 'K')
-
-        console.log("ride distance in Km=> ", onAirDistance)
 
         let response = await axios.post(process.env.LOCATION_SERVER + '/getNearbyDrivers', {
             "user_id": rideData.customer_id,
@@ -232,7 +217,6 @@ module.exports = {
         })
 
 
-        console.log("Location server nearby driver get response ::", response.data)
 
         if (!response.data.success) throw new createHttpError.InternalServerError()
 
@@ -253,7 +237,6 @@ module.exports = {
 
         let url = `https://maps.googleapis.com/maps/api/distancematrix/json?destinations=${destinations}&origins=${origins}&key=${process.env.MAPS_API_KEY}`
 
-        console.log("distance matrix URL", url)
 
         let etaResult = await axios.get('https://maps.googleapis.com/maps/api/distancematrix/json', {
             params: {
@@ -266,7 +249,6 @@ module.exports = {
         if (!etaResult.data)
             throw new createHttpError.InternalServerError("Google distance Error")
 
-        console.log("etaresult data", etaResult.data)
 
         etaResult.data.rows.forEach((element, index) => {
             response.data.rows[index].address = etaResult.data.origin_addresses[index]
@@ -305,14 +287,11 @@ module.exports = {
 
     getUserTokens: async function (driverId, customerId) {
 
-        console.log("get userTokens Service Called ::")
 
         let [driver_fcmtokens, customer_fcmtokens] = await Promise.all([
             getAllTokensByIds(driverId),
             getAllTokensByIds(customerId)
         ])
-        console.log("driver_fcmtokens.data:: ", driver_fcmtokens)
-        console.log("customer_fcmtokens.data:: ", customer_fcmtokens)
 
         if (driver_fcmtokens.length <= 0 && customer_fcmtokens.length <= 0)
             throw new createHttpError.NotFound("fcm tokens not found")
@@ -322,7 +301,6 @@ module.exports = {
 
     },
     startRide: async function (req, res, next) {
-        console.log("req.body", req.body)
         let ride = await ridesDao.getRideByPk(req.body.id)
         if (ride.state != "ACCEPTED")
             throw new createHttpError.Conflict("Ride is already " + ride.state)
@@ -359,8 +337,7 @@ module.exports = {
             },
             tokens: customer_fcmtokens
         }
-        console.log(customerMsg)
-        console.log(driverMsg)
+
 
         await Promise.all([
             sendNotifications(driverMsg),
@@ -377,7 +354,6 @@ module.exports = {
     },
 
     endRide: async function (req, res, next) {
-        console.log("req.body", req.body)
         let ride = await ridesDao.getRideByPk(req.body.id)
         if (ride.state != "STARTED")
             throw new createHttpError.Conflict("Ride is already " + ride.state)
@@ -430,7 +406,6 @@ module.exports = {
     },
 
     cancelRide: async function (req, res, next) {
-        console.log("req.body", req.body)
         let ride = await ridesDao.getRideByPk(req.body.id)
         if (!['BOOKED', 'ACCEPTED', 'STARTED'].includes(ride.state))
             throw new createHttpError.Conflict("Ride is already " + String(ride.state).toLowerCase())
@@ -532,7 +507,6 @@ module.exports = {
         let ride = await ridesDao.getRidesById(rideId)
         if (!ride) throw new createHttpError.FailedDependency("ride not found in post requests ride")
         let requests = await ridesDao.createRideReq(reqArray, rideId)
-        console.log("ride>>><", ride, requests)
         res.sendResponse({
             msg: "success"
         })

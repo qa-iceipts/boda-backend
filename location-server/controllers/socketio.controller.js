@@ -7,10 +7,7 @@ exports = module.exports = function (io) {
 
     // when client connection with new connection 
     io.on('connection', async function (socket) {
-        console.log(
-            'A new user connected =>', socket.id,
-            "userId => " + socket.handshake.query.userId,
-        );
+
         if (!socket.handshake.query.userId || socket.handshake.query.userId == '') {
             socket.emit("error", { message: "pass userId" })
             socket.disconnect()
@@ -45,7 +42,7 @@ exports = module.exports = function (io) {
 // disconnect logic
 async function disconnectUser(socket) {
     try {
-        console.log('A user disconnected', socket.userObj);
+        // console.log('A user disconnected', socket.userObj);
     } catch (err) {
         handleError(err, socket)
     }
@@ -66,7 +63,7 @@ function handleError(err, socket) {
 //saveLocation 
 async function postLocation(data, socket, io) {
     try {
-        console.log("in Post Location>>", data, socket.userObj)
+        // console.log("in Post Location>>", data, socket.userObj)
         let [result, created] = await findOrCreateByUserId(data)
         if (!created) {
             result.set(data)
@@ -75,7 +72,6 @@ async function postLocation(data, socket, io) {
         socket.emit("locResponse", { message: "location updated" })
         let customer = await getByUserId(data.user_id)
         await result.reload()
-        console.log(result)
         if (result && result.customerId) {
             io.to(result.customerId).emit("driver-move", {
                 location: {
@@ -94,7 +90,6 @@ async function postLocation(data, socket, io) {
 
 async function getLocation(data, callback, socket) {
     try {
-        console.log("getLocation>> ", data)
         let userLocation = await getByUserId(data.userId)
         callback({
             userLocation

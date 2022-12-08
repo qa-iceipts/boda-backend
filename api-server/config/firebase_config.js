@@ -11,7 +11,7 @@ let a = {
     "auth_provider_x509_cert_url": process.env.auth_provider_x509_cert_url,
     "client_x509_cert_url": process.env.client_x509_cert_url,
 }
-console.log("fbDATA>>>", a)
+
 module.exports = {
     firebase_config: a
 }
