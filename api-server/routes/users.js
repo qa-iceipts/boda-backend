@@ -8,7 +8,6 @@ const authorize = require("../middleware/authorize")
 const { authMiddleware } = require('../middleware/firebase_middleware');
 // Routes
 router.get('/', function (req, res) {
-    console.log("/user request called");
     res.send('Welcome to Users');
 });
 
@@ -46,17 +45,5 @@ router.get('/getDriverProfile/:id', PromiseHandler(userService.getDriverProfile)
 
 //send custom Notifications to any user api
 router.post('/sendNotification/:userId', PromiseHandler(userService.sendNotification))
-
-
-// const cron = require('node-cron');
-
-// const { DestroyCronJob } = require("../utils/verifytoken")
-
-// cron.schedule('0 8 * * 1', async () => {
-//     // Runs 8 AM on every Monday
-//     console.log('running a task every monday 8 AM');
-//     let result = await DestroyCronJob()
-//     console.log("result CRON JOB ::", result)
-// });
 
 module.exports = router;

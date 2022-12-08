@@ -19,11 +19,9 @@ module.exports = {
       .auth()
       .verifyIdToken(token)
       .then((decodedToken) => {
-        console.log("decodedToken::", decodedToken)
         next()
       })
       .catch((err) => {
-        console.log("firebase error>>>", err)
         // throw new createHttpError.Forbidden("User Not Verified")
         res.status(403).send({ message: "Could not authorize" });
       }
