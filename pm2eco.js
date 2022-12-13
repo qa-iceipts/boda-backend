@@ -28,7 +28,7 @@ module.exports = {
             mpesa_lipa_na_mpesa_passkey: "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919",
             mpesa_lipaNaMpesaOnline_url: "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
 
-            MAPS_API_KEY: "AIzaSyCguo76jd96YAwvj9gkUYni3RI58Vylc9U",
+            MAPS_API_KEY: "AIzaSyCkHJGMi0ObaXZMJqt5Pjev5oWvgK0cLJg",
             type: "service_account",
             project_id: "boda-app-90859",
             private_key_id: "cdb1de34de8ebb5a43fb096bd9fc659905be679c",
@@ -71,7 +71,7 @@ module.exports = {
             LOCATION_SERVER: "http://localhost:4000/location",
             API_SERVER: "http://localhost:8080/api",
 
-            MAPS_API_KEY: "AIzaSyCguo76jd96YAwvj9gkUYni3RI58Vylc9U",
+            MAPS_API_KEY: "AIzaSyCkHJGMi0ObaXZMJqt5Pjev5oWvgK0cLJg",
             type: "service_account",
             project_id: "boda-app-90859",
             private_key_id: "cdb1de34de8ebb5a43fb096bd9fc659905be679c",
@@ -104,7 +104,7 @@ module.exports = {
             PORT: 4000,
             SECRET: "ansdkjheurhu--9023<>",
 
-            MAPS_API_KEY: "AIzaSyCguo76jd96YAwvj9gkUYni3RI58Vylc9U",
+            MAPS_API_KEY: "AIzaSyCkHJGMi0ObaXZMJqt5Pjev5oWvgK0cLJg",
 
         }
     }],
