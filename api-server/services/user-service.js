@@ -69,15 +69,20 @@ module.exports = {
         let { roleName } = req.params
         let { username } = req.body
 
-
+        //role checking
         if (!Object.values(role).includes(roleName))
             throw new createHttpError.Forbidden("User role is not Valid " + roleName)
-
-        let user = await usersDao.getUserByUsername(username)
+        let roleType
+        if (roleName == role.DRIVER) {
+            roleType = 2
+        } else if (roleName == role.CUSTOMER) {
+            roleType = 3
+        } else {
+            throw new createHttpError.Forbidden("User role is not Valid " + roleName)
+        }
+        await usersDao.login_register(username, roleType)
+        let user = await usersDao.getUserByUsername(username, roleType)
         let DbRoleName = await usersDao.getRoleName(user)
-        // let matched = await commonUtils.comparePassword(password, user.password)
-
-        // if (!matched) throw new createHttpError.Unauthorized("Invalid Password")
 
         if (DbRoleName != roleName)
             throw new createHttpError.Forbidden("Unathorized! User role is " + DbRoleName)

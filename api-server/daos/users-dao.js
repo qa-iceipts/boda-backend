@@ -22,18 +22,41 @@ const createHttpError = require('http-errors')
  */
 module.exports = {
 
-    getUserByUsername: async function (username) {
+    getUserByUsername: async function (username, roleType) {
 
         let user = await db.users.unscoped().findOne({
             where: {
                 [Op.or]: [
                     { phone: username },
                     { email: username }
-                ]
+                ],
+                roleType
             },
         });
         if (!user) throw new createHttpError.NotFound("User Not Found")
         return user
+    },
+
+    login_register: async function (phone, roleType) {
+
+        let user = await db.users.unscoped().findOne({
+            where: {
+                [Op.or]: [
+                    { phone: phone },
+                    { email: phone }
+                ],
+                roleType
+            },
+        });
+        if (!user) {
+            let userNew = await db.users.create({
+                phone: phone,
+                roleType
+            })
+
+            return userNew
+        } else
+            return user
     },
 
     getUserWithId: async function (userId) {

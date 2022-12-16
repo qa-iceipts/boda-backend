@@ -29,7 +29,7 @@ module.exports = {
             process.env.JWT_SECRET,
             {
                 expiresIn: '30d',
-                audience: user.name
+                audience: user.name ? user.name : ""
             }
         )
     },
@@ -146,7 +146,7 @@ module.exports = {
         let accessToken = module.exports.signAccessToken(user)
         console.log("accessToken::", accessToken)
         // let refreshToken = module.exports.loginRefreshToken(user)
-        let refreshToken = module.exports.generateRefreshToken(user,'01')
+        let refreshToken = module.exports.generateRefreshToken(user, '01')
         console.log("refreshToken::", refreshToken)
         // save refresh token
         await refreshToken.save();
@@ -277,10 +277,10 @@ module.exports = {
     getRefreshToken: async function (token) {
         const refreshToken = await db.refreshTokens.findOne({ where: { token } });
         if (!refreshToken || !refreshToken.isActive) throw new createHttpError.Forbidden('Invalid Refresh token');
-        console.log("DBrefreshToken",refreshToken.dataValues)
+        console.log("DBrefreshToken", refreshToken.dataValues)
         return refreshToken;
     },
-    
+
     // new authorize user
     authorize: (roles = []) => {
         return (req, res, next) => {
